@@ -134,16 +134,21 @@ export class GameScene {
     }
     const petal = new THREE.SphereGeometry(0.35, 8, 6);
     const colors = ['#ff6fa8', '#ffffff', '#b78cff', '#ffd23f'];
+    // One instanced mesh with per-instance colours (was 52 meshes = 52 draw calls; M2-15).
+    const flowers = new THREE.InstancedMesh(petal, new THREE.MeshLambertMaterial(), 52);
+    const m = new THREE.Matrix4();
+    const c = new THREE.Color();
+    let n = 0;
     for (let i = 0; i < 26; i++) {
       for (const side of [-1, 1]) {
-        const f = new THREE.Mesh(
-          petal,
-          new THREE.MeshLambertMaterial({ color: colors[(i + side + 4) % 4] }),
-        );
-        f.position.set(side * (L.laneWidth / 2 + 1.1 + ((i * 7) % 3) * 0.6), 0.3, -i * 1.8 + 3);
-        this.scene.add(f);
+        m.makeTranslation(side * (L.laneWidth / 2 + 1.1 + ((i * 7) % 3) * 0.6), 0.3, -i * 1.8 + 3);
+        flowers.setMatrixAt(n, m);
+        flowers.setColorAt(n, c.set(colors[(i + side + 4) % 4]));
+        n++;
       }
     }
+    flowers.frustumCulled = false;
+    this.scene.add(flowers);
   }
 
   private unitMesh(tex: THREE.Texture, count: number, radius: number): THREE.InstancedMesh {
