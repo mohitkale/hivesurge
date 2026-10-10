@@ -39,3 +39,7 @@ The finding itself holds (0 warnings after the fix, 2 before), so this is an evi
 
 - Lint passes. The PR is still docs and logs only.
 - **Remaining blocker (doc):** `prs/033-docs-m2-23-smoke-log.md` line 8 still says ``smoke-60s-f1108d0.txt`: PR 027 tip `f4729de` ``. Lines 28–29 say it was run at f1108d0, the pre-rebase tip. Change line 8 to f1108d0 and add a bullet for `smoke-60s-f4729de.txt`. After that it can merge as-is.
+
+## Re-review @ d160395 (2026-10-11)
+
+**Verdict: approved, merged (--no-ff) as 4b07a41.** The only change since d7dec87 is the doc file list in `prs/033-docs-m2-23-smoke-log.md`. The f1108d0 file is now labelled as the pre-rebase tip, and the f4729de file has its own bullet. The doc is now consistent with lines 28–30 and the logs. Lint passes.
