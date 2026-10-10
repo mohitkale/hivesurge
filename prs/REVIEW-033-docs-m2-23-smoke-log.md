@@ -24,3 +24,18 @@ The results back up PR 027.
 - **Fix:** commit the real f1108d0 log under that name (or drop the file), and make the doc's file list consistent.
 
 The finding itself holds (0 warnings after the fix, 2 before), so this is an evidence-labelling fix only.
+
+## Re-review @ d7dec87 (2026-10-11)
+
+**Verdict: changes requested (doc only), not merged.**
+
+- **Logs: all three fixed.** Each one is byte-identical to its artifact in `/workspace/hivesurge-artifacts/m2-23-smoke/`:
+
+| File                               | Commit recorded | WebGL warnings |
+| ---------------------------------- | --------------- | -------------- |
+| `smoke-60s-f1108d0.txt`            | `f1108d0`       | 0              |
+| `smoke-60s-f4729de.txt`            | `f4729de`       | 0              |
+| `baseline-60s-pre-fix-3f6ceec.txt` | `3f6ceec`       | 2              |
+
+- Lint passes. The PR is still docs and logs only.
+- **Remaining blocker (doc):** `prs/033-docs-m2-23-smoke-log.md` line 8 still says ``smoke-60s-f1108d0.txt`: PR 027 tip `f4729de` ``. Lines 28–29 say it was run at f1108d0, the pre-rebase tip. Change line 8 to f1108d0 and add a bullet for `smoke-60s-f4729de.txt`. After that it can merge as-is.
