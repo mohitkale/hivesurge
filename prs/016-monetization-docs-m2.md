@@ -40,3 +40,21 @@
   - the no-ads free player is at a median of 50% of expectedP (minimum 45%), on the 0.90 floor;
   - premium card share is 4.1% (48 of about 1,160 cards).
 - New DES issues are listed in economy.md: the expectedP curve is too steep even for the baseline, card intake is about 1,100 vs the 280 assumed, and the premium card count is 48 / 13 Epic, not 40 / 9.
+
+## Update 4: re-run against design 866e82b
+
+- `economy_sim.py`:
+  - default `--design-ref 866e82b`;
+  - parses the new expectedP table (stage n) and tail formula;
+  - reports enemy scale per persona and the premium Epic share;
+  - new `--win-sens` flag for the win-rate feedback assumption.
+- `economy.md` and `sim/last_run.md` are updated, including a sensitivity run.
+
+**Test results:**
+
+- `check_guardrails.py`: PASS (exit 0).
+- `economy_sim.py`:
+  - no hard wall;
+  - median P/expectedP: no-ads 87% (enemy scale 0.90), ad-watcher 109% (1.14), payer 117% (1.15 cap);
+  - premium cards 5.9% (4.8% with no feedback), premium Epics 24.5% (21.3%).
+- **New issue for DES:** the scaling feedback loop makes ad-watchers and payers clear fewer stages than no-ads players (day 30: 81–94 vs 159 at win-sens 2.0). See economy.md.
