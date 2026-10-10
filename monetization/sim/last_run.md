@@ -1,6 +1,7 @@
 # M5-2a last run — design 91fed5c
 
 ## k=0.5 (default)
+
 ```
 design_ref=91fed5c seed=42 runs=200 battles/day=6 base_win=0.7 win_sens=2.0 power_k=0.5 scale=clamp(1+0.01(P-expP),0.95,1.0) lossAssist=[[2, 0.95], [3, 0.9]] floor=0.85 xp/tier=270
 
@@ -34,6 +35,7 @@ Day-30 level n: no-ads 132, ads 134, payer 135
 ```
 
 ## k=0.3
+
 ```
 design_ref=91fed5c seed=42 runs=200 battles/day=6 base_win=0.7 win_sens=2.0 power_k=0.3 scale=clamp(1+0.01(P-expP),0.95,1.0) lossAssist=[[2, 0.95], [3, 0.9]] floor=0.85 xp/tier=270
 
@@ -67,6 +69,7 @@ Day-30 level n: no-ads 135.5, ads 132, payer 134
 ```
 
 ## Sensitivity (100 runs): day-30 stage
+
 ```
 k=0.0 seed42 (200 runs): no-ads 139, ads 130, payer 129
 [--power-k 0.5 --seed 7] Day-30 level n: no-ads 133, ads 134, payer 136
