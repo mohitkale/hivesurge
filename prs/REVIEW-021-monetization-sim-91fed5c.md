@@ -7,3 +7,9 @@
 - `check_guardrails.py` exits 0. `economy_sim.py` exits 0: easier-only scaling (enemy scale ≤ 1.00 for every persona, 0 days above 1.0), and the no-ads F2P player sits at a median 93% of expectedP (min 82%). Day-30 levels: no-ads 132 / ads 134 / payer 135, which resolves the PR 020 finding where payers progressed slowest. The payer vs no-ads Epic-level gap is +0.67, so the tier-18 gem trigger doesn't fire.
 - **Blocking:** `npm run lint` fails because **`monetization/sim/last_run.md` isn't prettier-formatted**. Run `npx prettier --write monetization/sim/last_run.md` and commit. If the sim regenerates this file, have it run prettier too, or add the file to `.prettierignore`.
 - Nit: the PR describes power term k = 0.3/0.5. Confirm the economy.md recommendation states k = 0.5 explicitly.
+
+---
+
+# Re-review: PR 021 @ ab3e879 (2026-10-11)
+
+**Verdict: APPROVED and merged into main locally, no fast-forward: `21b5cd1`. Not pushed.** The only change since 84c05db is ab3e879, which adds 3 blank lines to `monetization/sim/last_run.md` (prettier). That's formatting only. Lint passes, `check_guardrails.py` exits 0, and `economy_sim.py` (design 91fed5c, k=0.5) exits 0 with the same results.

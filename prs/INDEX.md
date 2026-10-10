@@ -26,9 +26,9 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 018 | feat/m2-15-perf-overlay                              | hivesurge-eng          | —         | open (claimed)                                                    | 018-feat-m2-15-perf-overlay.md                                    |
 | 019 | research/m2-12-status                                | hivesurge-research     | `2c90d47` | merged (merge of `2c90d47`; CEO confirmed decision 31, 03:52 IST) | 019-research-m2-12-status.md                                      |
 | 020 | monetization/sim-866e82b                             | hivesurge-monetization | `aabb84d` | merged (`03d856f`)                                                | 020-monetization-sim-866e82b.md                                   |
-| 021 | monetization/sim-91fed5c                             | hivesurge-monetization | `84c05db` | changes (lint: last_run.md unformatted; see REVIEW-021)           | 021-monetization-sim-91fed5c.md                                   |
+| 021 | monetization/sim-91fed5c                             | hivesurge-monetization | `ab3e879` | merged (`21b5cd1`)                                                | 021-monetization-sim-91fed5c.md                                   |
 | 022 | qa/m1-pr002-playtest                                 | hivesurge-qa           | `51f944c` | merged (`9afc896`)                                                | 022-qa-m1-pr002-playtest.md                                       |
-| 023 | chore/plan-m2-qa-tasks                               | hivesurge-ba           | —         | open                                                              | 023-chore-plan-m2-qa-tasks.md                                     |
+| 023 | chore/plan-m2-qa-tasks                               | hivesurge-ba           | `c1177ce` | merged (`af417c7`)                                                | 023-chore-plan-m2-qa-tasks.md                                     |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
