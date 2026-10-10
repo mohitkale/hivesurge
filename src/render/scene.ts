@@ -22,6 +22,7 @@ import {
   waspGeometry,
 } from '../art/models';
 import { BIOMES, type BiomeKit } from '../art/biomes';
+import { scaledModel, type ModelLibrary } from '../art/glbLoader';
 
 import { COLORS, type Palette } from '../ui/theme';
 
@@ -79,7 +80,18 @@ export class GameScene {
   private cannonKick = 0;
   private t = 0;
 
-  constructor(canvas: HTMLCanvasElement, level: LevelDef, pal: Palette = COLORS) {
+  /** GLB geometries (M3-5); any missing model uses the procedural one. */
+  private readonly models: ModelLibrary | null;
+  /** Which models came from GLB this build (for tests / the debug overlay). */
+  readonly glbUsed: string[] = [];
+
+  constructor(
+    canvas: HTMLCanvasElement,
+    level: LevelDef,
+    pal: Palette = COLORS,
+    models: ModelLibrary | null = null,
+  ) {
+    this.models = models;
     PALETTE = { ...pal, trap: pal.gateTrap, add: pal.gateAdd };
     GATE_COLOR = { mul: pal.gateMul, add: pal.gateAdd, sub: pal.gateTrap };
     this.level = level;
@@ -100,12 +112,12 @@ export class GameScene {
 
     this.buildLane();
     this.bees = {
-      worker: this.unitMesh(beeGeometry(0.42), 600, 0.42, 22),
-      queen: this.unitMesh(queenGeometry(0.95), 200, 0.95, 16),
+      worker: this.unitMesh(this.model('unit-bee', 0.42, beeGeometry), 600, 0.42, 22),
+      queen: this.unitMesh(this.model('unit-queen', 0.95, queenGeometry), 200, 0.95, 16),
     };
     this.wasps = {
-      wasp: this.unitMesh(waspGeometry(0.5), 400, 0.5, 30),
-      hornet: this.unitMesh(hornetGeometry(0.85), 100, 0.85, 24),
+      wasp: this.unitMesh(this.model('unit-wasp', 0.5, waspGeometry), 400, 0.5, 30),
+      hornet: this.unitMesh(this.model('unit-hornet', 0.85, hornetGeometry), 100, 0.85, 24),
     };
     this.scene.add(this.particles.mesh);
     this.buildCannon();
@@ -201,9 +213,20 @@ export class GameScene {
     return mesh;
   }
 
+  /** GLB model if loaded, else the procedural fallback (M3-5). */
+  private model(
+    name: Parameters<typeof scaledModel>[1],
+    scale: number,
+    procedural: (scale: number) => THREE.BufferGeometry,
+  ): THREE.BufferGeometry {
+    const g = scaledModel(this.models, name, scale);
+    if (g) this.glbUsed.push(name);
+    return g ?? procedural(scale);
+  }
+
   private buildCannon(): void {
     const body = new THREE.Mesh(
-      cannonGeometry(),
+      this.model('prop-cannon', 1, () => cannonGeometry()),
       new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
     );
     body.name = 'barrel';

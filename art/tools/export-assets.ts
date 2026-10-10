@@ -1,6 +1,6 @@
 /**
  * Exports the procedural models to GLB (raw), then gltfpack compresses them with
- * meshopt (EXT_meshopt_compression + quantization) into art/models/ (moved to public/ by M3-5 once the runtime loads them).
+ * meshopt (EXT_meshopt_compression + quantization) into public/assets/models/ (runtime models, M3-5) and art/models/ (the rest).
  * Run: npx tsx art/tools/export-assets.ts   (needs `gltfpack` on PATH or GLTFPACK env)
  * Vertex colours only, no textures: KTX2 is not needed (see ART_DIRECTION.md §Load budget).
  */
@@ -18,7 +18,11 @@ import {
 } from '../../src/art/models';
 import { SKINS, skinGeometry } from '../../src/art/skins';
 
-const OUT = 'art/models'; // not shipped until M3-5 loads GLBs at runtime
+// Models the runtime loads (src/art/glbLoader.ts RUNTIME_MODELS) ship from public/; the rest
+// stay in art/models until a runtime path uses them (M3-5).
+import { RUNTIME_MODELS } from '../../src/art/glbLoader';
+const OUT = 'art/models';
+const SHIPPED_OUT = 'public/assets/models';
 const RAW = '/tmp/hivesurge-raw-glb';
 
 function glb(geo: THREE.BufferGeometry, name: string): Buffer {
@@ -96,13 +100,26 @@ for (const b of Object.values(BIOMES))
 rmSync(RAW, { recursive: true, force: true });
 mkdirSync(RAW, { recursive: true });
 mkdirSync(OUT, { recursive: true });
+mkdirSync(SHIPPED_OUT, { recursive: true });
 const gltfpack = process.env.GLTFPACK ?? 'gltfpack';
 for (const [name, geo] of Object.entries(models)) {
   const raw = `${RAW}/${name}.glb`;
   writeFileSync(raw, glb(geo, name));
   // -cc: meshopt compression; -kv: keep the custom _WING attribute; -noq off => quantized.
-  execFileSync(gltfpack, ['-i', raw, '-o', `${OUT}/${name}.glb`, '-cc', '-kv', '-km'], {
-    stdio: 'pipe',
-  });
+  execFileSync(
+    gltfpack,
+    [
+      '-i',
+      raw,
+      '-o',
+      `${(RUNTIME_MODELS as readonly string[]).includes(name) ? SHIPPED_OUT : OUT}/${name}.glb`,
+      '-cc',
+      '-kv',
+      '-km',
+    ],
+    {
+      stdio: 'pipe',
+    },
+  );
   console.log(name, (geo.getAttribute('position').count / 3) | 0, 'tris');
 }
