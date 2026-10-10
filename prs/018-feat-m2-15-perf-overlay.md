@@ -34,7 +34,7 @@ rendering in a container and say nothing about phones. Real-device fps belongs t
 
 **Test results:** `npm run lint` pass · `npm test` 117/117 · `npm run build` pass, live-key guard clean. Entry 5.17 kB
 (2.28 kB gzip), game 55.96 kB (18.97 kB gzip), three 540.94 kB (134.79 kB gzip). Size budget: initial 2.25 KiB gzip,
-dist 593.7 KiB (approximately; see the build log).
+dist 593.77 KiB.
 
 **Acceptance (PLAN M2-15):**
 
