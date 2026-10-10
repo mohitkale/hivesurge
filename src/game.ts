@@ -121,15 +121,21 @@ export class Game {
     this.scene.setLeadLine(lx === null ? null : { x: lx, y: w.level.gates[1].y });
   }
 
-  /** Dev `?stress=N`: half bees, half wasps spread along the lane. */
+  /**
+   * Dev `?stress=N`: keep about N units alive (half bees from the hive, half wasps from the nest),
+   * topping up every frame because units constantly destroy each other.
+   */
   private spawnStress(n: number): void {
     const w = this.world;
     const half = w.level.laneWidth / 2 - 0.5;
-    for (let i = 0; i < n; i++) {
-      const x = -half + ((i * 0.618) % 1) * 2 * half;
-      const y = 2 + ((i * 0.381) % 1) * (w.level.laneLength - 4);
-      if (i % 2 === 0) w.bees.spawn(UnitKind.Worker, x, y);
-      else w.wasps.spawn(UnitKind.Wasp, x, y);
+    let k = w.stats.fired + w.wasps.count;
+    while (w.bees.count + w.wasps.count < n) {
+      const x = -half + ((k++ * 0.618) % 1) * 2 * half;
+      const beeShort = w.bees.count < n / 2;
+      const ok = beeShort
+        ? w.bees.spawn(UnitKind.Worker, x, 1.2 + (k % 7) * 0.4)
+        : w.wasps.spawn(UnitKind.Wasp, x, w.level.laneLength - 1 - (k % 7) * 0.4);
+      if (ok < 0) break;
     }
   }
 
@@ -206,7 +212,6 @@ export class Game {
     this.world = new World(this.currentLevel());
     this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id) ? new Ftue() : null;
     this.ftueReported = 0;
-    if (this.stress > 0) this.spawnStress(this.stress);
     this.scene = this.makeScene();
     this.resize();
     this.overlay.innerHTML = '';
@@ -435,6 +440,7 @@ export class Game {
       steps++;
     }
     if (steps === 5) this.acc = 0;
+    if (this.stress > 0) this.spawnStress(this.stress);
     if (this.ftue) this.updateFtueUi(w);
 
     if (this.input.firing) {
