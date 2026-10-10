@@ -3,7 +3,7 @@
 
 Run (from repo root):  python3 monetization/sim/economy_sim.py [--seed 42] [--runs 200] [--design-ref 209606b]
 
-Design tables are READ from git at --design-ref (default 866e82b on design/m2-specs):
+Design tables are READ from git at --design-ref (default 91fed5c on design/m2-specs):
   docs/design/meta-m5.md   -> bee roster, expectedP(n) table, enemy scaling clamp
   docs/design/liveops-m7.md -> season pass free/premium tracks, XP per tier
 Other tags: CODE = src/sim/rewards.ts (fix/pr-002-review); ASSUMPTION = MON placeholder (tune with playtests)."""
@@ -11,7 +11,7 @@ import random, re, subprocess, sys, statistics as st
 
 A = sys.argv
 arg = lambda k, d: type(d)(A[A.index(k) + 1]) if k in A else d
-SEED, RUNS, REF, DAYS = arg('--seed', 42), arg('--runs', 200), arg('--design-ref', '866e82b'), 30
+SEED, RUNS, REF, DAYS = arg('--seed', 42), arg('--runs', 200), arg('--design-ref', '91fed5c'), 30
 
 def design(path):
     return subprocess.run(['git', 'show', f'{REF}:{path}'], capture_output=True, text=True, check=True).stdout
@@ -48,10 +48,22 @@ def expectedP(n):
         if n <= b: return pa + (pb - pa) * (n - a) / (b - a)
     return min(TAIL[3], TAIL[1] + TAIL[2] * (n - TAIL[0]))  # META tail formula
 m = re.search(r'clamp\(1 \+ ([\d.]+) x \(P - expectedP\(n\)\), ([\d.]+), ([\d.]+)\)', META)
-K, LO, HI = float(m.group(1)), float(m.group(2)), float(m.group(3))
-def enemy_scale(P, n): return max(LO, min(HI, 1 + K * (P - expectedP(n))))
-BASE_WIN, WIN_SENS = 0.70, arg('--win-sens', 2.0)  # ASSUMPTION: 70% at scale 1.0; each +1% enemies = -2 pts win rate
-def win_rate(P, n): return max(0.05, min(0.95, BASE_WIN - WIN_SENS * (enemy_scale(P, n) - 1)))
+K, LO, HI = float(m.group(1)), float(m.group(2)), float(m.group(3))  # 91fed5c: 0.01, 0.95, 1.00 (easier-only)
+_la = re.search(r'difficulty\.lossAssist = (\[\[.*?\]\])', META)
+LOSS_ASSIST = sorted(eval(_la.group(1))) if _la else []          # [[losses, mult], ...]
+_fl = re.search(r'difficulty\.scaleFloor = ([\d.]+)', META)
+FLOOR = float(_fl.group(1)) if _fl else LO
+def enemy_scale(P, n, losses=0):
+    sc = max(LO, min(HI, 1 + K * (P - expectedP(n))))
+    la = next((mm for need, mm in reversed(LOSS_ASSIST) if losses >= need), 1.0)
+    return max(FLOOR, sc * la)
+BASE_WIN, WIN_SENS = 0.70, arg('--win-sens', 2.0)  # ASSUMPTION: 70% at scale 1.0; -WIN_SENS pts per +1% enemies
+POWER_K = arg('--power-k', 0.5)  # DES proposal (meta-m5.md 91fed5c): win + k*(P/expectedP - 1); ASSUMPTION value
+def power_ratio(P, n):
+    e = expectedP(n)
+    return 1.0 if e <= 0 else P / e  # stages with expectedP 0 (no slots): neutral
+def win_rate(P, n, losses=0):
+    return max(0.05, min(0.95, BASE_WIN - WIN_SENS * (enemy_scale(P, n, losses) - 1) + POWER_K * (power_ratio(P, n) - 1)))
 
 # ---- LIVE: season pass ------------------------------------------------------
 XP_TIER = int(re.search(r'XP per tier: (\d+)', LIVE).group(1))
@@ -160,9 +172,9 @@ def run(persona, seed):
         for sess in range(SESSIONS):
             if slots: open_chest(slots.pop(0))  # ASSUMPTION: 1 chest unlocks per gap between sessions
             for _ in range(BATTLES // SESSIONS):
-                P = power(); wr = win_rate(P, s['n'])
+                P = power(); wr = win_rate(P, s['n'], s.get('ls', 0))
                 if rng.random() < wr:
-                    s['n'] += 1; add_xp(30)
+                    s['n'] += 1; add_xp(30); s['ls'] = 0
                     c = rng.randint(*WIN_COINS)
                     if p['ads'] and ads_today < 20: c *= 2; ads_today += 1
                     t = rng.choices([x for x, _ in WIN_CHEST], [w for _, w in WIN_CHEST])[0]
@@ -170,19 +182,19 @@ def run(persona, seed):
                     else: c = int(c * 1.5)  # META slots-full bonus
                     s['coins'] += c
                 else:
-                    s['coins'] += rng.randint(*LOSS_COINS); add_xp(10)
+                    s['coins'] += rng.randint(*LOSS_COINS); add_xp(10); s['ls'] = s.get('ls', 0) + 1
             if slots and p['ads'] and chest_ads < 3 and UNLOCK_MIN[slots[0]] <= 60:  # M5-5: ad halves timer, 3/day
                 open_chest(slots.pop(0)); chest_ads += 1
             upgrade()
         P = power()
-        out.append(dict(day=d + 1, n=s['n'], P=P, exp=expectedP(s['n']), scale=enemy_scale(P, s['n']),
+        out.append(dict(day=d + 1, n=s['n'], P=P, exp=expectedP(s['n']), scale=enemy_scale(P, s['n']), epic_lvl=sum(bees[b][0] for b in BYRAR['E']) / len(BYRAR['E']), epic_max=max(bees[b][0] for b in BYRAR['E']),
                         epic_prem=s.get('epic_cards_prem', 0), epic_all=sum(v for k, v in s.items() if k.startswith('epic_')), tier=s['tier'], prem=s['cards_prem'], chest=s['cards_chest'], free_track=s['cards_free_track']))
     return out
 
 def main():
     res = {k: [run(k, SEED + i) for i in range(RUNS)] for k in PERSONAS}
     med = lambda k, d, f: st.median(r[d][f] for r in res[k])
-    print(f"design_ref={REF} seed={SEED} runs={RUNS} battles/day={BATTLES} base_win={BASE_WIN} scale=clamp(1+{K}(P-expP),{LO},{HI})\n")
+    print(f"design_ref={REF} seed={SEED} runs={RUNS} battles/day={BATTLES} base_win={BASE_WIN} win_sens={WIN_SENS} power_k={POWER_K} scale=clamp(1+{K}(P-expP),{LO},{HI}) lossAssist={LOSS_ASSIST} floor={FLOOR} xp/tier={XP_TIER}\n")
     print("Target: expectedP(n) from meta-m5.md (= 100% of free ad-watcher by design). Ratio = median P / expectedP(n).\n")
     print("| Day | no-ads n | no-ads P/expP | no-ads enemy scale | ads n | ads P/expP | payer n | payer P/expP |")
     print("|---|---|---|---|---|---|---|---|")
@@ -209,6 +221,10 @@ def main():
         rr = [ratio(k, d) for d in range(DAYS)]; sc = [med(k, d, 'scale') for d in range(DAYS)]
         print(f"{k}: median P/expP days 3-30 {st.median(rr[2:]):.0%} (min {min(rr[2:]):.0%}, max {max(rr[2:]):.0%}); "
               f"median enemy scale {st.median(sc[2:]):.2f} (max {max(sc[2:]):.2f}); days scale>1.0: {sum(1 for x in sc if x > 1.0)}")
+    for k in PERSONAS:
+        print(f"{k}: day-30 median Epic level (mean of {len(BYRAR['E'])} Epics, unowned=0) {med(k,29,'epic_lvl'):.2f}, best Epic {med(k,29,'epic_max'):g}, season tier {med(k,29,'tier'):g}")
+    gap = st.median(r[-1]['epic_lvl'] for r in res['payer_pass']) - st.median(r[-1]['epic_lvl'] for r in res['f2p_no_ads'])
+    print(f"Epic-level gap payer - no-ads (day 30): {gap:+.2f} -> tier-18-to-gems trigger (>1): {'YES' if gap > 1 else 'no'}")
     print(f"Day-30 level n: no-ads {med('f2p_no_ads',29,'n'):g}, ads {med('f2p_ads',29,'n'):g}, payer {med('payer_pass',29,'n'):g}")
 
 if __name__ == '__main__':
