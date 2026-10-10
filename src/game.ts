@@ -20,6 +20,7 @@ import { applyMultiplier, computeRewards, type Rewards } from './sim/rewards';
 import { SIM_DT, World } from './sim/world';
 import { Hud } from './ui/hud';
 import { Input } from './ui/input';
+import { defeatHeadline } from './ui/defeatCopy';
 import { PerfOverlay } from './ui/perfOverlay';
 import { PerfStats, perfEnabledFromUrl, stressCountFromUrl } from './ui/perfStats';
 import { UnitKind } from './sim/types';
@@ -315,7 +316,7 @@ export class Game {
       canOfferRewarded(this.save) &&
       this.pacer.canRewarded('revive');
     this.overlay.innerHTML = `<div class="modal"><div class="card">
-      <h1>So close!</h1><p class="reward">Nest at ${pct}% health</p>
+      <h1>${defeatHeadline(r.nestDamage)}</h1><p class="reward">Nest at ${pct}% health</p>
       <p class="small">Tip: chain ×2 into ×3 and send the Queen ahead of big waves.</p>
       ${canRevive ? '<div class="row"><button class="btn primary ad" data-a="revive">Revive the hive</button></div>' : ''}
       <div class="row"><button class="btn" data-a="retry">Retry (free)</button>
