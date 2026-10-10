@@ -4,7 +4,15 @@ import { canOfferRewarded, canShowInterstitial } from './platform/adPolicy';
 import { AdPacer } from './platform/adPacer';
 import { applyPurchase } from './platform/entitlements';
 import { ResultSession } from './platform/resultSession';
-import { MockPlatform } from './platform/mockPlatform';
+import { adModeFromUrl, MockPlatform } from './platform/mockPlatform';
+import type { RewardedPlacement, RewardedResult } from './platform/platform';
+import {
+  ReviveOffer,
+  ReviveSession,
+  shouldOfferRevive,
+  UNAVAILABLE_MS,
+  type ReviveStep,
+} from './platform/revive';
 import { CATALOG, type Sku } from './platform/platform';
 import { Analytics } from './analytics/analytics';
 import type { SaveData, SaveStore } from './platform/save';
@@ -51,6 +59,10 @@ export class Game {
   private hitHapticAt = 0;
   private readonly proj = new THREE.Vector3();
   private ftue: Ftue | null = null;
+  /** revive-m2.md: per app session, never saved. */
+  private readonly reviveSession = new ReviveSession();
+  private reviveOffer: ReviveOffer | null = null;
+  private reviveTimer = 0;
   private readonly perf = new PerfStats();
   private readonly perfOverlay = new PerfOverlay(document.getElementById('app')!);
   private readonly stress = stressCountFromUrl(location.search);
@@ -66,10 +78,14 @@ export class Game {
     applyTheme(document.documentElement, this.save.settings.colorBlind);
     this.sfx.setMuted(this.save.settings.muted);
     this.scene = this.makeScene();
-    this.platform = new MockPlatform(this.overlay, {
-      onAdStart: () => this.sfx.setMuted(true),
-      onAdEnd: () => this.sfx.setMuted(this.save.settings.muted),
-    });
+    this.platform = new MockPlatform(
+      this.overlay,
+      {
+        onAdStart: () => this.sfx.setMuted(true),
+        onAdEnd: () => this.sfx.setMuted(this.save.settings.muted),
+      },
+      adModeFromUrl(location.search),
+    );
     this.perfOverlay.visible = perfEnabledFromUrl(location.search);
     window.addEventListener('keydown', (e) => {
       if (e.key === 'F3') this.perfOverlay.visible = !this.perfOverlay.visible;
@@ -295,7 +311,7 @@ export class Game {
       double: async () => {
         if (this.result.isClaimed || !offerDouble) return;
         this.disableResultButtons();
-        const ok = await this.watchRewarded('win_double');
+        const ok = (await this.watchRewarded('win_double')) === 'completed';
         this.claim(ok ? applyMultiplier(r, 2) : r);
       },
       claim: () => this.claim(r),
@@ -303,42 +319,148 @@ export class Game {
   }
 
   private showLoss(r: Rewards): void {
-    const pct = Math.ceil((1 - r.nestDamage) * 100);
-    // Revive is offered only for close calls and once per battle (no offer on every loss).
-    const canRevive =
-      this.world.revives === 0 &&
+    // revive-m2.md: offer only outside FTUE (G2), within caps (G5), on a close call, and
+    // only while this battle has not been revived. One ReviveOffer per defeat.
+    this.reviveOffer = null;
+    if (
       this.result.canOfferRevive &&
-      r.nestDamage >= 0.5 &&
-      canOfferRewarded(this.save) &&
-      this.pacer.canRewarded('revive');
+      shouldOfferRevive({
+        rewardedAllowed: canOfferRewarded(this.save),
+        capsOk: this.pacer.canRewarded('revive'),
+        revives: this.world.revives,
+        nestDamage: r.nestDamage,
+      })
+    ) {
+      this.reviveOffer = new ReviveOffer(this.reviveSession);
+      this.analytics.track('ad_offered', {
+        placement: 'revive',
+        type: 'rewarded',
+        nestDamage: r.nestDamage,
+        levelId: this.world.level.id,
+      });
+      this.startReviveCountdown(r);
+    }
+    this.renderLoss(r);
+  }
+
+  private renderLoss(r: Rewards): void {
+    const pct = Math.ceil((1 - r.nestDamage) * 100);
+    const o = this.reviveOffer;
+    let reviveRow = '';
+    if (o && o.open) {
+      const secs = `<span class="revive-count" aria-live="off">${Math.ceil(o.countdown)}</span>`;
+      const main =
+        o.button === 'ad'
+          ? `<button class="btn ad" data-a="revive">Revive (watch ad) · ${secs}</button>`
+          : o.button === 'free'
+            ? `<button class="btn" data-a="reviveFree">Revive (free) · ${secs}</button>`
+            : '<button class="btn" data-a="unavailable" disabled>Ad not available</button>';
+      // G9: Revive and "No thanks" have the same size and style.
+      reviveRow = `<div class="row revive-row">${main}<button class="btn" data-a="noThanks">No thanks</button></div>`;
+    }
     this.overlay.innerHTML = `<div class="modal"><div class="card">
       <h1>${defeatHeadline(r.nestDamage)}</h1><p class="reward">Nest at ${pct}% health</p>
       <p class="small">Tip: chain ×2 into ×3 and send the Queen ahead of big waves.</p>
-      ${canRevive ? '<div class="row"><button class="btn primary ad" data-a="revive">Revive the hive</button></div>' : ''}
+      ${reviveRow}
       <div class="row"><button class="btn" data-a="retry">Retry (free)</button>
       <button class="btn" data-a="home">Home · 🪙 ${r.coins}</button></div></div></div>`;
-    if (canRevive) this.analytics.track('ad_offered', { placement: 'revive', type: 'rewarded' });
     this.bind({
-      revive: async () => {
-        if (this.result.isClaimed || !this.result.canOfferRevive) return;
-        this.result.markReviveAttempted();
-        this.disableResultButtons();
-        if ((await this.watchRewarded('revive')) && this.world.revive()) {
-          this.result = new ResultSession();
-          this.overlay.innerHTML = '';
-          this.input.enabled = true;
-          this.phase = 'battle';
-          this.platform.gameplayStart();
-        } else this.showLoss(r);
+      revive: () => void this.requestRevive(r),
+      reviveFree: () => {
+        const step = this.reviveOffer?.takeFree();
+        if (step) this.applyReviveStep(step, r);
+      },
+      noThanks: () => {
+        const o2 = this.reviveOffer;
+        if (!o2 || !o2.open) return;
+        this.analytics.track('revive_declined', { reason: 'button', closesBefore: o2.closes });
+        this.applyReviveStep(o2.decline(), r);
       },
       retry: () => this.claim(r, true),
       home: () => this.claim(r),
     });
   }
 
+  private async requestRevive(r: Rewards): Promise<void> {
+    const o = this.reviveOffer;
+    if (!o || this.result.isClaimed || !this.result.canOfferRevive) return;
+    const attempt = o.request();
+    if (!attempt) return;
+    this.disableResultButtons();
+    this.analytics.track('ad_requested', { placement: 'revive', attempt });
+    const res = await this.watchRewarded('revive');
+    if (this.reviveOffer !== o || this.result.isClaimed) return;
+    this.applyReviveStep(o.onAdResult(res), r);
+  }
+
+  private applyReviveStep(step: ReviveStep, r: Rewards): void {
+    if (step.kind === 'grant') {
+      // The grant comes only from the platform result or the free slot; world.revive()
+      // still refuses a second revive.
+      if (!this.world.revive()) {
+        this.stopReviveCountdown();
+        this.reviveOffer = null;
+        this.renderLoss(r);
+        return;
+      }
+      this.result.markReviveGranted();
+      this.analytics.track('revive_granted', { source: step.source, attempt: step.attempt });
+      this.stopReviveCountdown();
+      this.reviveOffer = null;
+      // A fresh result for the next battle end; keep the "rewarded ad shown" block (G4).
+      const shown = this.result.rewardedShown;
+      this.result = new ResultSession();
+      this.result.markReviveGranted();
+      if (shown) this.result.markRewardedShown();
+      this.overlay.innerHTML = '';
+      this.input.enabled = true;
+      this.phase = 'battle';
+      this.platform.gameplayStart(); // G18: only after a granted revive
+      return;
+    }
+    if (step.kind === 'unavailable') {
+      this.renderLoss(r);
+      const o = this.reviveOffer;
+      setTimeout(() => {
+        if (this.reviveOffer !== o || !o?.open) return;
+        this.applyReviveStep(o.decline(), r);
+      }, UNAVAILABLE_MS);
+      return;
+    }
+    if (step.kind === 'closed') this.stopReviveCountdown();
+    this.renderLoss(r);
+  }
+
+  private startReviveCountdown(r: Rewards): void {
+    this.stopReviveCountdown();
+    let last = performance.now();
+    this.reviveTimer = window.setInterval(() => {
+      const o = this.reviveOffer;
+      const now = performance.now();
+      const dt = (now - last) / 1000;
+      last = now;
+      if (!o) return this.stopReviveCountdown();
+      if (o.tick(dt)) {
+        this.analytics.track('revive_declined', { reason: 'timeout', closesBefore: o.closes });
+        this.stopReviveCountdown();
+        if (!this.result.isClaimed) this.renderLoss(r);
+        return;
+      }
+      const el = this.overlay.querySelector('.revive-count');
+      if (el) el.textContent = String(Math.ceil(o.countdown));
+    }, 250);
+  }
+
+  private stopReviveCountdown(): void {
+    if (this.reviveTimer) clearInterval(this.reviveTimer);
+    this.reviveTimer = 0;
+  }
+
   private async claim(r: Rewards, replay = false): Promise<void> {
     // Idempotent per battle: a second click (or 2X then "No thanks") never credits again.
     if (!this.result.tryClaim()) return;
+    this.stopReviveCountdown();
+    this.reviveOffer = null;
     this.disableResultButtons();
     const rewardedShown = this.result.rewardedShown;
     this.save.coins += r.coins;
@@ -355,6 +477,7 @@ export class Game {
       this.phase = 'ad';
       this.analytics.track('ad_offered', { placement: 'level_transition', type: 'interstitial' });
       await this.platform.showInterstitial('level_transition');
+      this.reviveSession.noteAdLoaded();
       this.analytics.track('ad_watched', {
         placement: 'level_transition',
         type: 'interstitial',
@@ -369,16 +492,25 @@ export class Game {
     }
   }
 
-  private async watchRewarded(p: 'win_double' | 'revive'): Promise<boolean> {
+  /** Rewarded ad via the platform; only real impressions count toward caps (G5). */
+  private async watchRewarded(p: RewardedPlacement): Promise<RewardedResult> {
     const prev = this.phase;
     this.phase = 'ad';
-    // Any rewarded ad shown (even closed early) blocks an interstitial on this transition.
-    this.result.markRewardedShown();
-    this.pacer.recordRewarded(p);
-    const ok = await this.platform.showRewarded(p);
-    this.analytics.track('ad_watched', { placement: p, completed: ok, type: 'rewarded' });
+    this.platform.gameplayStop(); // G18
+    const res = await this.platform.requestRewarded(p);
+    if (res === 'completed' || res === 'closed') {
+      // Any rewarded ad shown (even closed early) blocks an interstitial on this transition.
+      this.result.markRewardedShown();
+      this.pacer.recordRewarded(p);
+      this.reviveSession.noteAdLoaded();
+      this.analytics.track('ad_watched', {
+        placement: p,
+        completed: res === 'completed',
+        type: 'rewarded',
+      });
+    } else this.analytics.track('ad_failed', { placement: p, reason: res });
     this.phase = prev;
-    return ok;
+    return res;
   }
 
   private disableResultButtons(): void {

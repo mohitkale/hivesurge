@@ -48,12 +48,12 @@ describe('ResultSession rewarded flag (REVIEW-002 #2)', () => {
   });
 });
 
-describe('ResultSession revive offer (REVIEW-002 nit)', () => {
-  it('offers revive once; an early-closed revive ad does not re-offer it', () => {
+describe('ResultSession revive offer (revive-m2.md replaces the REVIEW-002 nit)', () => {
+  it('an early close does not use up the revive; only a grant does', () => {
     const s = new ResultSession();
+    s.markRewardedShown(); // revive ad closed early
     expect(s.canOfferRevive).toBe(true);
-    s.markReviveAttempted();
-    s.markRewardedShown(); // ad closed early (ok = false), loss screen re-rendered
+    s.markReviveGranted();
     expect(s.canOfferRevive).toBe(false);
   });
 

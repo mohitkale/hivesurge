@@ -7,7 +7,7 @@
 export class ResultSession {
   private claimed = false;
   private rewarded = false;
-  private reviveTried = false;
+  private revived = false;
 
   /** Returns true only on the first call. */
   tryClaim(): boolean {
@@ -25,15 +25,15 @@ export class ResultSession {
   }
 
   /**
-   * Revive is offered at most once per battle: once its ad has been shown
-   * (completed or closed early) it is never offered again on this result.
+   * revive-m2.md: called only when a revive is granted (not when its ad is closed early).
+   * The early-close count and countdown live in ReviveOffer.
    */
-  markReviveAttempted(): void {
-    this.reviveTried = true;
+  markReviveGranted(): void {
+    this.revived = true;
   }
 
   get canOfferRevive(): boolean {
-    return !this.reviveTried && !this.claimed;
+    return !this.revived && !this.claimed;
   }
 
   get rewardedShown(): boolean {
