@@ -1,4 +1,4 @@
-# PR 008 — feat/m2-13-guardrails (M2-13; base: feat/m2-16-size-budget, PR 007)
+# PR 008 — feat/m2-13-guardrails (M2-13; base: feat/m2-16-size-budget, PR 007, on PR 010 M2-7)
 
 **Summary:** Adds tests and fixes for monetisation guardrails G1, G2, G5, G6, G13 and G17
 (`monetization/guardrails.md`). Sandbox only; no real ads, payments or keys.
@@ -29,7 +29,14 @@
 - `tests/guardrails.test.ts`: T-G1, T-G2, T-G5, T-G6, T-G13, T-G17 (21 tests). Two existing policy test fixtures gain
   `ftueDone: true`.
 
-**Test results:**
+**Test results (after restack onto M2-7):**
+
+- `npm run lint`: pass.
+- `npm test`: 114/114.
+- T-G6 against the old `platform.ts`: 1 failed (`gems_small`), checked before the restack.
+- `npm run build`: pass, live-key guard clean. Entry 5.17 kB (2.28 kB gzip), game 53.39 kB (18.20 kB gzip), three
+  540.94 kB (134.79 kB gzip). Budget: initial 2.25 KiB gzip / 1.98 KiB Brotli, dist 591.10 KiB.
+- `ftueDone` now has a single definition, shared with M2-7. The FTUE's first win sets it.
 
 - `npm run lint`: pass.
 - `npm test`: 85/85 (11 files).
