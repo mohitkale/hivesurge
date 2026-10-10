@@ -36,7 +36,7 @@ Owner: DES. Implements in M7-3, all driven by remote config (M6-5), tested with 
 
 ## Season pass (28 days, 30 tiers)
 
-- XP per tier: 300. Sources: win 30, loss 10, targets as above. Free player at 6 wins/day + dailies reaches about tier 30 in 26 days.
+- XP per tier: 270 (was 300; M5-2a showed payers stalling at tier 29). Sources: win 30, loss 10, targets as above. Baseline player earns about 295 XP/day, so tier 30 (8,100 XP) lands around day 27 of 28.
 - Premium track via sandbox purchase (test price 4.99 USD). Retroactive: buying later grants all earned premium tiers.
 - M5-11 guardrail: the premium track is paid, so every premium reward is fixed and named (no chests, no random card picks). Free-track chests stay, since they are earned, and their odds are shown.
 
@@ -95,7 +95,7 @@ Run 1 event at a time, 3 to 5 days, 1 to 2 day gap. Points from playing event le
     "id": "s1-bloom",
     "start": "2026-11-02T00:00:00Z",
     "days": 28,
-    "xpPerTier": 300,
+    "xpPerTier": 270,
     "tiers": "see table"
   },
   "events": [
