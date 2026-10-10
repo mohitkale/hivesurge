@@ -3,26 +3,27 @@
 **Status: provisional.** M5-1 (meta design) is not yet written, so card/building costs below are ASSUMPTIONS. Re-run when M5-1 lands.
 
 ## Currencies
-| Currency | Sources | Sinks |
-| --- | --- | --- |
-| Coins (soft) | battle wins, win multiplier ad, chests, daily login, away earnings, starter pack | card upgrades, global fire-rate buff, hive building upgrades |
-| Gems (hard) | IAP, small drips (daily login 5, season free track, achievements) | chest timer skip, rewarded-alternative (G8), cosmetics, season pass not purchasable with gems |
-| Skip tickets | IAP, season track | claim a rewarded reward without watching |
-| Cards | chests (odds shown), season, rewarded pack (cap 1/day) | upgrades |
 
-## 30-day sim (F2P, no ads watched — worst case)
-ASSUMPTIONS: 6 battles/day, 70% win, 40 coins/win, 10/loss, daily login 100 coins; level-N upgrade cost = 100·1.35^N; required power = upgrades needed to keep expected win-rate ≥ 60% grows by 1 level per ~2 days.
+| Currency     | Sources                                                                          | Sinks                                                                                         |
+| ------------ | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Coins (soft) | battle wins, win multiplier ad, chests, daily login, away earnings, starter pack | card upgrades, global fire-rate buff, hive building upgrades                                  |
+| Gems (hard)  | IAP, small drips (daily login 5, season free track, achievements)                | chest timer skip, rewarded-alternative (G8), cosmetics, season pass not purchasable with gems |
+| Skip tickets | IAP, season track                                                                | claim a rewarded reward without watching                                                      |
+| Cards        | chests (odds shown), season, rewarded pack (cap 1/day)                           | upgrades                                                                                      |
 
-| Day | F2P upgrade level | Level needed (assumed) | Coins banked |
-|---|---|---|---|
-| 1 | 2 | 0 | 51 |
-| 3 | 4 | 1 | 195 |
-| 7 | 6 | 3 | 558 |
-| 10 | 7 | 5 | 811 |
-| 14 | 9 | 7 | 34 |
-| 21 | 10 | 10 | 547 |
-| 30 | 11 | 15 | 1110 |
+## Sources/sinks sheet
 
-Days where F2P falls behind needed level: [22, 23, 24, 25, 26, 27, 28, 29, 30].
+Full sheet: [`economy-sources-sinks.csv`](economy-sources-sinks.csv) (CODE = `src/sim/rewards.ts` / `platform.ts` on `fix/pr-002-review`; META/LIVE = `docs/design/meta-m5.md` / `liveops-m7.md` on `design/m2-specs`; ASSUMPTION marked).
 
-Interpretation: with these assumptions the exponential cost curve outpaces flat income in the late window — that is a **soft wall to tune in M5-1**, not a paywall: G7 requires (and the acceptance "sim shows no hard paywall" is NOT yet met)  the needed-level curve to be flattened (sawtooth/league resets) or coin income to scale with league so the F2P line stays ≥ needed line. Ads/IAP must only *accelerate*, never be required. Sim is a ~10-line loop over the constants above (re-derive in a sheet or script); replace constants with M5-1 values.
+## 30-day sim (M5-2a) — reproducible
+
+`python3 monetization/sim/economy_sim.py [--seed 42] [--runs 200]` → output saved in [`sim/last_run.md`](sim/last_run.md).
+Uses the CODE win/loss coin table and META chest, odds, pity, pollen and upgrade tables, plus LIVE daily targets and login cycle.
+ASSUMPTIONS: 6 battles/day in 3 sessions, 70% win rate, one chest unlocks per gap between sessions, greedy upgrades, C/R upgrade costs L7–10 extrapolated x2/level, hive rooms/idle coins/overflow conversion/events/season pass not simulated. Target power = 85% of the median f2p_ads player (no design target exists yet; `expectedP(n)` in META is undefined).
+
+**Headline (seed 42, 200 runs):** no hard wall. A free player who watches no ads makes power gains every day (longest stall: 0 days). They sit just under the target on days 1–6, then stay above it. At day 30, the starter-pack payer has 1.08x the power of a no-ads free player. META's generator scales enemies by power vs expectedP, which softens any gap further.
+
+## M5-11 guardrail check (no paid random items)
+
+`python3 monetization/sim/check_guardrails.py` (exit 1 on violation) over [`skus.json`](skus.json): every paid SKU must have `random:false`, must not grant chests/cards/packs/spins, must grant noAds (G6), and must cost at least $2.
+**Current result: FAIL.** The season pass premium track in `liveops-m7.md` grants Silver, Gold and Royal chests plus un-named Epic/Legendary card bundles (tiers 1, 5, 12, 18, 20, 25). Proposed fix for DES (M7-2): replace them with named bee cards (fixed content), coins/gems, or cosmetics. Gem chest skips only speed up chests earned in play, so they pass; REV should still confirm this in M5-10.

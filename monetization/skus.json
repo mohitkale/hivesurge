@@ -1,0 +1,151 @@
+[
+  {
+    "id": "no_ads",
+    "type": "non_consumable",
+    "usd": 2.99,
+    "inr": 149,
+    "random": false,
+    "grants": {
+      "noAds": true
+    }
+  },
+  {
+    "id": "starter_pack",
+    "type": "non_consumable",
+    "usd": 2.99,
+    "inr": 149,
+    "random": false,
+    "grants": {
+      "coins": 500,
+      "gems": 50,
+      "noAds": true,
+      "skin": "starter"
+    }
+  },
+  {
+    "id": "gems_small",
+    "type": "consumable",
+    "usd": 4.99,
+    "inr": 249,
+    "random": false,
+    "grants": {
+      "gems": 120,
+      "noAds": true
+    }
+  },
+  {
+    "id": "gems_medium",
+    "type": "consumable",
+    "usd": 9.99,
+    "inr": 499,
+    "random": false,
+    "grants": {
+      "gems": 300,
+      "noAds": true
+    }
+  },
+  {
+    "id": "gems_large",
+    "type": "consumable",
+    "usd": 19.99,
+    "inr": 999,
+    "random": false,
+    "grants": {
+      "gems": 700,
+      "noAds": true
+    }
+  },
+  {
+    "id": "skip_tickets_10",
+    "type": "consumable",
+    "usd": 2.99,
+    "inr": 99,
+    "random": false,
+    "grants": {
+      "skipTickets": 10,
+      "noAds": true
+    }
+  },
+  {
+    "id": "season_pass",
+    "type": "non_consumable_per_season",
+    "usd": 4.99,
+    "inr": 249,
+    "random": false,
+    "grants": {
+      "seasonPremium": true,
+      "noAds": true
+    },
+    "contents_ref": "docs/design/liveops-m7.md premium track (design/m2-specs)",
+    "contents": [
+      {
+        "tier": 1,
+        "item": "epic_card_x2",
+        "random": true,
+        "note": "bee not named"
+      },
+      {
+        "tier": 3,
+        "item": "gems_20",
+        "random": false
+      },
+      {
+        "tier": 5,
+        "item": "silver_chest",
+        "random": true
+      },
+      {
+        "tier": 8,
+        "item": "coins_1000",
+        "random": false
+      },
+      {
+        "tier": 10,
+        "item": "season_skin",
+        "random": false
+      },
+      {
+        "tier": 12,
+        "item": "gold_chest",
+        "random": true
+      },
+      {
+        "tier": 15,
+        "item": "gems_40",
+        "random": false
+      },
+      {
+        "tier": 18,
+        "item": "epic_card_x5",
+        "random": true,
+        "note": "bee not named"
+      },
+      {
+        "tier": 20,
+        "item": "royal_chest",
+        "random": true
+      },
+      {
+        "tier": 23,
+        "item": "gems_50",
+        "random": false
+      },
+      {
+        "tier": 25,
+        "item": "legendary_card_x3",
+        "random": true,
+        "note": "bee not named"
+      },
+      {
+        "tier": 28,
+        "item": "hive_decoration",
+        "random": false
+      },
+      {
+        "tier": 30,
+        "item": "cannon_skin_gems_100",
+        "random": false
+      }
+    ]
+  }
+]
