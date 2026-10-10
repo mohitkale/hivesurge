@@ -1,13 +1,7 @@
 import { crossesGate, gateSpawnCount, gateX } from './gates';
 import { SpatialGrid } from './grid';
 import { createRng } from './rng';
-import {
-  UNIT_STATS,
-  UnitKind,
-  type BattleOutcome,
-  type LevelDef,
-  type SimEvent,
-} from './types';
+import { UNIT_STATS, UnitKind, type BattleOutcome, type LevelDef, type SimEvent } from './types';
 import { UnitPool } from './units';
 
 export const SIM_DT = 1 / 60;
@@ -108,7 +102,8 @@ export class World {
     if (this.outcome !== 'playing') return;
     const L = this.level;
     this.time += dt;
-    for (let i = 0; i < L.gates.length; i++) this.gateXs[i] = gateX(L.gates[i], this.time, L.laneWidth);
+    for (let i = 0; i < L.gates.length; i++)
+      this.gateXs[i] = gateX(L.gates[i], this.time, L.laneWidth);
 
     // Cannon: ease toward aim, clamp to lane.
     const target = Math.max(-this.maxCannonX, Math.min(this.maxCannonX, input.aimX));

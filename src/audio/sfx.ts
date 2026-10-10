@@ -12,7 +12,9 @@ export class Sfx {
       void this.ctx.resume();
       return;
     }
-    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const Ctx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!Ctx) return;
     this.ctx = new Ctx();
     this.master = this.ctx.createGain();
@@ -33,7 +35,8 @@ export class Sfx {
 
   setMuted(m: boolean): void {
     this.muted = m;
-    if (this.master && this.ctx) this.master.gain.setTargetAtTime(m ? 0 : 0.5, this.ctx.currentTime, 0.02);
+    if (this.master && this.ctx)
+      this.master.gain.setTargetAtTime(m ? 0 : 0.5, this.ctx.currentTime, 0.02);
   }
 
   /** Swarm hum grows with unit count. */
@@ -69,7 +72,14 @@ export class Sfx {
     [392, 330, 262].forEach((f, i) => this.tone('sine', f, 0.3, 0.18, 0.9, i * 0.15));
   }
 
-  private tone(type: OscillatorType, freq: number, dur: number, vol: number, bend: number, delay = 0): void {
+  private tone(
+    type: OscillatorType,
+    freq: number,
+    dur: number,
+    vol: number,
+    bend: number,
+    delay = 0,
+  ): void {
     if (!this.ctx || !this.master || this.muted) return;
     const t = this.ctx.currentTime + delay;
     const o = this.ctx.createOscillator();

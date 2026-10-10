@@ -9,13 +9,7 @@ export function gateX(g: GateDef, t: number, laneWidth: number): number {
 }
 
 /** True if a unit moving from prevY to y crossed the gate line inside its span. */
-export function crossesGate(
-  g: GateDef,
-  gx: number,
-  ux: number,
-  prevY: number,
-  y: number,
-): boolean {
+export function crossesGate(g: GateDef, gx: number, ux: number, prevY: number, y: number): boolean {
   const lo = Math.min(prevY, y);
   const hi = Math.max(prevY, y);
   if (!(g.y > lo && g.y <= hi)) return false;
