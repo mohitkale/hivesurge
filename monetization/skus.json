@@ -76,74 +76,132 @@
       "seasonPremium": true,
       "noAds": true
     },
-    "contents_ref": "docs/design/liveops-m7.md premium track (design/m2-specs)",
+    "contents_ref": "docs/design/liveops-m7.md premium track @ 209606b (design/m2-specs)",
     "contents": [
       {
         "tier": 1,
-        "item": "epic_card_x2",
-        "random": true,
-        "note": "bee not named"
+        "item": "2 Orchid Bee cards (Epic) + season skin frame (cosmetic)",
+        "cards": {
+          "orchid": 2
+        },
+        "coins": 0,
+        "gems": 0,
+        "random": false
       },
       {
         "tier": 3,
-        "item": "gems_20",
+        "item": "20 gems",
+        "cards": {},
+        "coins": 0,
+        "gems": 20,
         "random": false
       },
       {
         "tier": 5,
-        "item": "silver_chest",
-        "random": true
+        "item": "4 Bumble Tank cards (Common) + 2 Mason Bee cards (Rare) + 120 coins",
+        "cards": {
+          "bumble": 4,
+          "mason": 2
+        },
+        "coins": 120,
+        "gems": 0,
+        "random": false
       },
       {
         "tier": 8,
-        "item": "coins_1000",
+        "item": "1000 coins",
+        "cards": {},
+        "coins": 1000,
+        "gems": 0,
         "random": false
       },
       {
         "tier": 10,
-        "item": "season_skin",
+        "item": "Season bee skin (cosmetic)",
+        "cards": {},
+        "coins": 0,
+        "gems": 0,
         "random": false
       },
       {
         "tier": 12,
-        "item": "gold_chest",
-        "random": true
+        "item": "6 Dart Bee cards (Common) + 4 Sweat Bee cards (Rare) + 2 Leafcutter cards (Epic) + 300 coins",
+        "cards": {
+          "dart": 6,
+          "sweat": 4,
+          "leafcutter": 2
+        },
+        "coins": 300,
+        "gems": 0,
+        "random": false
       },
       {
         "tier": 15,
-        "item": "gems_40",
+        "item": "40 gems",
+        "cards": {},
+        "coins": 0,
+        "gems": 40,
         "random": false
       },
       {
         "tier": 18,
-        "item": "epic_card_x5",
-        "random": true,
-        "note": "bee not named"
+        "item": "5 Leafcutter cards (Epic)",
+        "cards": {
+          "leafcutter": 5
+        },
+        "coins": 0,
+        "gems": 0,
+        "random": false
       },
       {
         "tier": 20,
-        "item": "royal_chest",
-        "random": true
+        "item": "10 Bumble Tank cards (Common) + 6 Carpenter Bee cards (Rare) + 4 Honey Guard cards (Epic) + 500 coins",
+        "cards": {
+          "bumble": 10,
+          "carpenter": 6,
+          "honeyguard": 4
+        },
+        "coins": 500,
+        "gems": 0,
+        "random": false
       },
       {
         "tier": 23,
-        "item": "gems_50",
+        "item": "50 gems",
+        "cards": {},
+        "coins": 0,
+        "gems": 50,
         "random": false
       },
       {
         "tier": 25,
-        "item": "legendary_card_x3",
-        "random": true,
-        "note": "bee not named"
+        "item": "3 Frost Wing cards (Legendary)",
+        "cards": {
+          "frost-wing": 3
+        },
+        "coins": 0,
+        "gems": 0,
+        "random": false
       },
       {
         "tier": 28,
-        "item": "hive_decoration",
+        "item": "Hive decoration (cosmetic)",
+        "cards": {},
+        "coins": 0,
+        "gems": 0,
         "random": false
       },
       {
         "tier": 30,
-        "item": "cannon_skin_gems_100",
+        "item": "Animated season cannon skin + 100 gems",
+        "cards": {},
+        "coins": 0,
+        "gems": 100,
+        "random": false
+      },
+      {
+        "tier": "31+ bonus (max 10)",
+        "item": "150 coins + 15 gems",
         "random": false
       }
     ]
