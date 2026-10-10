@@ -461,6 +461,13 @@ export class GameScene {
   }
 
   dispose(): void {
+    // The next GameScene reuses this canvas and therefore the same GL context. CanvasTexture
+    // uploads leave UNPACK_FLIP_Y / PREMULTIPLY_ALPHA set, and three's WebGLState constructor
+    // then creates its empty 3D textures with them on, so WebGL warns "texImage3D: FLIP_Y or
+    // PREMULTIPLY_ALPHA isn't allowed" twice per new renderer (PR 002 bug 3). Reset them.
+    const gl = this.renderer.getContext();
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     this.renderer.dispose();
   }
 }
