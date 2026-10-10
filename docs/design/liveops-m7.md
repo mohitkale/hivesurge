@@ -38,22 +38,28 @@ Owner: DES. Implements in M7-3, all driven by remote config (M6-5), tested with 
 
 - XP per tier: 300. Sources: win 30, loss 10, targets as above. Free player at 6 wins/day + dailies reaches about tier 30 in 26 days.
 - Premium track via sandbox purchase (test price 4.99 USD). Retroactive: buying later grants all earned premium tiers.
-  | Tier                                                                                                                                                                                                  | Free         | Premium                                |
-  | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------------------------------- |
-  | 1                                                                                                                                                                                                     | 200 coins    | Epic bee card x2 + season skin frame   |
-  | 3                                                                                                                                                                                                     | Wood chest   | 20 gems                                |
-  | 5                                                                                                                                                                                                     | 5 gems       | Silver chest                           |
-  | 8                                                                                                                                                                                                     | Silver chest | 1000 coins                             |
-  | 10                                                                                                                                                                                                    | 500 coins    | Season bee skin (cosmetic)             |
-  | 12                                                                                                                                                                                                    | Rare card x5 | Gold chest                             |
-  | 15                                                                                                                                                                                                    | 10 gems      | 40 gems                                |
-  | 18                                                                                                                                                                                                    | Silver chest | Epic cards x5                          |
-  | 20                                                                                                                                                                                                    | 800 coins    | Royal chest                            |
-  | 23                                                                                                                                                                                                    | Gold chest   | 50 gems                                |
-  | 25                                                                                                                                                                                                    | 15 gems      | Legendary card x3                      |
-  | 28                                                                                                                                                                                                    | Gold chest   | Hive decoration (cosmetic)             |
-  | 30                                                                                                                                                                                                    | Royal chest  | Animated season cannon skin + 100 gems |
-  | Other tiers: free 150 coins, premium 300 coins. After tier 30: bonus Silver chest every 600 XP (max 10). Power rewards on premium stay under 15% of season card total so free players are not walled. |
+- M5-11 guardrail: the premium track is paid, so every premium reward is fixed and named (no chests, no random card picks). Free-track chests stay, since they are earned, and their odds are shown.
+
+| Tier | Free         | Premium (fixed contents)                                                                              | Replaces (value basis)                               |
+| ---- | ------------ | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 1    | 200 coins    | 2 Orchid Bee cards (Epic) + season skin frame (cosmetic)                                              | "Epic bee card x2" (random Epic)                     |
+| 3    | Wood chest   | 20 gems                                                                                               |                                                      |
+| 5    | 5 gems       | 4 Bumble Tank cards (Common) + 2 Mason Bee cards (Rare) + 120 coins                                   | Silver chest (6 cards, 80 to 150 coins)              |
+| 8    | Silver chest | 1000 coins                                                                                            |                                                      |
+| 10   | 500 coins    | Season bee skin (cosmetic)                                                                            |                                                      |
+| 12   | Rare card x5 | 6 Dart Bee cards (Common) + 4 Sweat Bee cards (Rare) + 2 Leafcutter cards (Epic) + 300 coins          | Gold chest (12 cards, 200 to 400 coins)              |
+| 15   | 10 gems      | 40 gems                                                                                               |                                                      |
+| 18   | Silver chest | 5 Leafcutter cards (Epic)                                                                             | "Epic cards x5" (random Epics)                       |
+| 20   | 800 coins    | 10 Bumble Tank cards (Common) + 6 Carpenter Bee cards (Rare) + 4 Honey Guard cards (Epic) + 500 coins | Royal chest (20 cards, 500 coins, 1 Epic guaranteed) |
+| 23   | Gold chest   | 50 gems                                                                                               |                                                      |
+| 25   | 15 gems      | 3 Frost Wing cards (Legendary)                                                                        | "Legendary card x3" (random Legendaries)             |
+| 28   | Gold chest   | Hive decoration (cosmetic)                                                                            |                                                      |
+| 30   | Royal chest  | Animated season cannon skin + 100 gems                                                                |                                                      |
+
+- Other tiers: free 150 coins, premium 300 coins.
+- After tier 30: bonus reward every 600 XP (max 10). Free track: Silver chest (earned, odds shown). Premium track: 150 coins + 15 gems (fixed).
+- Named bees for tiers 1, 18, 20 and 25 may rotate per season (remote config `season.premiumBees`), but each season's list is fixed and shown on the pass screen before purchase.
+- Power cap: premium card rewards total 40 cards across 6 tiers, including 9 Epic and 3 Legendary. That must stay under 15% of the player's total season card intake (about 280 cards from chests at 6 battles/day). Current share is about 14%. M5-2a sim to confirm.
 
 ## Rotating events
 

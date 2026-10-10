@@ -49,7 +49,31 @@ Each bee is a loadout card that modifies the cannon or spawns. Rarity sets drop 
 
 - Slot 1 unlocks at level 3, slot 2 at 5, slot 3 at 8, slot 4 at 12. Worker is always the base shooter and does not take a slot.
 - One copy of each bee. Total power `P = sum(bee level x rarityWeight)` with weights C1 R2 E3 L4 is shown on screen and used by matchmaking for events.
-- Balance rule: a full max loadout must not lift aim-bot win rate on a level more than 25 points; generator scales E by `1 + 0.03 x (P - expectedP(n))`, capped at plus 15%.
+- Balance rule: a full max loadout must not lift aim-bot win rate on a level more than 25 points; generator scales E by `clamp(1 + 0.03 x (P - expectedP(n)), 0.90, 1.15)` (at most plus 15% harder, at most 10% easier). See expectedP below.
+
+### expectedP(n): expected player power at level n
+
+Baseline player: **free (no purchases), watches rewarded ads** at the caps in M5-5 (3 chest-time halvings/day plus daily pack), plays 6 battles/day at a 70% win rate, opens the free daily Wood chest, completes dailies, and uses only the free season track. A paying player sits above the baseline, which is what the plus 15% cap limits. A free player who skips ads sits below it, which is what the minus 10% floor softens.
+
+P = sum over equipped bees of (bee level x rarityWeight), with weights C1 R2 E3 L4. Worker is excluded.
+
+| Level n | Slots open | expectedP(n) | Typical baseline loadout             |
+| ------- | ---------- | ------------ | ------------------------------------ |
+| 1 to 2  | 0          | 0            | none                                 |
+| 3       | 1          | 2            | Bumble L2                            |
+| 5       | 2          | 6            | Bumble L2, Mason (R) L2              |
+| 8       | 3          | 12           | Bumble L3, Mason L3, Dart L3         |
+| 10      | 3          | 15           | Bumble L4, Mason L4, Dart L3         |
+| 12      | 4          | 22           | + Orchid (E) L1, others up one level |
+| 15      | 4          | 28           |                                      |
+| 20      | 4          | 36           |                                      |
+| 30      | 4          | 50           |                                      |
+| 50      | 4          | 72           |                                      |
+
+Formula: piecewise-linear interpolation between the rows above. Beyond n = 50: `expectedP(n) = 72 + 1.1 x (n - 50)`, capped at 112 (4 Legendaries at L7).
+Config: ship as remote config `difficulty.expectedP` (array of [n, P] points) so MON/DES can retune it after the M5-2a sim.
+
+**Reconciling with the M5-2 sim's 85% assumption.** I could not find the 85% figure written in `monetization/economy.md` or the other monetization docs. I read it as "the free player reaches 85% of the power the curve expects". Under this definition the baseline (free, with ads) is 100% of expectedP by construction. A free player who never watches ads is about 85% (rewarded chest skips are about 15% of their card intake). So **the definitions agree if the sim's 85% models a free no-ads player, and conflict if it models a free player who watches ads**. In that case the sim should use 100%. At 85%, the minus 10% floor makes enemies at most 10% weaker, so that player is never walled. MON should state which player the 85% refers to in the M5-2a re-run.
 
 ## Chests
 
