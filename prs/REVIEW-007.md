@@ -31,3 +31,9 @@ Non-blocking:
   - vs **PR 006** (825609b): **src/main.ts**, because 006 moves `Game` into src/game.ts. The only art change there is the dev hook in `makeScene()`. Resolve by taking 006's main.ts and adding the 2 lines to `makeScene()` in src/game.ts. Rebase PR 007 onto 006 before merge.
   - vs **main**: **prs/002-feat-core-loop.md** add/add. Main (2481ec4) has the short CEO-decision note, and the branch carries the full PR 002 doc. **The same conflict hits PR 002 itself and PR 006.** When merging PR 002, keep the full doc and append the CEO note (branch, retirement, merge order). Then 005/006/007 inherit the resolution.
 - **Split?** Recommended but not required. 118 files and 2.1k lines: ~92 binary/SVG assets, art tooling and docs, plus ~940 lines of runtime src/tests. Suggested split: (a) runtime art (src/art, scene.ts, theme/textures, sfx, tests) as the reviewable PR; (b) assets + art/tools + screenshots; (c) FTUE vocabulary (008ff71), which belongs to the FTUE task. At minimum, keep the unused GLBs out of `public/` until M3-5 loads them.
+
+---
+
+# Closed: superseded by the split (2026-10-11)
+
+PR 007 (art/m3-premium-pass @ 568e617) is **closed**. Its content is split into PR 013 (art/m3-runtime), PR 011 (art/m3-assets) and PR 012 (art/m2-7-ftue-visuals), all stacked on PR 006. See REVIEW-013-011-012-art-split.md.

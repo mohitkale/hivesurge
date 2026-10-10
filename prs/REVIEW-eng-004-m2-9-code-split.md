@@ -25,3 +25,11 @@ Nits:
 - Checks: lint pass · tests 60/60 (9 files) · build: entry 4.76 kB, game 42.00 kB, three 537.84 kB (chunk-size warning shown on purpose).
 - `git merge-tree` against main shows no conflicts.
 - PR 005 (levels, 481d9b2) fixes the earlier parse.ts nits (32-gate cap, integer values, lane fit) and was renumbered from 003.
+
+---
+
+# Re-review: PR 006 @ 988dd35 (delta vs approved 825609b) (2026-10-11)
+
+**Verdict: APPROVED (code), not merged.** It merges after 005.
+
+`git range-diff` shows both commits (cbd9ef3 = 0b8faa0, 988dd35 = 825609b) are **identical patches**, rebased onto 005 @ 7757ea9. Checks: lint pass · tests 65/65 · build: entry 4.76 kB, game 44.68 kB, three 537.84 kB.

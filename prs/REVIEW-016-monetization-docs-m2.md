@@ -15,3 +15,23 @@
 - **Clean-room:** OK. Mob Control appears only as a cited price reference in iap-catalog.md, never as our product name.
 - **Conflicts:** none with main, research/ (merged) or PRs 002/005/006/007. Those branches show only their existing `prs/002` conflict with main.
 - **Shared checkout:** the untracked `/workspace/hivesurge/monetization/*.md` drafts (6 files) **differ** from this branch's versions. After merge, checking out main there would fail with "untracked files would be overwritten". The owner should remove the drafts once the branch supersedes them.
+
+---
+
+# Re-review: PR 016 @ 4c33a8e (2026-10-11)
+
+**Verdict: APPROVED and merged into main locally, no fast-forward: `14d92f8`. Not pushed.**
+
+- The doc is renamed to `prs/016-monetization-docs-m2.md`.
+- Design commit **209606b exists** on design/m2-specs ("fixed premium season rewards (M5-11), define expectedP(n)").
+- The season_pass tiers in `skus.json` are now **fixed content**: named cards, gems, coins and cosmetics, all `random:false`. `check_guardrails.py` is unchanged.
+- **Checks on a clean checkout of 4c33a8e:**
+  - `check_guardrails.py` **exits 0** ("7 SKUs fixed-content, all grant noAds, all >= $2").
+  - `economy_sim.py --design-ref 209606b` exits 0: no hard wall; premium card share 4.1% (cap 15%); day-30 levels no-ads 161 / ads 159 / payer 158.
+  - `npm run lint` passes.
+- No secrets. No conflicts with main. The content is docs, data and Python tooling under `monetization/` only.
+- Nits:
+  - The sim reads design tables with `git show 209606b:…`. That ref must stay reachable; it's on the unmerged design/m2-specs branch, so pin a tag or vendor the tables.
+  - The no-ads F2P player sits at 45–50% of expectedP from day 3 to 30, so design should confirm that's the intent.
+- Heads-up: the monetization worktree has **uncommitted** edits to economy_sim.py (default ref → 866e82b) and last_run.md. Those are the owner's work in progress and aren't part of this merge.
+- Shared checkout: the untracked `monetization/*.md` drafts in /workspace/hivesurge now collide with the tracked files on main. The owner should remove them.
