@@ -8,6 +8,10 @@ export type AnalyticsEventName =
   | 'level_win'
   | 'ad_offered'
   | 'ad_watched'
+  | 'ad_requested'
+  | 'ad_failed'
+  | 'revive_granted'
+  | 'revive_declined'
   | 'purchase'
   | 'ftue_step';
 
@@ -61,12 +65,16 @@ export class Analytics {
 
   /** Simple funnel counts for a debug panel / tuning. */
   summary(): Record<AnalyticsEventName, number> {
-    const out = {
+    const out: Record<AnalyticsEventName, number> = {
       level_start: 0,
       level_fail: 0,
       level_win: 0,
       ad_offered: 0,
       ad_watched: 0,
+      ad_requested: 0,
+      ad_failed: 0,
+      revive_granted: 0,
+      revive_declined: 0,
       purchase: 0,
       ftue_step: 0,
     };

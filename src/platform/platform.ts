@@ -1,4 +1,9 @@
 export type RewardedPlacement = 'win_double' | 'revive';
+/**
+ * Outcome of a rewarded ad request. `completed` / `closed` were impressions (an ad was shown);
+ * `no_fill` / `error` (load failure or 5 s timeout) showed nothing.
+ */
+export type RewardedResult = 'completed' | 'closed' | 'no_fill' | 'error';
 export type Sku = 'no_ads' | 'starter_pack' | 'gems_small';
 
 export interface SkuInfo {
@@ -32,6 +37,8 @@ export interface Platform {
   readonly name: string;
   /** Resolves true only if the ad was watched to completion. */
   showRewarded(placement: RewardedPlacement): Promise<boolean>;
+  /** Like showRewarded, but tells closed-early apart from no fill / load error. */
+  requestRewarded(placement: RewardedPlacement): Promise<RewardedResult>;
   showInterstitial(placement: string): Promise<void>;
   /** Resolves true only when the purchase is confirmed (webhook in production). */
   purchase(sku: Sku): Promise<boolean>;
