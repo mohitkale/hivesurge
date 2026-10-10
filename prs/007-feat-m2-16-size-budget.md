@@ -1,4 +1,4 @@
-# PR 007 — feat/m2-16-size-budget (M2-16; base: feat/m2-9-code-split, PR 006)
+# PR 007 — feat/m2-16-size-budget (M2-16; base: feat/m2-7-ftue, PR 010; restacked so the stack is linear)
 
 **Summary:** `npm run build` now fails (exit 1) if the initial JS is over 1 MiB gzip or over 1 MiB Brotli, or if
 `dist/` is over 5 MiB (research PERF-B).
@@ -18,8 +18,9 @@
   - A 6 MiB `dist/` fails, and the CLI exits 1.
   - A small build passes.
 
-**Test results:** `npm run lint` pass · `npm test` 64/64 (10 files) · `npm run build` pass. Budget line from the real
-build: `initial JS 4.65 KiB raw, 2.12 KiB gzip, 1.86 KiB brotli (limit 1 MiB) · dist 576.03 KiB (limit 5 MiB)`.
+**Test results (after restack):** `npm run lint` pass · `npm test` 93/93 · `npm run build` pass. Budget line
+from the real build: `initial JS 4.69 KiB raw, 2.13 KiB gzip, 1.88 KiB brotli (limit 1 MiB) · dist 589.03 KiB (limit
+5 MiB)`.
 
 **Acceptance (PLAN M2-16):**
 
