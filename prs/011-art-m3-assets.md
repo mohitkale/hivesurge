@@ -1,14 +1,14 @@
-# PR 011 — art/m3-assets (base: art/m3-runtime, PR 010)
+# PR 011 — art/m3-assets (base: art/m3-runtime, PR 013)
 
-**Part 2 of 3 of the former PR 007.** Stack: 010 `art/m3-runtime` → **011 `art/m3-assets`** → 012 `art/m2-7-ftue-visuals`.
-Merge after PR 010.
+**Part 2 of 3 of the former PR 007.** Stack: 013 `art/m3-runtime` → **011 `art/m3-assets`** → 012 `art/m2-7-ftue-visuals`.
+Merge after PR 013.
 
-**Tasks:** asset parts of M3-2 (models), M3-3 (icons), M3-4 (audio), M7-5 (skin models). DES approved M3-1 (see PR 010 history).
+**Tasks:** asset parts of M3-2 (models), M3-3 (icons), M3-4 (audio), M7-5 (skin models). DES approved M3-1 (see PR 013 history).
 
 **Changes**
 
 - `public/assets/audio/*.ogg`: 9 original Opus cues (fire, pop, thud, hurt, queen, win, lose, hum loop, 16 s music
-  loop), 133.9 KB. Played by PR 010's `Sfx`; each cue falls back to the synth if it is missing or cannot be decoded.
+  loop), 133.9 KB. Played by PR 013's `Sfx`; each cue falls back to the synth if it is missing or cannot be decoded.
 - `public/assets/icons/*.svg`: 41 original UI icons, 19.3 KB.
 - `art/models/*.glb`: 26 meshopt GLBs (units, cannon, nest, 6 skins, 2 biome kits), 116.6 KB. **They are kept out
   of `public/` until M3-5 adds runtime GLB loading** (per REVIEW-007), so nothing unused ships. The game builds the
