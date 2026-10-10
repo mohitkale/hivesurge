@@ -12,6 +12,7 @@
   and the milestone playtest checklist (`playtests/README.md`) is completed and logged.
 - Each milestone ends with an annotated tag, e.g. `git tag -a v0.1.0-slice -m "Vertical slice"`.
 - Branches may be stacked (branch B based on open PR A); merge in order.
+- Before naming a prs/NNN file, claim the next number by adding a line to prs/INDEX.md on main.
 
 ## Clean-room rules
 
