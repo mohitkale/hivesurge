@@ -1,0 +1,38 @@
+{
+  "id": "clover-run",
+  "name": "Clover Run",
+  "seed": 1337,
+  "laneWidth": 10,
+  "laneLength": 40,
+  "timeLimit": 90,
+  "nestHp": 2600,
+  "hiveHp": 40,
+  "fireInterval": 0.11,
+  "queenCharge": 7,
+  "trickleInterval": 0.9,
+  "gates": [
+    { "kind": "mul", "value": 2, "x": -2.4, "y": 9, "width": 3.4 },
+    { "kind": "add", "value": 2, "x": 2.6, "y": 9, "width": 3.2 },
+    {
+      "kind": "mul",
+      "value": 3,
+      "x": 0,
+      "y": 17,
+      "width": 2.6,
+      "motion": { "amplitude": 3, "speed": 0.9 }
+    },
+    { "kind": "sub", "value": 25, "x": -3, "y": 24.5, "width": 3.2 },
+    { "kind": "mul", "value": 2, "x": 2.7, "y": 25, "width": 3 }
+  ],
+  "waves": [
+    { "at": 4, "kind": "wasp", "count": 14, "x": 0, "spread": 3 },
+    { "at": 12, "kind": "wasp", "count": 22, "x": -2, "spread": 2.5 },
+    { "at": 20, "kind": "hornet", "count": 3, "x": 2, "spread": 1.5 },
+    { "at": 26, "kind": "wasp", "count": 34, "x": 2, "spread": 3 },
+    { "at": 36, "kind": "hornet", "count": 5, "x": -1, "spread": 3 },
+    { "at": 44, "kind": "wasp", "count": 50, "x": 0, "spread": 4 },
+    { "at": 56, "kind": "hornet", "count": 6, "x": 0, "spread": 3.5 },
+    { "at": 62, "kind": "wasp", "count": 70, "x": 0, "spread": 4.5 },
+    { "at": 75, "kind": "wasp", "count": 80, "x": 0, "spread": 4.5 }
+  ]
+}
