@@ -25,9 +25,14 @@ Takes about 3 minutes.
 ## C. Context (optional)
 
 12. How often do you play mobile/browser games? never / monthly / weekly / daily
-13. Have you played Mob Control, Count Masters or similar? yes / no
+13. (Internal-only, see note) Have you played Mob Control, Count Masters or similar? yes / no
 
 ## Moderator-only (fill in from notes)
 
 - Asked to keep playing / kept going without prompting: yes / no
 - Battles played: ___ Drop-off level: ___ Notable quotes:
+
+> **Note on Q13 (internal-only):** Q13 names competitor games (Mob Control, Count Masters). It exists
+> only for internal research analysis and must never appear in anything players see: no in-game UI,
+> store pages, marketing, or player-facing surveys. Remove Q13 from any version shown outside the team.
+> Under decision 31 the survey is used only for QA box-browser sessions for now.

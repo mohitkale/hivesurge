@@ -1,8 +1,11 @@
 # M2-12 — Local-only playtest protocol (localhost on the box)
 
-Hosting decision (BA): **local on the box**. No preview URL, tunnel, or public deploy. No outside
-contact; testers are only people Mohit provides and seats at the box (or at its desktop view).
-Run against the M2-7 (FTUE) build once merged. Until then, use bot sessions (§4) to dry-run the pipeline.
+**Current scope (STATUS decision 31, CEO 2026-10-11):** run **bot sessions (§4)** and **QA box-browser
+sessions (§2)** only. No outside testers, no human testers beyond QA, and no exposing the game to the
+network: bind to `127.0.0.1` only, with no LAN, tunnel, preview URL or deploy. Real-phone and human testers
+will be raised with Mohit at the M2 milestone (§5 is parked until then).
+
+Hosting: local on the box. Run against the M2-7 (FTUE) build once merged; bot sessions can dry-run now.
 
 ## 1. Setup (box)
 
@@ -16,7 +19,7 @@ npm ci && npm run build && npx vite preview --host 127.0.0.1 --port 4173
 - Start each tester from a **fresh profile** (or clear `localStorage`) so FTUE and analytics start clean.
 - Note build commit, browser, viewport, and DevTools throttling ("Fast 4G" for the load-time criterion).
 
-## 2. Session script (moderator)
+## 2. Session script (QA box-browser session; reused for humans only if approved at M2)
 
 1. Read out: "This is an early game. Play as long as you like and stop whenever you want. I can't help
    while you play. Please think out loud." Nothing else; no explanation of controls.
@@ -63,18 +66,19 @@ Goal: test the pipeline and get a baseline. **Bot data is never reported as play
 - Note: puppeteer-core isn't installed in every worktree (see REVIEW-eng-004); `npm i -D puppeteer-core`
   locally or run from a worktree that has it.
 
-## 5. Instructions for Mohit-provided testers (later)
+## 5. Human and real-phone testers: PARKED (decision 31)
 
-- Mohit picks and invites 5–10 people himself; research does not contact anyone.
-- Ideal mix: has never seen Hive Surge; ≥ 3 who play casual mobile games; ≥ 1 who doesn't.
-- They play at the box (in person or via screen share of the box desktop) at `http://127.0.0.1:4173/`.
-  Nothing is exposed outside the box.
-- Consent line read aloud: "We'll record anonymous gameplay events and your survey answers to improve
-  the game. No name or contact details are stored." Tester ids are `T01…T10`.
-- Physical phone testing would need LAN exposure (`--host 0.0.0.0`). That goes beyond "local on the box",
-  so it needs the BA/Mohit's OK first.
+Not allowed for now. This gets raised with Mohit at the M2 milestone. Until he decides:
+
+- Nobody outside the team is contacted, and research invites no one.
+- No real-phone testing, and nothing is exposed beyond `127.0.0.1` (no `--host 0.0.0.0`, LAN, or tunnel).
+- If Mohit approves, the draft to revisit is: he picks 5–10 testers himself, they play on the box browser
+  using the §2 script, they hear a consent line ("We'll record anonymous gameplay events and your survey
+  answers to improve the game. No name or contact details are stored."), and they get ids `T01…T10`.
+  Any network exposure for phones needs its own explicit approval.
 
 ## 6. Report
 
 Fill in the table in `research/m2-12-outside-playtests.md`, mark §7.1 criteria pass/fail, list the top 5 issues
-ranked by number of testers affected, and keep bot baselines in a separate section.
+ranked by number of sessions affected. Keep QA-session and bot results in separate sections, and label
+them as QA/bot data, not outside-player data.
