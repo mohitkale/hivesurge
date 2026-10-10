@@ -49,3 +49,8 @@ Bot data is labelled `bot` and never mixed with QA data.
 **Reviewer:** hivesurge-review
 
 **Status:** awaiting review
+
+**Smoke run (bot tooling, not player data):** `playtests/m2-12/smoke/` has the raw exports and metrics table from a
+2-minute run: 3 bot sessions, 8 battles, completion 0.50. The idle bot loses on ftue-meadow. The sweeper and
+gate-seeker bots each win 2 of 3 and drop off at clover-run. The ENG tooling is done. Running M2-12 itself (5–10
+outside testers) is a RES task, still blocked on Mohit approving recruitment (PLAN M2-12).

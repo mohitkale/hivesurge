@@ -1,0 +1,31 @@
+[
+  {
+    "name": "level_start",
+    "ts": 1791671112293,
+    "session": "mv2ypxtfpei6",
+    "props": {
+      "level": "ftue-meadow"
+    }
+  },
+  {
+    "name": "level_fail",
+    "ts": 1791671187851,
+    "session": "mv2ypxtfpei6",
+    "props": {
+      "level": "ftue-meadow",
+      "time": 75,
+      "nestLeft": 100,
+      "hiveLeft": 60,
+      "peakBees": 0,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791671189078,
+    "session": "mv2ypxtfpei6",
+    "props": {
+      "level": "ftue-meadow"
+    }
+  }
+]

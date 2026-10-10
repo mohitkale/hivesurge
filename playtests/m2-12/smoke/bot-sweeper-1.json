@@ -1,0 +1,102 @@
+[
+  {
+    "name": "level_start",
+    "ts": 1791671233047,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "level": "ftue-meadow"
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791671235989,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "step": 1,
+      "msSinceFirstInput": 2250,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791671238727,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "step": 2,
+      "msSinceFirstInput": 4933,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791671239569,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "step": 3,
+      "msSinceFirstInput": 5700,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791671239570,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "step": 4,
+      "msSinceFirstInput": 5717,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791671259269,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "step": 5,
+      "msSinceFirstInput": 24867,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "level_win",
+    "ts": 1791671259269,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "level": "ftue-meadow",
+      "time": 25,
+      "nestLeft": 0,
+      "hiveLeft": 60,
+      "peakBees": 105,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791671261349,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "level": "dandelion-drift"
+    }
+  },
+  {
+    "name": "level_win",
+    "ts": 1791671319020,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "level": "dandelion-drift",
+      "time": 54,
+      "nestLeft": 0,
+      "hiveLeft": 50,
+      "peakBees": 112,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791671320869,
+    "session": "mv2ysiz83bzx",
+    "props": {
+      "level": "clover-run"
+    }
+  }
+]
