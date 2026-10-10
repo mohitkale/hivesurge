@@ -6,7 +6,7 @@ import cloverJson from '../src/levels/clover-run.json';
 describe('level data files', () => {
   it('loads Clover Run from JSON with the original tuning', () => {
     expect(CLOVER_RUN).toBe(getLevel('clover-run'));
-    expect(LEVELS.map((l) => l.id)).toEqual(['clover-run']);
+    expect(LEVELS.map((l) => l.id)).toContain('clover-run');
     expect(CLOVER_RUN).toMatchObject({
       seed: 1337,
       laneWidth: 10,

@@ -1,0 +1,28 @@
+{
+  "id": "ftue-meadow",
+  "name": "Meadow Start",
+  "seed": 101,
+  "laneWidth": 10,
+  "laneLength": 32,
+  "timeLimit": 75,
+  "nestHp": 600,
+  "hiveHp": 60,
+  "fireInterval": 0.11,
+  "queenCharge": 4,
+  "trickleInterval": 0,
+  "gates": [
+    { "kind": "mul", "value": 2, "x": 0, "y": 8, "width": 4.0 },
+    {
+      "kind": "add",
+      "value": 3,
+      "x": 0,
+      "y": 15,
+      "width": 3.6,
+      "motion": { "amplitude": 2.0, "speed": 0.7 }
+    }
+  ],
+  "waves": [
+    { "trigger": "step3", "kind": "wasp", "count": 8, "x": 0, "spread": 2 },
+    { "trigger": "step5", "kind": "wasp", "count": 12, "x": 0, "spread": 3 }
+  ]
+}
