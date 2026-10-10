@@ -1,0 +1,55 @@
+# Hive Surge — status
+
+_Last updated: 2026-10-11 (IST)._ Source plan: `/workspace/mob-control-plan/mob-control-web-plan.md`.
+
+## Current state
+
+- **Milestone M1 (vertical slice) — awaiting review + human playtest.** Code on `feat/core-loop` (PR 002), stacked on `chore/process-docs` (PR 001). `main` holds only the scaffold.
+- Playable: title → battle on "Clover Run" → win (stars, coins, 2X via sandbox ad) or loss (near-miss %, revive via sandbox ad, free retry) → paced interstitial → title. Sandbox shop with 3 mock SKUs.
+- `npm run lint` ✅ · `npm test` ✅ (48 tests, 7 files) · `npm run build` ✅ (JS 580 kB / 149 kB gzip) · `npm run dev` ✅ (headless smoke playtest).
+
+## Decision log
+
+| #   | Decision                                                                                               | Rationale                                                                 |
+| --- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| 1   | Three.js + TypeScript + Vite                                                                           | Plan §5.2 primary recommendation; InstancedMesh draws crowds in one call. |
+| 2   | Custom kinematic sim, no physics engine                                                                | Plan §5.3: units only need lane movement + overlap tests.                 |
+| 3   | Struct-of-arrays typed-array unit pools, swap-remove                                                   | No per-unit objects/GC spikes on low-end phones.                          |
+| 4   | Uniform spatial hash (counting sort) for bee↔wasp contact                                              | Near-linear collision cost.                                               |
+| 5   | Deterministic 60 Hz fixed step + seeded mulberry32 RNG                                                 | Enables replays, server validation, reproducible tests.                   |
+| 6   | Sim is pure TS with zero DOM/Three imports                                                             | Unit-testable in Node; could move to a worker/server later.               |
+| 7   | Gate rules from plan §1.3 (+k spawns k, ×k spawns k−1 clones, per-gate bitmask)                        | Clean, testable spec; clones can't re-trigger.                            |
+| 8   | Trap gate absorbs N bees then breaks (shows remaining)                                                 | Readable, deterministic version of "−k" traps.                            |
+| 9   | Unit caps 600 bees / 400 wasps; overflow folds into HP (rendered as bigger bee)                        | Plan §1.3/§5.3 overflow guidance; no lost power.                          |
+| 10  | Contact combat subtracts min(hp) from both                                                             | Plan §1.3 one-for-one attrition; hornets/queens absorb several.           |
+| 11  | Original theme: honey cannon, worker bees, Queen, wasp nest; honey/teal vs plum/orange                 | Clean-room §8.3: original names, palette and silhouettes.                 |
+| 12  | All art + audio procedural at runtime (canvas textures, primitives, WebAudio synth)                    | Zero third-party assets; tiny download.                                   |
+| 13  | Camera behind hive, portrait-first; landscape shows a centered portrait column                         | One-thumb play everywhere; no layout fork.                                |
+| 14  | Unified input: press-to-fire + drag-to-aim; keys A/D/←/→, Space, Q                                     | Touch, mouse and keyboard with one code path.                             |
+| 15  | Adaptive pixel-ratio scaler (2 → 0.75)                                                                 | Plan §5.3: lower resolution before simulation quality.                    |
+| 16  | DOM overlay for HUD/menus                                                                              | Plan §5.2: accessible, quick, localisable.                                |
+| 17  | `Platform` adapter interface + `MockPlatform` sandbox                                                  | Plan §5.4; portal SDKs swap in by build flag later. No real ads/money.    |
+| 18  | Ad pacing as pure function: ≥3 min gap, none in first 2 battles, never after rewarded, none for payers | Plan §4.2/§6.1 portal rules; ethical guardrails.                          |
+| 19  | Revive offered only on close losses (≥50% nest damage), once per battle                                | Plan §4.2 #3: no out-of-lives offer on every death.                       |
+| 20  | "No thanks" equal size/style to 2X                                                                     | CrazyGames rule cited in plan §4.2 #1.                                    |
+| 21  | Loss still pays coins by nest damage; defeat screen shows nest %                                       | Plan §3 near-miss hook; every run progresses.                             |
+| 22  | Local analytics ring buffer (500 events) in localStorage                                               | Plan §5.2 analytics events; drainable to PostHog/Supabase later.          |
+| 23  | Versioned save doc with `revision`/`updatedAt` + `mergeSaves` + `SaveBackend` seam                     | Ready for Supabase optimistic-concurrency sync (plan §5.2).               |
+| 24  | Design tokens in `src/ui/theme.ts`, Okabe-Ito colour-blind palette; gates also differ by symbol        | Accessibility; meaning never colour-only.                                 |
+| 25  | Balance enforced by scripted-bot tests (idle/no-aim lose, aiming wins)                                 | Guards the "aiming matters" pillar against regressions.                   |
+| 26  | ESLint flat config + typescript-eslint + Prettier check in `npm run lint`                              | One gate for CI.                                                          |
+| 27  | Protected main, task branches, PR docs in `prs/`, milestone tags                                       | Requested process; audit trail for independent creation (plan §8.3 #6).   |
+
+## Next steps toward MVP (see PLAN.md for owners)
+
+1. Human playtest PR 002 on a real phone + desktop; review; merge PR 001 then 002; tag `v0.1.0-slice`.
+2. M2: levels as JSON + 4 levels + boss; FTUE < 30 s; low-end perf pass; code-split Three.js toward < 3 MB initial load.
+3. M4 meta & monetisation (sandbox): rewarded boosts/chest skip/daily pack/away doubler; interstitials via portal SDK test modes; mock IAP → Stripe **test mode**; chests + collectible bees; cards/loadout; Hive base buildings; Supabase cloud save.
+4. M3 art pass and M5 live ops (events, streaks, season pass, procedural levels, tuning dashboard).
+
+## Known gaps / risks
+
+- No human playtest yet; headless bot lost on timer at nest 8% → difficulty may be slightly high for casual players.
+- Wasps are hard to tell from bees at distance (art pass).
+- Bundle 580 kB JS (Three.js monolith); fine vs 3 MB goal but should be code-split/tree-shaken.
+- Name "Hive Surge" is a placeholder; trademark search required before any launch (plan §8.3 #7).

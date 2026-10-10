@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { crossesGate, gateLabel, gateSpawnCount, gateX } from '../src/sim/gates';
 import type { GateDef } from '../src/sim/types';
 
-const g = (o: Partial<GateDef> = {}): GateDef => ({ kind: 'mul', value: 3, x: 0, y: 10, width: 2, ...o });
+const g = (o: Partial<GateDef> = {}): GateDef => ({
+  kind: 'mul',
+  value: 3,
+  x: 0,
+  y: 10,
+  width: 2,
+  ...o,
+});
 
 describe('gate math', () => {
   it('add +k spawns k, mul xk spawns k-1, sub spawns 0', () => {
