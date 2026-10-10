@@ -1,6 +1,6 @@
 /**
  * Exports the procedural models to GLB (raw), then gltfpack compresses them with
- * meshopt (EXT_meshopt_compression + quantization) into public/assets/models/.
+ * meshopt (EXT_meshopt_compression + quantization) into art/models/ (moved to public/ by M3-5 once the runtime loads them).
  * Run: npx tsx art/tools/export-assets.ts   (needs `gltfpack` on PATH or GLTFPACK env)
  * Vertex colours only, no textures: KTX2 is not needed (see ART_DIRECTION.md §Load budget).
  */
@@ -18,7 +18,7 @@ import {
 } from '../../src/art/models';
 import { SKINS, skinGeometry } from '../../src/art/skins';
 
-const OUT = 'public/assets/models';
+const OUT = 'art/models'; // not shipped until M3-5 loads GLBs at runtime
 const RAW = '/tmp/hivesurge-raw-glb';
 
 function glb(geo: THREE.BufferGeometry, name: string): Buffer {
