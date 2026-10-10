@@ -9,6 +9,11 @@ backend (M4), Stripe test-mode monetisation (M5) and an admin panel (M6). Record
 - `PLAN.md`: M0 marked done (PR 001 merged `bb45228`); M1 status from code; new M2–M7 (51 tasks); owner key;
   sandbox-only hard rules; resolved questions (Stripe test mode primary, RevenueCat deferred; Supabase free
   tier only with cost check/stop; local/LAN playtests only; dev→eng, test→qa).
+- `PLAN.md` (monetization update): doc paths → `monetization/` (`docs/monetization` symlink also works); M2-8 done;
+  new M2-13 (ENG guardrail tests G1, G2, G5, G6 incl. gems_small→noAds fix, G13, G17) + M2-14 (QA verify);
+  M5-2 provisional until M5-1 (free player falls behind from day 22); M5-6 decided (Stripe Checkout test mode
+  now, RevenueCat later) with sub-tasks M5-6a–M5-6j from `monetization/integration-plan.md`; M5-7/M5-8 re-scoped;
+  hard gate: any external account (Stripe, AdSense, etc.) needs Mohit's explicit approval in chat first.
 - `STATUS.md`: added to main (from `feat/core-loop`) with dated decision 28.
 - `CONTRIBUTING.md`: clean-room line now points generically to `/workspace/mob-control-plan/`.
 

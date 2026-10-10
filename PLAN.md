@@ -52,6 +52,7 @@ appends gameplay findings to the **Research inbox** at the bottom, triaged at ea
 
 **Hard rules (all milestones):** SANDBOX/TEST MODE ONLY — no real money, no live payment keys, no production
 deploys, no production Supabase project. Secrets only via `.env.local` (git-ignored); never commit keys.
+**External accounts gate:** creating a Stripe, AdSense, AppLixir, RevenueCat, Poki/CrazyGames developer or any other external account (even test mode) requires Mohit's explicit approval in chat first; no bot may create one on its own.
 Every code task ships as a branch + `prs/NNN-*.md` and is merged only after REV approval.
 "Done" = acceptance criteria met + REV approved + (where gameplay changes) QA playtest logged in `playtests/`.
 
@@ -66,10 +67,12 @@ Every code task ships as a branch + `prs/NNN-*.md` and is merged only after REV 
 | M2-5 | ENG | Implement M2-4 levels + bot balance tests | 5 new levels playable; scripted bot: idle loses, aiming wins on each | M2-4 |
 | M2-6 | DES | FTUE spec: aim → gate → queen in < 30 s, no text walls (incl. aim-lead hint) | Spec doc with step flow, max 8 words per prompt | M2-1 |
 | M2-7 | ENG | Implement FTUE | New player reaches first queen launch in < 30 s in headless playtest; FTUE skipped on replay | M2-6 |
-| M2-8 | MON | Codify ethical guardrails (no ads first levels, caps, clear prices, odds shown) | `docs/monetization/guardrails.md`; each rule mapped to a unit test or REV checklist item | — |
+| M2-8 | MON | **done** — Codify ethical guardrails (no ads first levels, caps, clear prices, odds shown) | `monetization/guardrails.md`; each rule mapped to a unit test or REV checklist item | — |
 | M2-9 | ENG | Code-split Three.js / asset streaming; initial bundle < 3 MB | `npm run build` initial chunk < 3 MB (gzip reported in PR) | M2-1 |
 | M2-10 | QA | Low-end Android perf pass (500 units, 15-min session) | ≥ 50 fps median, no memory growth > 10% over 15 min; log in `playtests/` | M2-5, M2-9 |
 | M2-11 | QA | Accessibility pass (reduced motion, contrast, keyboard-only, audio-cue captions) | Checklist all pass or filed; WCAG AA contrast on HUD | M2-7 |
+| M2-13 | ENG | Guardrail tests + fixes per `monetization/guardrails.md`: G1 (no ads before 5 battles + tutorial complete), G2 (`canOfferRewarded`, no rewarded offers in FTUE), G5 (`AdPacer` session/day caps, clock mock), G6 (fix: any purchase incl. `gems_small` grants `noAds`), G13 (≤1 pop-up offer/session, none on FTUE defeat, no <24h timers), G17 (build refuses `sk_live`/`pk_live`/RC prod keys) | Tests T-G1, T-G2, T-G5, T-G6, T-G13, T-G17 exist and pass in `npm test`; T-G6 fails on current main before fix | M2-8, M2-1 |
+| M2-14 | QA | Verify M2-13 guardrails in browser (fresh save: no ads/offers in FTUE; buy mock `gems_small` ⇒ no interstitials; caps hit) | Log in `playtests/` with pass per G-id | M2-13 |
 | M2-12 | RES | Run 5–10 playtests locally on the box (localhost or LAN dev server, `npm run dev -- --host`); no external hosting; summarise vs plan §7.1 exit criteria | Report with completion rate, D0 retry rate, top 5 issues; sessions noted as local/LAN | M2-7 |
 
 ## M3 — Premium art pass
@@ -101,14 +104,24 @@ Every code task ships as a branch + `prs/NNN-*.md` and is merged only after REV 
 | ID | Owner | Description | Acceptance criteria | Deps |
 | --- | --- | --- | --- | --- |
 | M5-1 | DES | Meta design: collectible bee variants, chests (odds shown), cards + 4-slot loadout, hive base | `docs/design/meta-m5.md` with flows + wireframes | M2-12 |
-| M5-2 | MON | Economy sources/sinks sheet + 30-day sim + SKU catalog (No Ads, starter pack, gems) with test prices | Sheet in `docs/monetization/`; sim shows no hard paywall; SKUs map to M2-8 guardrails | M5-1, M2-8 |
+| M5-2 | MON | **PROVISIONAL until M5-1 lands** — 30-day sim currently shows a free player falling behind from day 22; re-run after meta design. Economy sources/sinks sheet + 30-day sim + SKU catalog (No Ads, starter pack, gems) with test prices | Sheet in `monetization/` (economy.md, iap-catalog.md); sim shows no hard paywall; SKUs map to M2-8 guardrails | M5-1, M2-8 |
 | M5-3 | RES | Benchmark Mob Control-style meta & pricing; regional loot-box restrictions | Report in `docs/research/`; list of regions where paid random items are disabled | — |
 | M5-4 | ENG | Implement collection, chests, cards/loadout, coin upgrades, hive base timers | Features playable; state persists via M4 cloud save; unit tests for economy math | M5-1, M4-5 |
 | M5-5 | ENG | Rewarded placements (pre-battle boost, chest skip, daily pack, away doubler) via sandbox ad adapter | Pacing rules from adPolicy tests still pass; caps enforced | M5-4 |
-| M5-6 | MON | Stripe **test mode** product/price setup (primary web purchase sandbox). RevenueCat deferred — only revisit with a written case from MON | Only `sk_test_`/`pk_test_` keys; products match M5-2 catalog | M5-2 |
-| M5-7 | ENG | Purchase flow: store UI → Stripe test-mode Checkout → entitlement | Test card 4242… grants entitlement; build refuses to start with a live key (`sk_live`/`pk_live` check test) | M5-6, M4-3 |
-| M5-8 | ENG | Server-side entitlement verification (Supabase edge function Stripe webhook, test-mode secret) writes `purchases_sandbox` | Webhook signature verified; client cannot grant itself items (RLS test) | M5-7 |
-| M5-9 | QA | Purchase test matrix: success, cancel, refund, restore, No-Ads removes interstitials | All cases logged pass; no real charge possible | M5-8 |
+| M5-6 | MON | **DECIDED:** Stripe Checkout in test mode now; RevenueCat Web Billing later (see `monetization/integration-plan.md`). Delivered via M5-6a–M5-6j | Decision recorded; sub-tasks below tracked | M5-2 |
+| M5-6a | MON | Freeze SKU list from `monetization/iap-catalog.md` as `monetization/skus.json` (id, type, usd, inr, grants, random:false) | JSON validated by unit test; matches `CATALOG` | M5-2 |
+| M5-6b | ENG | Stripe **test-mode** account setup — **HARD GATE: Mohit must approve in chat first**; no live activation | Mohit's approval referenced in PR doc; only `pk_test_`/`sk_test_` in `.env.local`; never committed | Mohit OK |
+| M5-6c | ENG | `scripts/stripe-seed-test.ts` creates Products/Prices (USD + INR) from skus.json, `lookup_key = sku id`; refuses non-`sk_test_` key | Idempotent (2nd run creates nothing); test asserts refusal on live key | M5-6a, M5-6b |
+| M5-6d | ENG | Extend Platform: `purchase(sku)` → `ownSitePlatform` opens Stripe Checkout (test); `CATALOG.price` → `{usd, inr}` | Mock platform still default in tests/CI; G6 test: any purchase ⇒ `noAds` | M5-6c, M2-13 |
+| M5-6e | ENG | Supabase edge fn `stripe-webhook` (test `whsec_`), handles `checkout.session.completed` + `charge.refunded` → `purchases_sandbox` | Signature-verification test (bad sig rejected); client insert blocked by RLS | M5-8 |
+| M5-6f | ENG | Live-key guard in build (`sk_live`/`pk_live`/RC prod) — extends G17 | Build/test fails when a live key is present | M5-7, M2-13 |
+| M5-6g | ENG | `AdPacer` per-placement/session/day caps from `monetization/ad-placements.md` via remote config; extend adPolicy tests | G1–G5 tests green with remote-config values | M5-5, M2-13 |
+| M5-6h | ENG | Ad adapters: H5 Games Ads (test flag), Poki (debug), CrazyGames (local SDK) behind build flag. **AdSense/AppLixir accounts need Mohit's approval in chat first** | Per-adapter G10/G18 tests pass; mock default | M7-4 |
+| M5-6i | QA | Purchase matrix with Stripe test cards (4242 success, 0002 decline, 3155 3DS, refund) | All cases logged pass in `playtests/`; satisfies M5-9 | M5-6e |
+| M5-6j | MON | (Optional, later) RevenueCat Web Billing sandbox spike if mobile builds/subscriptions are planned (account needs Mohit's approval) | Written go/no-go in `monetization/` | — |
+| M5-7 | ENG | Purchase flow: store UI → Stripe test-mode Checkout → entitlement (implemented via M5-6c/6d) | Test card 4242… grants entitlement; build refuses to start with a live key (`sk_live`/`pk_live` check test) | M5-6, M4-3 |
+| M5-8 | ENG | Server-side entitlement verification: `purchases_sandbox` schema + entitlement grant on webhook (edge fn itself = M5-6e) | Webhook signature verified; client cannot grant itself items (RLS test) | M5-7 |
+| M5-9 | QA | Purchase test matrix: success, cancel, refund, restore, No-Ads removes interstitials | All cases logged pass; no real charge possible | M5-8, M5-6i |
 | M5-10 | REV | Monetisation compliance review vs guardrails | Checklist from M2-8 all pass | M5-9 |
 
 ## M6 — Admin panel (sandbox)
