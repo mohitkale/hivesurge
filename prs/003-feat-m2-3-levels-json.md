@@ -1,4 +1,4 @@
-# PR 003 — feat/levels-data (base: feat/core-loop)
+# PR 003 — feat/m2-3-levels-json (M2-3; base: feat/core-loop, stacked on PR 002)
 
 **Summary:** Level definitions move out of code into JSON data files under `src/levels/`, validated at load
 by `parseLevel`. Behaviour is unchanged (same Clover Run tuning; balance bot tests still pass). First step of
@@ -21,3 +21,7 @@ JSON-loaded level. Human playtest not yet done — quick title → battle → wi
 **Reviewer:** hivesurge-review
 
 **Status:** awaiting review + playtest
+
+**Acceptance criteria (PLAN M2-3):** levels load from `src/levels/*.json` ✅ · invalid JSON fails a unit test
+(`tests/levels.test.ts` "rejects malformed levels") ✅ · Clover Run unchanged in balance tests ✅. Dependency
+M2-1 (merge of PR 001/002) still open, so this PR is stacked on `feat/core-loop` and merges after PR 002.
