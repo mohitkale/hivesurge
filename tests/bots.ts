@@ -81,3 +81,67 @@ export function winRate(level: LevelDef, bot: Bot, n = 20): number {
   for (let s = 0; s < n; s++) if (run(level, bot, level.seed + s * 7919).outcome === 'won') wins++;
   return wins / n;
 }
+
+/** Small seeded RNG (mulberry32) so the casual bot is independent of the world RNG. */
+function rng(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Casual bot (levels-m2.md, M2-17 tuning note): every 1.5 s picks the best visible non-trap
+ * gate (mul scores 3x its value), but 35% of the time a random non-trap gate; aims at the
+ * gate's x at the moment it picks, with no lead and no tracking until the next pick, plus
+ * noise (sum of 3 uniforms, sd about 1.2 lane units);
+ * lifts its finger 15% of the time; launches the queen 1 s after it is ready. Own RNG from
+ * the run seed, so build one bot per run (see `casualWinRate`).
+ */
+export function casualBot(seed: number): Bot {
+  const r = rng(seed ^ 0x9e3779b9);
+  let nextPick = 0;
+  let target = -1;
+  let noise = 0;
+  let firing = true;
+  let readyAt = -1;
+  let pickX = 0;
+  return (w) => {
+    const L = w.level;
+    if (w.time >= nextPick) {
+      nextPick = w.time + 1.5;
+      const ids = L.gates
+        .map((g, i) => (g.kind !== 'sub' && w.gateActive(i) ? i : -1))
+        .filter((i) => i >= 0);
+      const score = (i: number) => (L.gates[i].kind === 'mul' ? 3 : 1) * L.gates[i].value;
+      if (ids.length === 0) target = -1;
+      else if (r() < 0.35) target = ids[Math.floor(r() * ids.length)];
+      else target = ids.reduce((a, b) => (score(b) > score(a) ? b : a));
+      noise = (r() + r() + r() - 1.5) * 2.4;
+      firing = r() >= 0.15;
+      pickX = target >= 0 ? w.gateXAhead(target, 0) : 0;
+    }
+    const base = pickX;
+    const half = L.laneWidth / 2;
+    const aimX = Math.max(-half, Math.min(half, base + noise));
+    if (w.queenReady) {
+      if (readyAt < 0) readyAt = w.time;
+    } else readyAt = -1;
+    const queen = readyAt >= 0 && w.time - readyAt >= 1;
+    return { aimX, firing, queen };
+  };
+}
+
+/** Casual-bot win rate over `n` seeds; a fresh bot (own RNG) per run. */
+export function casualWinRate(level: LevelDef, n = 200): number {
+  let wins = 0;
+  for (let s = 0; s < n; s++) {
+    const seed = level.seed + s * 7919;
+    if (run(level, casualBot(seed), seed).outcome === 'won') wins++;
+  }
+  return wins / n;
+}
