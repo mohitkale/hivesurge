@@ -1,4 +1,3 @@
-import { gateX } from '../src/sim/gates';
 import { autoTriggers } from '../src/sim/triggers';
 import type { LevelDef } from '../src/sim/types';
 import { CANNON_Y, World, type PlayerInput } from '../src/sim/world';
@@ -19,8 +18,7 @@ export function leadAimX(w: World, i: number): number {
   const L = w.level;
   const g = L.gates[i];
   const travel = (g.y - CANNON_Y) / WORKER_SPEED;
-  const speedScale = L.bossPhases?.[w.bossPhase - 1]?.gateSpeedScale ?? 1;
-  return gateX(g, (w.time + travel) * speedScale, L.laneWidth);
+  return w.gateXAhead(i, travel);
 }
 
 /** Aims (with lead) at gate `a`, or alternates a/b every `period/2` s; queen when ready. */
