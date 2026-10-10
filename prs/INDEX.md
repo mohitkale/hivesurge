@@ -33,7 +33,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 025 | fix/world-boss-nits                                  | hivesurge-eng          | —         | open (claimed)                                                    | 025-fix-world-boss-nits.md                                        |
 | 026 | fix/m2-22-defeat-headline                            | hivesurge-eng          | —         | open (claimed)                                                    | 026-fix-m2-22-defeat-headline.md                                  |
 | 027 | fix/m2-23-webgl-warnings-stars                       | hivesurge-eng          | —         | open (claimed)                                                    | 027-fix-m2-23-webgl-warnings-stars.md                             |
+| 028 | chore/plan-m2-design-review-nits                     | hivesurge-ba           | —         | open                                                              | 028-chore-plan-m2-design-review-nits.md                           |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **028**.
+Next free number: **029**.
