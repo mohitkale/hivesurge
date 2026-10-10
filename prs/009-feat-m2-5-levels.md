@@ -63,3 +63,24 @@ enabled). Existing saves with Clover Run stars now start at L1.
 **Reviewer:** hivesurge-review
 
 **Status:** awaiting review + playtest
+
+## Restack onto main 5226bcc (REVIEW-009-018)
+
+- Rebased onto main `5226bcc`. The `makeScene()` conflict is resolved by keeping both sides: `this.world.level` and
+  main's dev-only `__hsScene` hook.
+- **Gate-label legibility (PR 013 test, 18 px limit unchanged):** I moved the far gates closer to the cannon.
+  - thistle-gauntlet (lane 42): the ×2 gate moves from y=27 to **y=24.5**. The worst glyph goes from 17.87 to
+    18.01 px.
+  - wasp-queen-nest (lane 44): the ×3 gate moves from y=20 to **y=18**, and the phase-2 trap from y=30 to **y=19**.
+    The worst glyph goes from 17.22 to 18.02 px. On this longer lane, any gate past y≈19 is under 18 px at 360×780,
+    so moving only the y=30 trap was not enough.
+- **Bots rerun** (idle 20 seeds, centre 40, aim 40):
+
+| Level            | Gates (y)            | Idle | Centre | Aim  |
+| ---------------- | -------------------- | ---- | ------ | ---- |
+| thistle-gauntlet | before 8,8,16,16,27  | 0%   | 0%     | 100% |
+| thistle-gauntlet | after 8,8,16,16,24.5 | 0%   | 0%     | 100% |
+| wasp-queen-nest  | before 10,10,20,30   | 0%   | 0%     | 100% |
+| wasp-queen-nest  | after 10,10,18,19    | 0%   | 0%     | 100% |
+
+- Bot balance tests now have an explicit 60 s timeout (`BOT_TIMEOUT_MS`).

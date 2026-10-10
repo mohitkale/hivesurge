@@ -17,11 +17,11 @@
       "kind": "mul",
       "value": 3,
       "x": 0,
-      "y": 20,
+      "y": 18,
       "width": 2.4,
       "motion": { "amplitude": 3, "speed": 1.0 }
     },
-    { "kind": "sub", "value": 30, "x": 0, "y": 30, "width": 4, "fromPhase": 2 }
+    { "kind": "sub", "value": 30, "x": 0, "y": 19, "width": 4, "fromPhase": 2 }
   ],
   "waves": [],
   "bossPhases": [

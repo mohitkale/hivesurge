@@ -4,27 +4,42 @@ import { nextLevelIndex } from '../src/levels/progress';
 import { BEE_CAP, WASP_CAP } from '../src/sim/world';
 import { aimBot, centreBot, idleBot, run, winRate } from './bots';
 
+/** Bot runs are CPU-heavy (one took 13.9 s in review); vitest's 5 s default is too short. */
+const BOT_TIMEOUT_MS = 60_000;
+
 /** M2-5: every campaign level must punish idling and reward aiming (levels-m2.md validator). */
 describe.each(LEVELS.map((l) => [l.id, l] as const))('level %s balance', (_id, level) => {
   const aim = aimBot(level);
 
-  it('idle bot loses', () => {
-    expect(run(level, idleBot).outcome).toBe('lost');
-  });
+  it(
+    'idle bot loses',
+    () => {
+      expect(run(level, idleBot).outcome).toBe('lost');
+    },
+    BOT_TIMEOUT_MS,
+  );
 
-  it('aim bot wins (base seed) within unit caps', () => {
-    const r = run(level, aim);
-    expect(r.outcome).toBe('won');
-    expect(r.peakBees).toBeLessThanOrEqual(BEE_CAP);
-    expect(r.peakWasps).toBeLessThan(WASP_CAP);
-  });
+  it(
+    'aim bot wins (base seed) within unit caps',
+    () => {
+      const r = run(level, aim);
+      expect(r.outcome).toBe('won');
+      expect(r.peakBees).toBeLessThanOrEqual(BEE_CAP);
+      expect(r.peakWasps).toBeLessThan(WASP_CAP);
+    },
+    BOT_TIMEOUT_MS,
+  );
 
-  it('aiming beats firing straight (win rate over 8 seeds)', () => {
-    const a = winRate(level, aim, 8);
-    const c = winRate(level, centreBot, 8);
-    expect(a).toBeGreaterThanOrEqual(0.75);
-    if (level.id !== 'ftue-meadow') expect(a).toBeGreaterThan(c);
-  });
+  it(
+    'aiming beats firing straight (win rate over 8 seeds)',
+    () => {
+      const a = winRate(level, aim, 8);
+      const c = winRate(level, centreBot, 8);
+      expect(a).toBeGreaterThanOrEqual(0.75);
+      if (level.id !== 'ftue-meadow') expect(a).toBeGreaterThan(c);
+    },
+    BOT_TIMEOUT_MS,
+  );
 });
 
 describe('campaign', () => {
