@@ -5,7 +5,8 @@ and the script only, with no code changes. It was kept out of the 009–030 stac
 
 **Files**
 
-- `playtests/m2-23/smoke-60s-f1108d0.txt`: PR 027 tip `f4729de`, the code merged in `5d5ed00`.
+- `playtests/m2-23/smoke-60s-f1108d0.txt`: PR 027 pre-rebase tip `f1108d0`, the same patch as `f4729de`. 0 WebGL/texImage3D warnings.
+- `playtests/m2-23/smoke-60s-f4729de.txt`: PR 027 tip `f4729de`, the code merged in `5d5ed00`.
   - A 60 s session on a fresh profile: FTUE battle, win, claim, next battle. That is 3 renderer builds.
   - **0 WebGL/texImage3D warnings.**
   - The win screen star row read `aria-label="3 of 3 stars"`, with 3 lit stars.
