@@ -20,6 +20,7 @@ import { applyMultiplier, computeRewards, type Rewards } from './sim/rewards';
 import { SIM_DT, World } from './sim/world';
 import { Hud } from './ui/hud';
 import { Input } from './ui/input';
+import { starRowHtml, starsLabel } from './ui/stars';
 import { defeatHeadline } from './ui/defeatCopy';
 import { PerfOverlay } from './ui/perfOverlay';
 import { PerfStats, perfEnabledFromUrl, stressCountFromUrl } from './ui/perfStats';
@@ -154,7 +155,7 @@ export class Game {
       <div class="modal"><div class="card">
         <div class="title-logo">HIVE<br/>SURGE</div>
         <p>Aim the honey cannon. Fly bees through flower gates to multiply the swarm. Break the wasp nest!</p>
-        <p>Level ${levelNo}/${LEVELS.length} · <b>${level.name}</b> · best ${'★'.repeat(best)}${'☆'.repeat(3 - best)}</p>
+        <p>Level ${levelNo}/${LEVELS.length} · <b>${level.name}</b> · best <span role="img" aria-label="${starsLabel(best)}">${'★'.repeat(best)}${'☆'.repeat(3 - best)}</span></p>
         <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
         <div class="row"><button class="btn primary" data-a="play">PLAY</button></div>
         <div class="row"><button class="btn" data-a="shop">Shop (sandbox)</button></div>
@@ -280,11 +281,8 @@ export class Game {
   private showWin(r: Rewards): void {
     // G2 (no rewarded offers in FTUE) + G5 (caps).
     const offerDouble = canOfferRewarded(this.save) && this.pacer.canRewarded('win_double');
-    const stars = [0, 1, 2]
-      .map((i) => `<span class="${i < r.stars ? '' : 'off'}">★</span>`)
-      .join('');
     this.overlay.innerHTML = `<div class="modal"><div class="card">
-      <h1>Nest broken!</h1><div class="stars">${stars}</div>
+      <h1>Nest broken!</h1>${starRowHtml(r.stars)}
       <p class="reward">🪙 ${r.coins}</p>
       <p class="small">Peak swarm ${this.world.stats.peakBees} · ${Math.ceil(this.world.timeLeft)}s left</p>
       <div class="row">${
