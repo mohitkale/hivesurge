@@ -9,7 +9,10 @@ import type { SaveData, SaveStore } from './platform/save';
 import { QualityScaler } from './render/quality';
 import { applyTheme, palette } from './ui/theme';
 import { GameScene } from './render/scene';
-import { CLOVER_RUN } from './sim/levels';
+import { LEVELS } from './sim/levels';
+import { nextLevelIndex } from './levels/progress';
+import { autoTriggers } from './sim/triggers';
+import type { LevelDef } from './sim/types';
 import { applyMultiplier, computeRewards, type Rewards } from './sim/rewards';
 import { SIM_DT, World } from './sim/world';
 import { Hud } from './ui/hud';
@@ -28,7 +31,7 @@ export class Game {
   private readonly save: SaveData;
   private readonly analytics = new Analytics(localStorage);
   private readonly quality = new QualityScaler(window.devicePixelRatio || 1);
-  private world = new World(CLOVER_RUN);
+  private world: World;
   private scene: GameScene;
   private result = new ResultSession();
   private hud: Hud | null = null;
@@ -42,6 +45,7 @@ export class Game {
   constructor(store: SaveStore) {
     this.store = store;
     this.save = store.data;
+    this.world = new World(this.currentLevel());
     applyTheme(document.documentElement, this.save.settings.colorBlind);
     this.sfx.setMuted(this.save.settings.muted);
     this.scene = this.makeScene();
@@ -64,7 +68,7 @@ export class Game {
   }
 
   private makeScene(): GameScene {
-    const sc = new GameScene(this.canvas, CLOVER_RUN, palette(this.save.settings.colorBlind));
+    const sc = new GameScene(this.canvas, this.world.level, palette(this.save.settings.colorBlind));
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
     sc.setPixelRatio(this.quality.pixelRatio);
@@ -79,15 +83,21 @@ export class Game {
     if (this.save.settings.haptics) haptic(ms);
   }
 
+  private currentLevel(): LevelDef {
+    return LEVELS[nextLevelIndex(LEVELS, this.save.bestStars)];
+  }
+
   // ---------- screens ----------
   private showTitle(): void {
     this.phase = 'title';
-    const best = this.save.bestStars[CLOVER_RUN.id] ?? 0;
+    const level = this.currentLevel();
+    const levelNo = LEVELS.indexOf(level) + 1;
+    const best = this.save.bestStars[level.id] ?? 0;
     this.overlay.innerHTML = `
       <div class="modal"><div class="card">
         <div class="title-logo">HIVE<br/>SURGE</div>
         <p>Aim the honey cannon. Fly bees through flower gates to multiply the swarm. Break the wasp nest!</p>
-        <p><b>${CLOVER_RUN.name}</b> · best ${'★'.repeat(best)}${'☆'.repeat(3 - best)}</p>
+        <p>Level ${levelNo}/${LEVELS.length} · <b>${level.name}</b> · best ${'★'.repeat(best)}${'☆'.repeat(3 - best)}</p>
         <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
         <div class="row"><button class="btn primary" data-a="play">PLAY</button></div>
         <div class="row"><button class="btn" data-a="shop">Shop (sandbox)</button></div>
@@ -146,11 +156,11 @@ export class Game {
   private startBattle(): void {
     this.sfx.unlock();
     this.scene.dispose();
-    this.world = new World(CLOVER_RUN);
+    this.world = new World(this.currentLevel());
     this.scene = this.makeScene();
     this.resize();
     this.overlay.innerHTML = '';
-    this.analytics.track('level_start', { level: CLOVER_RUN.id });
+    this.analytics.track('level_start', { level: this.world.level.id });
     this.hud = new Hud(this.hudRoot);
     this.hud.queenBtn.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
@@ -182,7 +192,7 @@ export class Game {
     else this.sfx.lose();
     this.haptic(won ? 120 : 250);
     this.analytics.track(won ? 'level_win' : 'level_fail', {
-      level: CLOVER_RUN.id,
+      level: this.world.level.id,
       time: Math.round(w.time),
       nestLeft: Math.round((w.nestHp / w.level.nestHp) * 100),
       hiveLeft: w.hiveHp,
@@ -259,8 +269,8 @@ export class Game {
     this.disableResultButtons();
     const rewardedShown = this.result.rewardedShown;
     this.save.coins += r.coins;
-    const prev = this.save.bestStars[CLOVER_RUN.id] ?? 0;
-    this.save.bestStars[CLOVER_RUN.id] = Math.max(prev, r.stars);
+    const id = this.world.level.id;
+    this.save.bestStars[id] = Math.max(this.save.bestStars[id] ?? 0, r.stars);
     this.save.battlesCompleted++;
     const now = Date.now();
     if (canShowInterstitial(this.save, now, rewardedShown)) {
@@ -332,6 +342,7 @@ export class Game {
     let steps = 0;
     const queen = this.input.takeQueen();
     while (this.acc >= SIM_DT && steps < 5) {
+      autoTriggers(w);
       w.step({ aimX: this.input.aimX, firing: this.input.firing, queen: queen && steps === 0 });
       this.acc -= SIM_DT;
       steps++;

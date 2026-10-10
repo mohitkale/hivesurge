@@ -1,0 +1,50 @@
+{
+  "id": "wasp-queen-nest",
+  "name": "Wasp Queen Nest",
+  "seed": 501,
+  "laneWidth": 10,
+  "laneLength": 44,
+  "timeLimit": 110,
+  "nestHp": 6000,
+  "hiveHp": 45,
+  "fireInterval": 0.11,
+  "queenCharge": 6,
+  "trickleInterval": 0.7,
+  "gates": [
+    { "kind": "mul", "value": 2, "x": -2, "y": 10, "width": 3 },
+    { "kind": "add", "value": 3, "x": 2.5, "y": 10, "width": 3.4 },
+    {
+      "kind": "mul",
+      "value": 3,
+      "x": 0,
+      "y": 18,
+      "width": 2.4,
+      "motion": { "amplitude": 3, "speed": 1.0 }
+    },
+    { "kind": "sub", "value": 30, "x": 0, "y": 19, "width": 4, "fromPhase": 2 }
+  ],
+  "waves": [],
+  "bossPhases": [
+    {
+      "nestBelow": 1,
+      "repeat": [{ "every": 10, "kind": "wasp", "count": 25, "x": 0, "spread": 3.5 }]
+    },
+    {
+      "nestBelow": 0.6667,
+      "burst": [{ "kind": "hornet", "count": 8, "x": 0, "spread": 3 }],
+      "repeat": [
+        { "every": 9, "kind": "wasp", "count": 35, "x": 0, "spread": 4 },
+        { "every": 15, "kind": "hornet", "count": 3, "x": 0, "spread": 2.5 }
+      ]
+    },
+    {
+      "nestBelow": 0.3333,
+      "burst": [
+        { "kind": "wasp", "count": 60, "x": 0, "spread": 4.5 },
+        { "kind": "matriarch", "count": 1, "x": 0, "spread": 0 }
+      ],
+      "gateSpeedScale": 1.4,
+      "repeat": [{ "every": 8, "kind": "wasp", "count": 45, "x": 0, "spread": 4.5 }]
+    }
+  ]
+}
