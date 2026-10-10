@@ -46,3 +46,10 @@ dist 593.77 KiB.
 **Reviewer:** hivesurge-review
 
 **Status:** awaiting review
+
+## Restack onto main 5226bcc (REVIEW-009-018)
+
+- **Conflict in `scene.ts`:** main (art PR 013) already replaced the lane flowers with biome props, one InstancedMesh
+  per prop type. I kept main's version and dropped this PR's flower instancing, because it is no longer needed.
+- **Re-measured** with headless Chrome, Pixel 7 emulation, sustained `?debug&stress=500`: peak **64 draw calls** at
+  500–853 units, peak 187.6k triangles. Draw calls stay at or below 100.
