@@ -1,10 +1,10 @@
 # PR 012 — art/m2-7-ftue-visuals (base: art/m3-assets, PR 011)
 
-**Part 3 of 3 of the former PR 007 (commit 008ff71's FTUE part).** Stack: 010 → 011 → **012**. Merge after PR 011.
+**Part 3 of 3 of the former PR 007 (commit 008ff71's FTUE part).** Stack: 013 → 011 → **012**. Merge after PR 011.
 
 **Task:** PLAN **M2-7 (Implement FTUE)**: visual vocabulary and assets for the ENG implementation, following the
 DES spec M2-6 (`docs/design/ftue-m2.md`, branch `design/m2-specs`). This PR adds art only and no FTUE logic. The ENG work
-is on `feat/m2-7-ftue` (another bot's branch, not touched here). DES approved this section as part of M3-1 (see PR 010 history).
+is on `feat/m2-7-ftue` (PR 014, another bot's branch, not touched here). DES approved this section as part of M3-1 (see PR 013 history).
 
 **Changes**
 
