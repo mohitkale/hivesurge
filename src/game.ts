@@ -12,6 +12,7 @@ import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
 import { nextLevelIndex } from './levels/progress';
 import { autoTriggers } from './sim/triggers';
+import { Ftue, FtueStep, shouldRunFtue } from './ftue/ftue';
 import type { LevelDef } from './sim/types';
 import { applyMultiplier, computeRewards, type Rewards } from './sim/rewards';
 import { SIM_DT, World } from './sim/world';
@@ -41,10 +42,14 @@ export class Game {
   private fireSoundTimer = 0;
   private hitHapticAt = 0;
   private readonly proj = new THREE.Vector3();
+  private ftue: Ftue | null = null;
+  private ftueReported = 0;
 
   constructor(store: SaveStore) {
     this.store = store;
     this.save = store.data;
+    // ftue-m2.md: FTUE counts as done on a later launch once a battle was played.
+    if (!this.save.ftueDone && this.save.battlesCompleted > 0) this.save.ftueDone = true;
     this.world = new World(this.currentLevel());
     applyTheme(document.documentElement, this.save.settings.colorBlind);
     this.sfx.setMuted(this.save.settings.muted);
@@ -58,7 +63,9 @@ export class Game {
       if (document.hidden) this.input.firing = false;
     });
     this.resize();
-    this.showTitle();
+    // First launch: no menu, straight into the FTUE battle.
+    if (shouldRunFtue(this.save.ftueDone, this.currentLevel().id)) this.startBattle();
+    else this.showTitle();
     requestAnimationFrame(this.frame);
   }
 
@@ -81,6 +88,23 @@ export class Game {
 
   private haptic(ms: number): void {
     if (this.save.settings.haptics) haptic(ms);
+  }
+
+  private updateFtueUi(w: World): void {
+    const f = this.ftue!;
+    for (; this.ftueReported < f.completed.length; this.ftueReported++) {
+      const e = f.completed[this.ftueReported];
+      this.analytics.track('ftue_step', {
+        step: e.step,
+        msSinceFirstInput: e.msSinceFirstInput,
+        timedOut: e.timedOut,
+      });
+    }
+    this.hud?.hideHint();
+    this.hud?.setPrompt(f.prompt, f.emphasis);
+    this.hud?.setQueenFocus(f.step === FtueStep.Queen && w.queenReady);
+    const lx = f.leadTargetX(w);
+    this.scene.setLeadLine(lx === null ? null : { x: lx, y: w.level.gates[1].y });
   }
 
   private currentLevel(): LevelDef {
@@ -157,6 +181,8 @@ export class Game {
     this.sfx.unlock();
     this.scene.dispose();
     this.world = new World(this.currentLevel());
+    this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id) ? new Ftue() : null;
+    this.ftueReported = 0;
     this.scene = this.makeScene();
     this.resize();
     this.overlay.innerHTML = '';
@@ -182,6 +208,13 @@ export class Game {
   }
 
   private endBattle(): void {
+    if (this.ftue) {
+      // Close the FTUE's final step so its ftue_step event is recorded.
+      this.ftue.update(this.world, { aimX: 0, firing: false, queen: false }, 0);
+      this.updateFtueUi(this.world);
+      this.hud?.setPrompt('', false);
+      this.scene.setLeadLine(null);
+    }
     this.platform.gameplayStop();
     this.input.enabled = false;
     this.input.firing = false;
@@ -272,6 +305,8 @@ export class Game {
     const id = this.world.level.id;
     this.save.bestStars[id] = Math.max(this.save.bestStars[id] ?? 0, r.stars);
     this.save.battlesCompleted++;
+    // FTUE is done after its first win (replays of level 1 run without prompts).
+    if (this.ftue && this.world.outcome === 'won') this.save.ftueDone = true;
     const now = Date.now();
     if (canShowInterstitial(this.save, now, rewardedShown)) {
       this.save.lastInterstitialAt = now;
@@ -342,12 +377,19 @@ export class Game {
     let steps = 0;
     const queen = this.input.takeQueen();
     while (this.acc >= SIM_DT && steps < 5) {
-      autoTriggers(w);
-      w.step({ aimX: this.input.aimX, firing: this.input.firing, queen: queen && steps === 0 });
+      const input = {
+        aimX: this.input.aimX,
+        firing: this.input.firing,
+        queen: queen && steps === 0,
+      };
+      if (this.ftue) this.ftue.update(w, input, SIM_DT);
+      else autoTriggers(w);
+      w.step(input);
       this.acc -= SIM_DT;
       steps++;
     }
     if (steps === 5) this.acc = 0;
+    if (this.ftue) this.updateFtueUi(w);
 
     if (this.input.firing) {
       this.fireSoundTimer -= dt;

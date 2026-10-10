@@ -10,6 +10,8 @@ export class Hud {
   readonly queenBtn: HTMLButtonElement;
   readonly muteBtn: HTMLButtonElement;
   private readonly hint: HTMLElement;
+  private readonly prompt: HTMLElement;
+  private lastPrompt = '';
   private lastCount = -1;
   private lastTime = -1;
 
@@ -20,6 +22,7 @@ export class Hud {
       <div class="bar-wrap bottom"><span class="chip">🏠</span><div class="bar hive"><i style="width:100%"></i></div></div>
       <div class="count">0</div>
       <div class="hint">Hold &amp; drag to launch bees</div>
+      <div class="ftue-prompt" role="status" aria-live="polite"></div>
       <button class="hud-btn queen-btn" aria-label="Launch Queen" style="--p:0">👑</button>
       <button class="hud-btn mute-btn" aria-label="Toggle sound">🔊</button>`;
     this.nestBar = root.querySelector('.bar.nest > i')!;
@@ -30,6 +33,22 @@ export class Hud {
     this.queenBtn = root.querySelector('.queen-btn')!;
     this.muteBtn = root.querySelector('.mute-btn')!;
     this.hint = root.querySelector('.hint')!;
+    this.prompt = root.querySelector('.ftue-prompt')!;
+  }
+
+  /** FTUE prompt (one line, top third). `emphasis` = timeout fallback pulse. */
+  setPrompt(text: string, emphasis: boolean): void {
+    if (text !== this.lastPrompt) {
+      this.lastPrompt = text;
+      this.prompt.textContent = text;
+      this.prompt.classList.toggle('show', text !== '');
+    }
+    this.prompt.classList.toggle('emph', emphasis);
+  }
+
+  /** FTUE step 4: bounce the queen button and dim the rest of the HUD. */
+  setQueenFocus(on: boolean): void {
+    this.root.classList.toggle('queen-focus', on);
   }
 
   hideHint(): void {

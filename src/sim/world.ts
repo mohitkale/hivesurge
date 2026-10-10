@@ -51,6 +51,10 @@ export class World {
   queenCharge = 0;
   outcome: BattleOutcome = 'playing';
   stats = { fired: 0, gateSpawns: 0, peakBees: 0, kills: 0, queens: 0 };
+  /** Bees (incl. queens) that crossed each gate line, traps included. */
+  readonly gatePasses: number[];
+  /** FTUE: while true, wasps reaching the hive deal no damage (ftue-m2.md: no loss before step 5). */
+  hiveShield = false;
 
   private readonly rng: () => number;
   private fireTimer = 0;
@@ -74,6 +78,7 @@ export class World {
     this.rng = createRng(level.seed);
     this.trapLeft = level.gates.map((g) => (g.kind === 'sub' ? g.value : 0));
     this.gateXs = level.gates.map((g) => g.x);
+    this.gatePasses = level.gates.map(() => 0);
     this.waspGrid = new SpatialGrid(level.laneWidth, level.laneLength, 1, WASP_CAP);
     this.timedWaves = level.waves
       .filter((w) => w.at !== undefined)
@@ -263,6 +268,7 @@ export class World {
         const gate = L.gates[g];
         if (!crossesGate(gate, this.gateXs[g], b.x[i], prevY, b.y[i])) continue;
         b.gates[i] |= bit;
+        this.gatePasses[g]++;
         if (gate.kind === 'sub') {
           if (this.trapLeft[g] > 0) {
             this.trapLeft[g]--;
@@ -317,7 +323,7 @@ export class World {
       const pull = w.y[i] < 10 ? 0.6 : 0.15;
       w.x[i] = clamp(w.x[i] + Math.sign(this.cannonX - w.x[i]) * pull * dt, half);
       if (w.y[i] <= 0.4 && w.hp[i] > 0) {
-        const dmg = Math.ceil(w.hp[i]);
+        const dmg = this.hiveShield ? 0 : Math.ceil(w.hp[i]);
         this.hiveHp -= dmg;
         w.hp[i] = 0;
         this.events.push({ type: 'hiveHit', damage: dmg, x: w.x[i] });

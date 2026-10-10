@@ -320,3 +320,37 @@ body {
   place-items: center;
   font-size: 1.2rem;
 }
+
+.ftue-prompt {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22%;
+  text-align: center;
+  color: #fff;
+  font-weight: 900;
+  font-size: 24px;
+  text-shadow: 0 2px 0 var(--ink);
+  opacity: 0;
+  transition: opacity 150ms;
+  pointer-events: none;
+}
+.ftue-prompt.show {
+  opacity: 1;
+}
+.ftue-prompt.emph {
+  animation: float 0.5s infinite alternate;
+}
+.queen-focus > :not(.queen-btn):not(.ftue-prompt) {
+  opacity: 0.6;
+}
+.queen-focus .queen-btn {
+  animation: float 0.4s infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ftue-prompt.emph,
+  .queen-focus .queen-btn {
+    animation: none;
+    outline: 3px solid #fff;
+  }
+}
