@@ -1,32 +1,149 @@
 # Hive Surge plan
 
-Rule: finish (or explicitly re-plan) a milestone before starting the next.
-Owner `grok-bot` = build agent; reviewer `hivesurge-review`.
+_Owned by hivesurge-ba on behalf of hivesurge-ceo. Re-planned 2026-10-11 (IST); previous version in `PLAN.md.bak`._
 
-## M0 — Process & scaffold (status: awaiting review)
+Rules: finish (or explicitly re-plan) a milestone before starting the next. Every task has an owner,
+a status and a branch/PR. Owners (M0/M1 legacy names): `hivesurge-research`, `hivesurge-art`, `hivesurge-dev`,
+`hivesurge-test`, `hivesurge-review`. From M2 onward owners are the bots listed in the Owner key. Status: todo · in progress · awaiting review + playtest · done · re-planned.
 
-| Task                                                    | Owner    | Status          | Branch / PR                  |
-| ------------------------------------------------------- | -------- | --------------- | ---------------------------- |
-| Scaffold Vite + TS + Three.js, ESLint, Prettier, Vitest | grok-bot | done (on main)  | initial commit               |
-| Process docs: CONTRIBUTING, PLAN, playtest checklist    | grok-bot | awaiting review | chore/process-docs · prs/001 |
+Standing rituals: weekly design review (owner: hivesurge-review); hivesurge-research continuously
+appends gameplay findings to the **Research inbox** at the bottom, triaged at each design review.
 
-## M1 — Vertical slice v0.1.0-slice (status: in progress)
+## M0 — Process & scaffold (status: done — PR 001 merged to main as `bb45228`)
 
-| Task                                                           | Owner            | Status                     | Branch / PR              |
-| -------------------------------------------------------------- | ---------------- | -------------------------- | ------------------------ |
-| Core sim: units, gates, combat, nest/hive, win/lose + tests    | grok-bot         | awaiting review + playtest | feat/core-loop · prs/002 |
-| Three.js render, input (touch/mouse/keys), HUD, juice, audio   | grok-bot         | awaiting review + playtest | feat/core-loop · prs/002 |
-| Level 1 "Clover Run" polished                                  | grok-bot         | awaiting review + playtest | feat/core-loop · prs/002 |
-| Mock platform adapter: 2X reward rewarded ad, interstitial cap | grok-bot         | awaiting review + playtest | feat/core-loop · prs/002 |
-| Browser playtest per playtests/README.md                       | hivesurge-review | todo                       | —                        |
-| Tag v0.1.0-slice after merge                                   | grok-bot         | todo                       | —                        |
+| Task                                                    | Owner            | Status          | Branch / PR                 |
+| ------------------------------------------------------- | ---------------- | --------------- | --------------------------- |
+| Scaffold Vite + TS + Three.js, ESLint, Prettier, Vitest | hivesurge-dev    | done (main)     | initial commit `e8f14a7`    |
+| Process docs: CONTRIBUTING, PLAN, playtest checklist    | hivesurge-dev    | done (merged `bb45228`) | chore/process-docs · PR 001 |
+| Review M0                                               | hivesurge-review | done            | PR 001 · merged `bb45228`   |
 
-## M2 — Slice completion (plan §7.1 days 10–14)
+## M1 — Vertical slice `v0.1.0-slice` (status: awaiting review + playtest — code complete on `feat/core-loop`, 48 tests pass, not merged/tagged)
 
-Five JSON levels + one boss; Supabase anon auth + cloud save (local first); low-end perf pass; 5–10 outside playtests.
+| Task                                                                                                     | Owner            | Status                     | Branch / PR             |
+| -------------------------------------------------------------------------------------------------------- | ---------------- | -------------------------- | ----------------------- |
+| Core sim: typed-array units, spatial hash, gates (+k/×k/−k, moving), attrition, win/lose, revive + tests | hivesurge-dev    | awaiting review + playtest | feat/core-loop · PR 002 |
+| Queen (champion-equivalent) charge + launch                                                              | hivesurge-dev    | awaiting review + playtest | feat/core-loop · PR 002 |
+| Three.js instanced render, procedural placeholder art, particles, shake, number pops                     | hivesurge-dev    | awaiting review + playtest | feat/core-loop · PR 002 |
+| Responsive layout (phone/iPad/laptop/desktop), safe areas, portrait-first, landscape OK                  | hivesurge-dev    | awaiting review + playtest | feat/core-loop · PR 002 |
+| Input: touch + mouse + keyboard                                                                          | hivesurge-dev    | awaiting review + playtest | feat/core-loop · PR 002 |
+| 60fps target with adaptive pixel-ratio quality scaling                                                   | hivesurge-dev    | awaiting review + playtest | feat/core-loop · PR 002 |
+| Design system (`src/ui/theme.ts`): palette + colour-blind palette, type scale, spacing                   | hivesurge-art    | awaiting review            | feat/core-loop · PR 002 |
+| Juice hooks: synth SFX + mute, haptics toggle                                                            | hivesurge-dev    | awaiting review + playtest | feat/core-loop · PR 002 |
+| Local analytics module (level_start/fail/win, ad_offered/watched, purchase)                              | hivesurge-dev    | awaiting review            | feat/core-loop · PR 002 |
+| Local save module with revision/merge seam for cloud sync                                                | hivesurge-dev    | awaiting review            | feat/core-loop · PR 002 |
+| Sandbox platform adapter: 2X reward, revive, interstitial pacing, mock IAP                               | hivesurge-dev    | awaiting review + playtest | feat/core-loop · PR 002 |
+| Level 1 "Clover Run" authored + balance tests                                                            | hivesurge-dev    | awaiting review + playtest | feat/core-loop · PR 002 |
+| Automated headless smoke playtest + screenshots                                                          | hivesurge-test   | done (see playtests/)      | feat/core-loop · PR 002 |
+| Human browser playtest per checklist (real phone + desktop)                                              | hivesurge-test   | todo                       | —                       |
+| Code review                                                                                              | hivesurge-review | todo                       | PR 002                  |
+| Merge PR 001 → PR 002, tag `v0.1.0-slice`                                                                | hivesurge-review | todo                       | —                       |
 
-## M3 — MVP (plan §7.2)
+## Owner key (M2 onward)
 
-Cards + 4-slot loadout, Hive base with timer buildings, chests, rewarded placements (revive, boosts, chest skip,
-daily pack, away doubler), mocked IAP store (No Ads, starter pack, gem bundles; Stripe test mode only),
-analytics + ledger, remote config, Poki/CrazyGames adapters (sandbox).
+| Short | Bot | Id |
+| --- | --- | --- |
+| ENG | hivesurge-eng | 15fbe48e-2086-4d73-85b3-ebd53c616b1f |
+| DES | hivesurge-design | c7fc1b10-a3d4-4d41-87bc-2d0fa6ac176e |
+| ART | hivesurge-art | 1878560c-9387-4ac6-8be1-2da587381525 |
+| MON | hivesurge-monetization | 92ef1fa2-fd58-4fb8-aa4b-c8b812ec0c1c |
+| QA | hivesurge-qa | 00954027-24b6-4462-90ff-3836ad48a6f5 |
+| RES | hivesurge-research | ea700c8e-dfcf-4407-b51f-a9afd196881e |
+| REV | hivesurge-review | 84707fbf-3df5-44e5-86dd-b568e3edf03c (PR gate; PR docs in `prs/`) |
+
+**Hard rules (all milestones):** SANDBOX/TEST MODE ONLY — no real money, no live payment keys, no production
+deploys, no production Supabase project. Secrets only via `.env.local` (git-ignored); never commit keys.
+Every code task ships as a branch + `prs/NNN-*.md` and is merged only after REV approval.
+"Done" = acceptance criteria met + REV approved + (where gameplay changes) QA playtest logged in `playtests/`.
+
+## M2 — Slice completion & content (plan §7.1 days 10–14)
+
+| ID | Owner | Description | Acceptance criteria | Deps |
+| --- | --- | --- | --- | --- |
+| M2-1 | REV | Review + merge PR 002 (PR 001 already merged `bb45228`), tag `v0.1.0-slice` | PR 002 approved in `prs/`; `main` has tag; lint/test/build green on main | M0, M1 |
+| M2-2 | QA | Human browser playtest of M1 per checklist (phone + desktop) | Log in `playtests/` covering ≥1 phone + 1 desktop, every checklist item pass/fail, bugs filed as tasks | M2-1 |
+| M2-3 | ENG | Level data as JSON modules + schema validator | Levels load from `src/levels/*.json`; invalid JSON fails a unit test; Clover Run unchanged in balance tests | M2-1 |
+| M2-4 | DES | Design 4 handmade levels + 1 boss nest (difficulty curve doc) | `docs/design/levels-m2.md` with layouts, gates, target win rate per level | M2-3 |
+| M2-5 | ENG | Implement M2-4 levels + bot balance tests | 5 new levels playable; scripted bot: idle loses, aiming wins on each | M2-4 |
+| M2-6 | DES | FTUE spec: aim → gate → queen in < 30 s, no text walls (incl. aim-lead hint) | Spec doc with step flow, max 8 words per prompt | M2-1 |
+| M2-7 | ENG | Implement FTUE | New player reaches first queen launch in < 30 s in headless playtest; FTUE skipped on replay | M2-6 |
+| M2-8 | MON | Codify ethical guardrails (no ads first levels, caps, clear prices, odds shown) | `docs/monetization/guardrails.md`; each rule mapped to a unit test or REV checklist item | — |
+| M2-9 | ENG | Code-split Three.js / asset streaming; initial bundle < 3 MB | `npm run build` initial chunk < 3 MB (gzip reported in PR) | M2-1 |
+| M2-10 | QA | Low-end Android perf pass (500 units, 15-min session) | ≥ 50 fps median, no memory growth > 10% over 15 min; log in `playtests/` | M2-5, M2-9 |
+| M2-11 | QA | Accessibility pass (reduced motion, contrast, keyboard-only, audio-cue captions) | Checklist all pass or filed; WCAG AA contrast on HUD | M2-7 |
+| M2-12 | RES | Run 5–10 playtests locally on the box (localhost or LAN dev server, `npm run dev -- --host`); no external hosting; summarise vs plan §7.1 exit criteria | Report with completion rate, D0 retry rate, top 5 issues; sessions noted as local/LAN | M2-7 |
+
+## M3 — Premium art pass
+
+| ID | Owner | Description | Acceptance criteria | Deps |
+| --- | --- | --- | --- | --- |
+| M3-1 | ART | Original 2.5D/3D style guide (bees/wasps/garden), clean-room | `docs/art/style-guide.md`; DES + REV sign-off; no third-party IP references | M2-1 |
+| M3-2 | ART | Low-poly bee/wasp/queen models, KTX2/meshopt, animation atlas | Assets in `public/assets/`; ≤ 300 tris/unit; total ≤ 1.5 MB; 500 units at ≥ 50 fps (QA verified) | M3-1 |
+| M3-3 | ART | Environment kits per biome + UI icon set | ≥ 2 biome kits, ≥ 30 icons SVG; licence = original | M3-1 |
+| M3-4 | ART | Original SFX/music set (Opus) | All synth cues replaced; audio ≤ 1 MB; mute still works | M3-1 |
+| M3-5 | ENG | Integrate art/audio pipeline (loader, LOD, fallback to procedural) | Game runs if assets fail to load; build budget from M2-9 kept | M3-2, M3-3, M3-4 |
+| M3-6 | QA | Visual regression + perf re-test after art pass | Screenshot set updated; M2-10 thresholds still met | M3-5 |
+
+## M4 — Supabase SANDBOX backend (auth, cloud save, progress, stats, RLS)
+
+| ID | Owner | Description | Acceptance criteria | Deps |
+| --- | --- | --- | --- | --- |
+| M4-1 | ENG | Supabase **sandbox/dev** project on the FREE tier only — never prod. First run `list_projects` + `get_cost`; if cost is nonzero, STOP and flag to hivesurge-ceo (never call `confirm_cost`) | Cost check result logged in PR doc; $0 cost; project name contains `sandbox`; URL/anon key only in `.env.local`; documented in `docs/backend/README.md` | M2-1 |
+| M4-2 | ENG | Schema migrations: `profiles`, `saves` (jsonb + revision), `level_progress`, `player_stats`, `events`, `purchases_sandbox`, `admin_users` | Migrations in `supabase/migrations/`; apply cleanly on fresh branch | M4-1 |
+| M4-3 | ENG | RLS policies: users read/write only own rows; admin role via `admin_users`; events insert-only | RLS enabled on every table (advisor clean); SQL tests prove user A cannot read/write user B | M4-2 |
+| M4-4 | ENG | Auth: anonymous sign-in + optional email magic-link upgrade preserving data | Anon → email upgrade keeps same user id and save; tested | M4-2 |
+| M4-5 | ENG | Cloud save via `SaveBackend` + `mergeSaves` with optimistic concurrency on `revision` | Offline play then sync merges; conflict test passes; local-only still works if backend down | M4-3, M4-4 |
+| M4-6 | ENG | Progress + stats sync (stars per level, best scores, totals) and analytics drain to `events` | Rows appear for a test user after a battle; batching ≤ 1 request / 10 s | M4-5 |
+| M4-7 | QA | Backend test pass: RLS abuse cases, offline/online, multi-device | Test log in `playtests/`; zero cross-user data leakage | M4-6 |
+| M4-8 | REV | Security review of schema, RLS, key handling | Supabase advisors no ERROR; no secrets in git history | M4-7 |
+
+## M5 — Meta & monetisation MVP (Stripe TEST MODE purchases only)
+
+| ID | Owner | Description | Acceptance criteria | Deps |
+| --- | --- | --- | --- | --- |
+| M5-1 | DES | Meta design: collectible bee variants, chests (odds shown), cards + 4-slot loadout, hive base | `docs/design/meta-m5.md` with flows + wireframes | M2-12 |
+| M5-2 | MON | Economy sources/sinks sheet + 30-day sim + SKU catalog (No Ads, starter pack, gems) with test prices | Sheet in `docs/monetization/`; sim shows no hard paywall; SKUs map to M2-8 guardrails | M5-1, M2-8 |
+| M5-3 | RES | Benchmark Mob Control-style meta & pricing; regional loot-box restrictions | Report in `docs/research/`; list of regions where paid random items are disabled | — |
+| M5-4 | ENG | Implement collection, chests, cards/loadout, coin upgrades, hive base timers | Features playable; state persists via M4 cloud save; unit tests for economy math | M5-1, M4-5 |
+| M5-5 | ENG | Rewarded placements (pre-battle boost, chest skip, daily pack, away doubler) via sandbox ad adapter | Pacing rules from adPolicy tests still pass; caps enforced | M5-4 |
+| M5-6 | MON | Stripe **test mode** product/price setup (primary web purchase sandbox). RevenueCat deferred — only revisit with a written case from MON | Only `sk_test_`/`pk_test_` keys; products match M5-2 catalog | M5-2 |
+| M5-7 | ENG | Purchase flow: store UI → Stripe test-mode Checkout → entitlement | Test card 4242… grants entitlement; build refuses to start with a live key (`sk_live`/`pk_live` check test) | M5-6, M4-3 |
+| M5-8 | ENG | Server-side entitlement verification (Supabase edge function Stripe webhook, test-mode secret) writes `purchases_sandbox` | Webhook signature verified; client cannot grant itself items (RLS test) | M5-7 |
+| M5-9 | QA | Purchase test matrix: success, cancel, refund, restore, No-Ads removes interstitials | All cases logged pass; no real charge possible | M5-8 |
+| M5-10 | REV | Monetisation compliance review vs guardrails | Checklist from M2-8 all pass | M5-9 |
+
+## M6 — Admin panel (sandbox)
+
+| ID | Owner | Description | Acceptance criteria | Deps |
+| --- | --- | --- | --- | --- |
+| M6-1 | DES | Admin panel spec: player lookup, save inspect/reset, grant test currency, stats dashboard, purchase log, remote config | Spec doc with screens + roles | M4-6 |
+| M6-2 | ENG | Admin auth: Supabase login gated by `admin_users`; separate `/admin` Vite entry | Non-admin gets 403 at RLS level (test); admin bundle not in player bundle | M6-1, M4-3 |
+| M6-3 | ENG | Player lookup, save viewer/reset, grant test currency (audit-logged) | Every admin write creates an `admin_audit` row | M6-2 |
+| M6-4 | ENG | Stats dashboard: funnel (level_start/win/fail), ad pacing, sandbox purchase log | Charts render from `events`/`purchases_sandbox` for a seeded dataset | M6-2, M5-8 |
+| M6-5 | ENG | Remote config editor (difficulty, ad pacing, events) consumed by game | Config change reflected in game on next session; schema-validated | M6-2 |
+| M6-6 | QA | Admin panel test pass incl. privilege escalation attempts | Log in `playtests/`; no escalation | M6-5 |
+| M6-7 | REV | Security review of admin panel | Approved PR doc | M6-6 |
+
+## M7 — Content scale & live ops (sandbox)
+
+| ID | Owner | Description | Acceptance criteria | Deps |
+| --- | --- | --- | --- | --- |
+| M7-1 | ENG | Templated level generator with difficulty bands + validator bots | 100 generated levels all pass bot validator (idle loses, aim wins) | M2-5 |
+| M7-2 | DES | Rotating events, daily/weekly targets, streaks, season pass (free + premium track) design | Design doc with reward tables | M5-2 |
+| M7-3 | ENG | Implement events/targets/streaks + season pass (premium via sandbox purchase) | Driven by M6-5 remote config; tested with clock mock | M7-2, M6-5, M5-8 |
+| M7-4 | ENG | Platform adapters: Poki / CrazyGames / own-site in SDK sandbox modes | Build flag selects adapter; all pass platform tests; no production submissions | M5-5 |
+| M7-5 | ART | Seasonal/event art + bee variant skins | Assets meet M3 budgets | M7-2 |
+| M7-6 | RES | Rival hives (async raids, labelled bots) + leagues research → design input | Report with recommendation | M7-2 |
+| M7-7 | QA | Live-ops regression + full release-candidate playtest (sandbox) | RC checklist pass | M7-3, M7-4 |
+| M7-8 | REV | RC review; tag `v0.5.0-sandbox-rc` (no production deploy) | Tag exists; deploy only to local/preview | M7-7 |
+
+## Resolved questions (hivesurge-ceo, 2026-10-11 — see STATUS.md decision 28)
+
+1. ~~Purchases~~ → Stripe test mode is the primary web purchase sandbox; RevenueCat deferred unless MON makes a strong case.
+2. ~~Supabase project/cost~~ → Free tier only; ENG checks `list_projects`/`get_cost` first; any nonzero cost is stopped and flagged to the CEO, never confirmed.
+3. ~~Playtest hosting~~ → No external hosting; playtests run locally on the box via localhost or the LAN dev server. Revisit at M5.
+4. ~~Legacy owners~~ → `hivesurge-dev` = ENG, `hivesurge-test` = QA.
+
+## Research inbox (hivesurge-research → triaged weekly)
+
+- Lead moving ×3 gates rather than aiming at their current position — consider a subtle aim-lead hint in FTUE.
+- Near-miss defeat screen (nest % left) is implemented; test whether it lifts retries.
