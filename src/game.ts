@@ -20,6 +20,9 @@ import { applyMultiplier, computeRewards, type Rewards } from './sim/rewards';
 import { SIM_DT, World } from './sim/world';
 import { Hud } from './ui/hud';
 import { Input } from './ui/input';
+import { PerfOverlay } from './ui/perfOverlay';
+import { PerfStats, perfEnabledFromUrl, stressCountFromUrl } from './ui/perfStats';
+import { UnitKind } from './sim/types';
 
 type Phase = 'title' | 'battle' | 'result' | 'ad';
 
@@ -46,6 +49,9 @@ export class Game {
   private hitHapticAt = 0;
   private readonly proj = new THREE.Vector3();
   private ftue: Ftue | null = null;
+  private readonly perf = new PerfStats();
+  private readonly perfOverlay = new PerfOverlay(document.getElementById('app')!);
+  private readonly stress = stressCountFromUrl(location.search);
   private ftueReported = 0;
 
   constructor(store: SaveStore) {
@@ -61,6 +67,10 @@ export class Game {
     this.platform = new MockPlatform(this.overlay, {
       onAdStart: () => this.sfx.setMuted(true),
       onAdEnd: () => this.sfx.setMuted(this.save.settings.muted),
+    });
+    this.perfOverlay.visible = perfEnabledFromUrl(location.search);
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F3') this.perfOverlay.visible = !this.perfOverlay.visible;
     });
     window.addEventListener('resize', () => this.resize());
     document.addEventListener('visibilitychange', () => {
@@ -109,6 +119,24 @@ export class Game {
     this.hud?.setQueenFocus(f.step === FtueStep.Queen && w.queenReady);
     const lx = f.leadTargetX(w);
     this.scene.setLeadLine(lx === null ? null : { x: lx, y: w.level.gates[1].y });
+  }
+
+  /**
+   * Dev `?stress=N`: keep about N units alive (half bees from the hive, half wasps from the nest),
+   * topping up every frame because units constantly destroy each other.
+   */
+  private spawnStress(n: number): void {
+    const w = this.world;
+    const half = w.level.laneWidth / 2 - 0.5;
+    let k = w.stats.fired + w.wasps.count;
+    while (w.bees.count + w.wasps.count < n) {
+      const x = -half + ((k++ * 0.618) % 1) * 2 * half;
+      const beeShort = w.bees.count < n / 2;
+      const ok = beeShort
+        ? w.bees.spawn(UnitKind.Worker, x, 1.2 + (k % 7) * 0.4)
+        : w.wasps.spawn(UnitKind.Wasp, x, w.level.laneLength - 1 - (k % 7) * 0.4);
+      if (ok < 0) break;
+    }
   }
 
   private currentLevel(): LevelDef {
@@ -384,6 +412,12 @@ export class Game {
     this.last = now;
     if (this.phase === 'battle') this.tick(dt);
     this.scene.render(this.world, this.phase === 'ad' ? 0 : dt);
+    if (this.perfOverlay.visible) {
+      const info = this.scene.renderer.info.render;
+      this.perf.sample(frameMs, info.calls, info.triangles);
+      const units = this.world.bees.count + this.world.wasps.count;
+      this.perfOverlay.update(dt, this.perf, units, this.quality.pixelRatio);
+    }
   };
 
   private tick(dt: number): void {
@@ -406,6 +440,7 @@ export class Game {
       steps++;
     }
     if (steps === 5) this.acc = 0;
+    if (this.stress > 0) this.spawnStress(this.stress);
     if (this.ftue) this.updateFtueUi(w);
 
     if (this.input.firing) {
