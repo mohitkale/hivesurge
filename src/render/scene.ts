@@ -58,6 +58,13 @@ export class GameScene {
   private readonly unitTime = { value: 0 };
   private readonly biome: BiomeKit = BIOMES.clover;
   private readonly cannon = new THREE.Group();
+  private readonly leadLine = new THREE.Line(
+    new THREE.BufferGeometry().setAttribute(
+      'position',
+      new THREE.BufferAttribute(new Float32Array(6), 3),
+    ),
+    new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.4, gapSize: 0.3 }),
+  );
   private readonly nest = new THREE.Group();
   private readonly hive = new THREE.Group();
   private readonly gates: GateView[] = [];
@@ -203,6 +210,23 @@ export class GameScene {
     this.cannon.add(body);
     this.cannon.position.z = -0.2;
     this.scene.add(this.cannon);
+    this.leadLine.visible = false;
+    this.leadLine.frustumCulled = false;
+    this.scene.add(this.leadLine);
+  }
+
+  /** FTUE aim-ahead hint: dotted line from the cannon to (x, y); null hides it. */
+  setLeadLine(target: { x: number; y: number } | null): void {
+    if (!target) {
+      this.leadLine.visible = false;
+      return;
+    }
+    const pos = this.leadLine.geometry.getAttribute('position') as THREE.BufferAttribute;
+    pos.setXYZ(0, this.cannon.position.x, 0.3, -1.2);
+    pos.setXYZ(1, target.x, 0.3, -target.y);
+    pos.needsUpdate = true;
+    this.leadLine.computeLineDistances();
+    this.leadLine.visible = true;
   }
 
   private buildNest(): void {
