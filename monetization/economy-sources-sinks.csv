@@ -1,0 +1,27 @@
+currency,flow,item,amount,frequency,cap,source_ref,status
+coins,source,battle win,50-125 (50 + hive 0-30 + timeLeft/2),per win,none,CODE src/sim/rewards.ts,implemented
+coins,source,battle loss,0-20 (nestDamage*20),per loss,none,CODE src/sim/rewards.ts,implemented
+coins,source,win 2x rewarded ad,+100% win coins,per win,6/session 20/day,CODE applyMultiplier + ad-placements.md,implemented (caps proposed)
+coins,source,slots-full bonus,x1.5 win coins,per win when 4 slots full,none,META meta-m5.md,design
+coins,source,wood chest,30-60,per chest,none,META,design
+coins,source,silver chest,80-150,per chest,none,META,design
+coins,source,gold chest,200-400,per chest,none,META,design
+coins,source,royal chest,500,per chest,none,META,design
+coins,source,daily targets,60-100 each (3/day),daily,3/day,LIVE liveops-m7.md,design
+coins,source,weekly target upgrade bees,500,weekly,1/week,LIVE,design
+coins,source,login streak d1/d4,100 / 300,7-day cycle,1/day,LIVE,design
+coins,source,Honey Store idle,20/h per level,continuous,8h cap,META,design (not simulated)
+coins,source,starter_pack IAP,500,once,1,CODE platform.ts CATALOG,implemented (sandbox)
+coins,sink,bee upgrade L1-7,50/150/400/1000/2000/4000,per level,max level by rarity,META,design
+coins,sink,bee upgrade L7-10 (C/R),8000/16000/32000,per level,,ASSUMPTION x2/level,assumption
+coins,sink,hive rooms,200-12000,per level,room lvl <= player lvl/2,META,design (not simulated)
+gems,source,login d3/d6,5 / 10,7-day cycle,,LIVE,design
+gems,source,daily target 3 stars,5,daily,,LIVE,design
+gems,source,weekly boss / event,20 / 15,weekly,,LIVE,design
+gems,source,starter_pack / gems_small IAP,50 / 120,per purchase,,CODE CATALOG,implemented (sandbox)
+gems,sink,chest skip,1 per 5 min (3/8/20/35 full),per chest,,META,design
+gems,sink,extra builder / chest slot / cosmetics,TBD,,,META,undefined
+pollen,source,chests (odds shown),3/6/12/20 cards,per chest,pity L at 40,META,design
+pollen,sink,bee level-up,see POLLEN table,per level,max level,META,design
+pollen,overflow,convert at max,C5 R15 E50 L200 coins,,,META,design (not simulated)
+ad_time,source,chest timer halve rewarded,halve remaining,per chest,3/day,META + ad-placements.md,design
