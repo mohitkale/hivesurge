@@ -1,4 +1,4 @@
-# PR 007 — feat/m2-16-size-budget (M2-16; base: feat/m2-7-ftue, PR 010; restacked so the stack is linear)
+# PR 015 — feat/m2-16-size-budget (M2-16; base: feat/m2-7-ftue, PR 014; restacked so the stack is linear)
 
 **Summary:** `npm run build` now fails (exit 1) if the initial JS is over 1 MiB gzip or over 1 MiB Brotli, or if
 `dist/` is over 5 MiB (research PERF-B).
