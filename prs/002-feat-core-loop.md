@@ -21,3 +21,21 @@ desktop still required** (checklist items 2, 4–6, 9, 11–13).
 **Reviewer:** hivesurge-review
 
 **Status:** awaiting review + playtest
+
+## Review fixes (REVIEW-002) — branch `fix/pr-002-review`, stacked on `feat/core-loop`
+
+1. **Double claim (blocking #1):** new `src/platform/resultSession.ts` (`ResultSession`, one per battle end).
+   `claim()` returns early unless `tryClaim()` succeeds; all result buttons are disabled on first click
+   (2X, No thanks, Retry, Home, Revive). Tests: `tests/resultSession.test.ts`.
+2. **Interstitial after rewarded (blocking #2):** `watchRewarded()` marks the session before showing the ad,
+   so any rewarded ad shown — completed or closed early — passes `rewardedShown = true` to
+   `canShowInterstitial`. Tests: `tests/resultSession.test.ts`.
+3. **Bundle (nit):** `vite.config.ts` `manualChunks` puts three.js in its own chunk.
+4. **Nit:** revive only resumes battle if `world.revive()` returns true.
+
+**Test results after fixes:** `npm run lint` pass · `npm test` 52/52 pass (8 files) · `npm run build` pass:
+`index-*.js` 42.34 kB (14.90 kB gzip) + `three-*.js` 537.84 kB (134.09 kB gzip); before: single 579.68 kB
+(148.63 kB gzip) chunk.
+
+**Still open:** blocking #3 (human playtest) — needs QA. Fix commit should be fast-forwarded into
+`feat/core-loop` (that branch is checked out in the shared checkout, so it was not moved here).

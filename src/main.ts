@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { haptic, Sfx } from './audio/sfx';
 import { canShowInterstitial } from './platform/adPolicy';
+import { ResultSession } from './platform/resultSession';
 import { MockPlatform } from './platform/mockPlatform';
 import { CATALOG, type Sku } from './platform/platform';
 import { Analytics } from './analytics/analytics';
@@ -29,6 +30,7 @@ class Game {
   private readonly quality = new QualityScaler(window.devicePixelRatio || 1);
   private world = new World(CLOVER_RUN);
   private scene: GameScene;
+  private result = new ResultSession();
   private hud: Hud | null = null;
   private phase: Phase = 'title';
   private acc = 0;
@@ -186,6 +188,7 @@ class Game {
       revives: w.revives,
     });
     this.phase = 'result';
+    this.result = new ResultSession();
     const rewards = computeRewards({
       outcome: w.outcome,
       nestHp: w.nestHp,
@@ -210,10 +213,12 @@ class Game {
     this.analytics.track('ad_offered', { placement: 'win_double', type: 'rewarded' });
     this.bind({
       double: async () => {
+        if (this.result.isClaimed) return;
+        this.disableResultButtons();
         const ok = await this.watchRewarded('win_double');
-        this.claim(ok ? applyMultiplier(r, 2) : r, ok);
+        this.claim(ok ? applyMultiplier(r, 2) : r);
       },
-      claim: () => this.claim(r, false),
+      claim: () => this.claim(r),
     });
   }
 
@@ -230,20 +235,26 @@ class Game {
     if (canRevive) this.analytics.track('ad_offered', { placement: 'revive', type: 'rewarded' });
     this.bind({
       revive: async () => {
-        if (await this.watchRewarded('revive')) {
-          this.world.revive();
+        if (this.result.isClaimed) return;
+        this.disableResultButtons();
+        if ((await this.watchRewarded('revive')) && this.world.revive()) {
+          this.result = new ResultSession();
           this.overlay.innerHTML = '';
           this.input.enabled = true;
           this.phase = 'battle';
           this.platform.gameplayStart();
         } else this.showLoss(r);
       },
-      retry: () => this.claim(r, false, true),
-      home: () => this.claim(r, false),
+      retry: () => this.claim(r, true),
+      home: () => this.claim(r),
     });
   }
 
-  private async claim(r: Rewards, rewardedShown: boolean, replay = false): Promise<void> {
+  private async claim(r: Rewards, replay = false): Promise<void> {
+    // Idempotent per battle: a second click (or 2X then "No thanks") never credits again.
+    if (!this.result.tryClaim()) return;
+    this.disableResultButtons();
+    const rewardedShown = this.result.rewardedShown;
     this.save.coins += r.coins;
     const prev = this.save.bestStars[CLOVER_RUN.id] ?? 0;
     this.save.bestStars[CLOVER_RUN.id] = Math.max(prev, r.stars);
@@ -272,10 +283,18 @@ class Game {
   private async watchRewarded(p: 'win_double' | 'revive'): Promise<boolean> {
     const prev = this.phase;
     this.phase = 'ad';
+    // Any rewarded ad shown (even closed early) blocks an interstitial on this transition.
+    this.result.markRewardedShown();
     const ok = await this.platform.showRewarded(p);
     this.analytics.track('ad_watched', { placement: p, completed: ok, type: 'rewarded' });
     this.phase = prev;
     return ok;
+  }
+
+  private disableResultButtons(): void {
+    this.overlay
+      .querySelectorAll<HTMLButtonElement>('[data-a]')
+      .forEach((b) => (b.disabled = true));
   }
 
   private bind(handlers: Record<string, () => void>): void {
