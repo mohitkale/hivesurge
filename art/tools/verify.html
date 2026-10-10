@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <body style="margin: 0">
+    <canvas id="c" width="390" height="844"></canvas>
+    <script type="module">
+      // Asset verification: GLBs decode (meshopt), Opus cues decode, 500-unit render fps.
+      import * as THREE from 'three';
+      import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+      import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+      import { beeGeometry, waspGeometry } from '/src/art/models.ts';
+      import { CUES } from '/src/audio/sfx.ts';
+      const out = { glb: {}, audio: {} };
+      const names = await (await fetch('/art/tools/models.json')).json();
+      const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+      for (const n of names) {
+        try {
+          const g = await loader.loadAsync('/assets/models/' + n);
+          let t = 0;
+          g.scene.traverse((o) => {
+            if (o.isMesh)
+              t +=
+                (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) /
+                3;
+          });
+          out.glb[n] = t;
+        } catch (e) {
+          out.glb[n] = 'ERR ' + e.message;
+        }
+      }
+      const ctx = new OfflineAudioContext(1, 48000, 48000);
+      for (const c of CUES) {
+        try {
+          const b = await ctx.decodeAudioData(
+            await (await fetch('/assets/audio/' + c + '.ogg')).arrayBuffer(),
+          );
+          out.audio[c] = +b.duration.toFixed(2);
+        } catch (e) {
+          out.audio[c] = 'ERR';
+        }
+      }
+      const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+      const scene = new THREE.Scene();
+      scene.add(new THREE.HemisphereLight('#fff', '#888', 2));
+      const cam = new THREE.PerspectiveCamera(62, 390 / 844, 0.1, 200);
+      cam.position.set(0, 21, 12);
+      cam.lookAt(0, 0, -20);
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+      const mk = (g, n) => {
+        const m = new THREE.InstancedMesh(g, mat, n);
+        m.frustumCulled = false;
+        scene.add(m);
+        return m;
+      };
+      // ?old=1 renders the previous placeholder (sphere body + 2 sphere wings per unit) for comparison.
+      const old = location.search.includes('old');
+      const sph = () => {
+        const g = new THREE.SphereGeometry(0.22, 10, 8);
+        g.scale(1, 1, 1.35);
+        return g;
+      };
+      const wing = () => new THREE.SphereGeometry(1, 8, 6).scale(0.2, 0.03, 0.11);
+      const meshes = old
+        ? [mk(sph(), 300), mk(sph(), 200), mk(wing(), 1000)]
+        : [mk(beeGeometry(0.42), 300), mk(waspGeometry(0.5), 200)];
+      const M = new THREE.Matrix4();
+      let frames = 0;
+      const t0 = performance.now();
+      while (performance.now() - t0 < 5000) {
+        const t = performance.now() / 1000;
+        meshes.forEach((m, k) => {
+          for (let i = 0; i < m.count; i++) {
+            M.makeTranslation(
+              ((i * 37) % 90) / 10 - 4.5 + Math.sin(t + i) * 0.2,
+              0.5,
+              -((i * 13) % 400) / 10 - k * 2,
+            );
+            m.setMatrixAt(i, M);
+          }
+          m.instanceMatrix.needsUpdate = true;
+        });
+        r.render(scene, cam);
+        r.getContext().finish?.();
+        frames++;
+        await new Promise((res) => requestAnimationFrame(res));
+      }
+      out.fps500 = +(frames / ((performance.now() - t0) / 1000)).toFixed(1);
+      window.__out = out;
+      document.title = 'ready';
+    </script>
+  </body>
+</html>

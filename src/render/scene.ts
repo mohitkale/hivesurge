@@ -4,7 +4,16 @@ import { UnitKind, type GateDef, type LevelDef } from '../sim/types';
 import type { UnitPool } from '../sim/units';
 import type { World } from '../sim/world';
 import { Particles } from './particles';
-import { drawLabel, grassTexture, labelTexture, stripeTexture } from './textures';
+import { drawLabel, grassTexture, labelTexture } from './textures';
+import {
+  beeGeometry,
+  cannonGeometry,
+  hornetGeometry,
+  nestGeometry,
+  queenGeometry,
+  waspGeometry,
+} from '../art/models';
+import { BIOMES, type BiomeKit } from '../art/biomes';
 
 import { COLORS, type Palette } from '../ui/theme';
 
@@ -37,7 +46,8 @@ export class GameScene {
   private readonly level: LevelDef;
   private readonly bees: Record<'worker' | 'queen', THREE.InstancedMesh>;
   private readonly wasps: Record<'wasp' | 'hornet', THREE.InstancedMesh>;
-  private readonly wings: THREE.InstancedMesh;
+  private readonly unitTime = { value: 0 };
+  private readonly biome: BiomeKit = BIOMES.clover;
   private readonly cannon = new THREE.Group();
   private readonly nest = new THREE.Group();
   private readonly hive = new THREE.Group();
@@ -64,8 +74,8 @@ export class GameScene {
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.scene.background = new THREE.Color('#ffd9a8');
-    this.scene.fog = new THREE.Fog('#ffd9a8', 45, 75);
+    this.scene.background = new THREE.Color(this.biome.sky);
+    this.scene.fog = new THREE.Fog(this.biome.fog, 45, 75);
 
     this.scene.add(new THREE.HemisphereLight('#fff6e0', '#7a5aa0', 1.6));
     const sun = new THREE.DirectionalLight('#ffffff', 1.6);
@@ -74,22 +84,13 @@ export class GameScene {
 
     this.buildLane();
     this.bees = {
-      worker: this.unitMesh(stripeTexture(PALETTE.honey, '#2b1d0e'), 600, 0.22),
-      queen: this.unitMesh(stripeTexture('#ffb000', '#7a2e8e', 2), 200, 0.6),
+      worker: this.unitMesh(beeGeometry(0.42), 600, 0.42, 22),
+      queen: this.unitMesh(queenGeometry(0.95), 200, 0.95, 16),
     };
     this.wasps = {
-      wasp: this.unitMesh(stripeTexture(PALETTE.plum, PALETTE.orange), 400, 0.24),
-      hornet: this.unitMesh(stripeTexture('#4a1d63', '#ffb34d', 2), 100, 0.45),
+      wasp: this.unitMesh(waspGeometry(0.5), 400, 0.5, 30),
+      hornet: this.unitMesh(hornetGeometry(0.85), 100, 0.85, 24),
     };
-    const wingGeo = new THREE.SphereGeometry(1, 8, 6);
-    wingGeo.scale(1, 0.15, 0.55);
-    this.wings = new THREE.InstancedMesh(
-      wingGeo,
-      new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.7 }),
-      2000,
-    );
-    this.wings.frustumCulled = false;
-    this.scene.add(this.wings);
     this.scene.add(this.particles.mesh);
     this.buildCannon();
     this.buildNest();
@@ -125,25 +126,59 @@ export class GameScene {
       r.position.set(side * (L.laneWidth / 2 + 0.15), 0.25, -L.laneLength / 2 + 1);
       this.scene.add(r);
     }
-    const petal = new THREE.SphereGeometry(0.35, 8, 6);
-    const colors = ['#ff6fa8', '#ffffff', '#b78cff', '#ffd23f'];
+    // Biome props scattered along the lane edges (one InstancedMesh per prop type).
+    const kit = this.biome;
+    const propMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+    const slots: Record<string, THREE.Matrix4[]> = {};
     for (let i = 0; i < 26; i++) {
       for (const side of [-1, 1]) {
-        const f = new THREE.Mesh(
-          petal,
-          new THREE.MeshLambertMaterial({ color: colors[(i + side + 4) % 4] }),
+        const id = kit.scatter[(i * 3 + (side + 1)) % kit.scatter.length];
+        const m = new THREE.Matrix4().compose(
+          new THREE.Vector3(side * (L.laneWidth / 2 + 1.1 + ((i * 7) % 3) * 0.6), 0, -i * 1.8 + 3),
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), i * 1.3),
+          new THREE.Vector3(1.4, 1.4, 1.4),
         );
-        f.position.set(side * (L.laneWidth / 2 + 1.1 + ((i * 7) % 3) * 0.6), 0.3, -i * 1.8 + 3);
-        this.scene.add(f);
+        (slots[id] ??= []).push(m);
       }
+    }
+    for (const [id, mats] of Object.entries(slots)) {
+      const inst = new THREE.InstancedMesh(kit.props[id](), propMat, mats.length);
+      mats.forEach((m, k) => inst.setMatrixAt(k, m));
+      this.scene.add(inst);
     }
   }
 
-  private unitMesh(tex: THREE.Texture, count: number, radius: number): THREE.InstancedMesh {
-    const geo = new THREE.SphereGeometry(radius, 10, 8);
-    geo.rotateX(Math.PI / 2); // stripes run across the body
-    geo.scale(1, 1, 1.35);
-    const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ map: tex }), count);
+  /**
+   * Vertex-coloured, flat-shaded unit with GPU wing flap: vertices tagged
+   * aWing = ±1 rotate around the body axis; phase varies per instance.
+   */
+  private unitMesh(
+    geo: THREE.BufferGeometry,
+    count: number,
+    scale: number,
+    flapHz: number,
+  ): THREE.InstancedMesh {
+    const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+    const uTime = this.unitTime;
+    const wingY = 0.36 * scale;
+    mat.onBeforeCompile = (sh) => {
+      sh.uniforms.uTime = uTime;
+      sh.vertexShader = sh.vertexShader
+        .replace(
+          '#include <common>',
+          '#include <common>\nattribute float aWing;\nuniform float uTime;',
+        )
+        .replace(
+          '#include <begin_vertex>',
+          `#include <begin_vertex>
+          if (aWing != 0.0) {
+            float a = aWing * (0.25 + 0.55 * sin(uTime * ${flapHz.toFixed(1)} + float(gl_InstanceID) * 1.7));
+            vec2 p = vec2(transformed.x, transformed.y - ${wingY.toFixed(3)});
+            transformed.xy = vec2(p.x * cos(a) - p.y * sin(a), p.x * sin(a) + p.y * cos(a) + ${wingY.toFixed(3)});
+          }`,
+        );
+    };
+    const mesh = new THREE.InstancedMesh(geo, mat, count);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     mesh.frustumCulled = false;
     this.scene.add(mesh);
@@ -151,51 +186,24 @@ export class GameScene {
   }
 
   private buildCannon(): void {
-    const base = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.75, 0.9, 0.5, 6),
-      new THREE.MeshLambertMaterial({ color: '#1f8f86' }),
+    const body = new THREE.Mesh(
+      cannonGeometry(),
+      new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
     );
-    base.position.y = 0.25;
-    const pot = new THREE.Mesh(
-      new THREE.SphereGeometry(0.62, 14, 10),
-      new THREE.MeshLambertMaterial({ color: PALETTE.teal }),
-    );
-    pot.position.y = 0.8;
-    const barrel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.28, 0.36, 1.1, 10),
-      new THREE.MeshLambertMaterial({ color: PALETTE.honey }),
-    );
-    barrel.rotation.x = -Math.PI / 2.6;
-    barrel.position.set(0, 1.05, -0.45);
-    barrel.name = 'barrel';
-    this.cannon.add(base, pot, barrel);
+    body.name = 'barrel';
+    this.cannon.add(body);
     this.cannon.position.z = -0.2;
     this.scene.add(this.cannon);
   }
 
   private buildNest(): void {
     const L = this.level;
-    const mat = new THREE.MeshLambertMaterial({ color: PALETTE.plum });
-    const band = new THREE.MeshLambertMaterial({ color: PALETTE.orange });
-    for (let i = 0; i < 5; i++) {
-      const r = 2.6 - Math.abs(i - 1.6) * 0.55;
-      const ring = new THREE.Mesh(
-        new THREE.CylinderGeometry(r * 0.9, r, 0.9, 12),
-        i % 2 ? band : mat,
-      );
-      ring.position.y = 0.45 + i * 0.85;
-      this.nest.add(ring);
-    }
-    const hole = new THREE.Mesh(
-      new THREE.CircleGeometry(0.7, 16),
-      new THREE.MeshBasicMaterial({ color: '#1b0b24' }),
+    this.nest.add(
+      new THREE.Mesh(
+        nestGeometry(L.laneWidth),
+        new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
+      ),
     );
-    hole.position.set(0, 1.5, 2.25);
-    this.nest.add(hole);
-    // Side walls make the full top edge read as "nest territory".
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(L.laneWidth, 0.8, 0.6), mat);
-    wall.position.set(0, 0.4, 0.6);
-    this.nest.add(wall);
     this.nest.position.set(0, 0, -L.laneLength - 1.4);
     this.scene.add(this.nest);
   }
@@ -317,7 +325,7 @@ export class GameScene {
     const L = this.level;
     this.syncUnits(world.bees, this.bees.worker, this.bees.queen, UnitKind.Worker, true);
     this.syncUnits(world.wasps, this.wasps.wasp, this.wasps.hornet, UnitKind.Wasp, false);
-    this.syncWings(world);
+    this.unitTime.value = this.t;
 
     // Cannon
     this.cannon.position.x = world.cannonX;
@@ -407,28 +415,6 @@ export class GameScene {
     big.count = nb;
     small.instanceMatrix.needsUpdate = true;
     big.instanceMatrix.needsUpdate = true;
-  }
-
-  private syncWings(world: World): void {
-    let n = 0;
-    const flap = Math.sin(this.t * 60) * 0.5;
-    for (const pool of [world.bees, world.wasps]) {
-      for (let i = 0; i < pool.count && n < this.wings.instanceMatrix.count - 1; i += 1) {
-        const k = pool.kind[i];
-        const r = k === UnitKind.Queen ? 0.55 : k === UnitKind.Hornet ? 0.42 : 0.2;
-        for (const side of [-1, 1]) {
-          this.q.setFromAxisAngle(this.v.set(0, 0, 1), side * (0.4 + flap));
-          this.m.compose(
-            this.v.set(pool.x[i] + side * r * 0.9, 0.55 + r, -pool.y[i]),
-            this.q,
-            this.s.set(r * 0.9, r * 0.9, r * 0.9),
-          );
-          this.wings.setMatrixAt(n++, this.m);
-        }
-      }
-    }
-    this.wings.count = n;
-    this.wings.instanceMatrix.needsUpdate = true;
   }
 
   dispose(): void {
