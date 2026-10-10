@@ -1,8 +1,8 @@
-# PR 010 — art/m3-runtime (base: feat/m2-9-code-split @ 988dd35, PR 006)
+# PR 013 — art/m3-runtime (base: feat/m2-9-code-split @ 988dd35, PR 006)
 
-**Part 1 of 3 of the former PR 007 (art/m3-premium-pass), split per REVIEW-007.** Stack: PR 010 `art/m3-runtime` →
-PR 011 `art/m3-assets` → PR 012 `art/m2-7-ftue-visuals`. Merge order: after PRs 002, 005 and 006, then 010, 011, 012.
-PR number 007 was already used on another branch (`feat/m2-16-size-budget`), so these PRs use the free numbers 010–012.
+**Part 1 of 3 of the former PR 007 (art/m3-premium-pass), split per REVIEW-007.** Stack: PR 013 `art/m3-runtime` →
+PR 011 `art/m3-assets` → PR 012 `art/m2-7-ftue-visuals`. Merge order: after PRs 002, 005 and 006, then 013, 011, 012.
+PR numbers are assigned in `prs/INDEX.md` on main (CONTRIBUTING.md rule): 013 (this PR), 011 and 012. 007 stays the record of the pre-split PR.
 
 **Tasks:** M3-1 (style guide, **DES approved**, REV approved the code), runtime parts of M3-2/M3-3/M3-4 and M7-5.
 
