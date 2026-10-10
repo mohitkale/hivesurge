@@ -55,10 +55,50 @@ Biome palettes live in `src/art/biomes.ts` (sky, fog, lane, soil, rail).
    (crown, horns), not just scale.
 6. **Skins keep the contract.** Bee skins may retint (body luminance > 0.35 linear, stripe < 0.06) and add
    ONE small accessory. They never make a bee dark or angular. Enforced in tests.
-7. **Gates are never colour-only.** They also use symbols (×, +, −), as already done in the CB palette.
+7. **Gates are never colour-only.** They also use symbols (×, +, −). See §5 for gate colours.
 8. Check: `art/screenshots/after-model-sheet.png`, bottom two rows (bees vs wasps at 24 px and 16 px).
 
-## 5. Style and technique
+## 5. Gates (DES change requests 1 and 2)
+
+**Colour rule.** Each gate kind has its own hue, every gate colour is at least **3:1** (WCAG 2.x)
+against every lane colour, and no gate reuses team teal (teal always means "ours"). Gate colours are
+dark and saturated, and white label text on them is at least 4.5:1. Meaning never depends on colour
+alone: symbols `+`, `×`, `−` and the word "trap" stay. Tokens: `gateAdd`, `gateMul`, `gateTrap` in
+`src/ui/theme.ts` (default and colour-blind palettes). Enforced by `tests/gate-contrast.test.ts`.
+
+| Kind              | Default           | Colour-blind (Okabe-Ito, darkened) |
+| ----------------- | ----------------- | ---------------------------------- |
+| Add (safe)        | blue `#1a47b8`    | blue `#00508a`                     |
+| Multiply (greedy) | violet `#5b1fb0`  | reddish purple `#7a2a5e`           |
+| Trap              | crimson `#a10f2a` | dark vermillion `#8a3800`          |
+
+WCAG contrast against the lane colours (grass base/band, Clover Meadow, Sunset Orchard), with the old
+colours for comparison:
+
+| Gate | Hex | #7cc46a | #86cd73 | #6db35c | #a7c45a | #97b54d | min | white text |
+| add | `#1a47b8` | 3.78 | 4.17 | 3.13 | 4.05 | 3.42 | **3.13** | 7.96 |
+| mul | `#5b1fb0` | 4.39 | 4.85 | 3.64 | 4.71 | 3.98 | **3.64** | 9.26 |
+| trap | `#a10f2a` | 3.81 | 4.20 | 3.15 | 4.08 | 3.45 | **3.15** | 8.02 |
+| CB add | `#00508a` | 3.96 | 4.37 | 3.28 | 4.25 | 3.59 | **3.28** | 8.35 |
+| CB mul | `#7a2a5e` | 4.29 | 4.74 | 3.56 | 4.61 | 3.89 | **3.56** | 9.05 |
+| CB trap | `#8a3800` | 3.76 | 4.15 | 3.12 | 4.04 | 3.41 | **3.12** | 7.94 |
+| old add | `#5fb84a` | 1.18 | 1.30 | 1.02 | 1.27 | 1.07 | **1.02** | 2.49 |
+| old mul | `#2ec4b6` | 1.03 | 1.13 | 1.17 | 1.10 | 1.07 | **1.03** | 2.17 |
+| old trap | `#e2557a` | 1.71 | 1.89 | 1.42 | 1.84 | 1.55 | **1.42** | 3.61 |
+
+**Gate build.** Translucent panel (50 %) + a **solid beam** in the gate colour + label plate. The beam
+and plate carry the contrast, so the panel can stay see-through.
+
+**Label legibility.** The label plate is filled with the gate colour, with a 12 px ink `#2a1838` rim and
+a 5 px white inner rim. The font is 900 weight and the text is white with an ink stroke. Labels render
+on top (no depth test) so swarms never hide them. Labels tilt toward the camera (−0.75 rad) and grow
+with distance (`h = 1.1 × (1 + 1.5 × y / laneLength)` world units).
+**Minimum:** the farthest gate's label glyphs must be **≥ 18 CSS px** tall on a 360 px wide viewport
+(the plate is ≥ 32 px). Measured with `art/tools/label-measure.mjs`: farthest row (y = 25) glyphs are
+18.5 px and the plate is 32.9 px; the nearest row is 19.6 / 34.8 px. Screenshot: `art/screenshots/gates-360.png`.
+**Trap state:** the count goes down (`−25` … `−1`), then the label greys out as "✓ broken" (non-blocking DES note, kept).
+
+## 6. Style and technique
 
 - Flat-shaded `MeshLambertMaterial`, vertex colours, faceted normals. No textures, no PBR, no outlines.
 - Each unit is ONE merged geometry with an `aWing` attribute (−1/0/+1). Wings flap in the vertex shader
@@ -67,7 +107,7 @@ Biome palettes live in `src/art/biomes.ts` (sky, fog, lane, soil, rail).
 - Icons: 64×64 grid, 4 px ink outline, rounded joins, palette fills, readable at 24 px.
 - Audio: synthesised from math expressions (`art/tools/make-audio.sh`), Ogg/Opus mono 48 kHz.
 
-## 6. Load budget (PLAN M3-2/M3-3/M3-4, kept for M7-5)
+## 7. Load budget (PLAN M3-2/M3-3/M3-4, kept for M7-5)
 
 | Budget                                             | Limit       | Current                                                              |
 | -------------------------------------------------- | ----------- | -------------------------------------------------------------------- |
@@ -81,7 +121,7 @@ Biome palettes live in `src/art/biomes.ts` (sky, fog, lane, soil, rail).
 Non-unit props (cannon 264, nest 382 tris) have one instance each, so the per-unit budget does not apply.
 Re-check with `npx vitest run tests/art.test.ts`.
 
-## 7. Pipeline
+## 8. Pipeline
 
 - Source of truth: `src/art/models.ts`, `biomes.ts`, `skins.ts`, `palette.ts` (used at runtime too).
 - `npx tsx art/tools/export-assets.ts` (needs `gltfpack`; set `GLTFPACK=`) writes meshopt-compressed GLBs.
