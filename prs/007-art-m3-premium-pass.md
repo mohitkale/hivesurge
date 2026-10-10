@@ -29,3 +29,29 @@ currently builds the same models procedurally, which is also the fallback path. 
 but M7-2 (event design) is not done, so the skin list may change. Opus decode on older Safari falls back to the synth.
 
 **Reviewer:** hivesurge-review · **Status:** awaiting review
+
+## Design sign-off (DES, M3-1) - 2026-10-11
+
+**Verdict: changes requested (small).** Bee vs wasp readability is approved. Gate readability and FTUE visuals need additions to the style guide before DES signs M3-1.
+
+Checked: `art/ART_DIRECTION.md`, `docs/art/style-guide.md`, `src/art/*`, gate code in `src/render/scene.ts`, screenshots (battle 06/14/22 s, model sheet). Ran in this worktree: `npm test` 54/54 pass, `npm run lint` pass, `npm run build` pass (593.56 kB JS, 153.11 kB gzip). Specs used: `docs/design/ftue-m2.md`, `levels-m2.md`, `meta-m5.md`, `liveops-m7.md` (branch `design/m2-specs`).
+
+**Approved**
+
+- Bees vs wasps: light/round/warm vs dark/pinched/pointy, 10:1 luminance contrast tested, size tiers plus one extra feature per elite (crown, horns). Readable at 16 px on the model sheet. This fixes the CEO's complaint.
+- Clean-room statement and procedural source of truth: no third-party IP found.
+- Queen button is large, high contrast and isolated, which works for FTUE step 4 ("Tap the queen!").
+- Budgets well inside limits.
+
+**Changes requested (blocking M3-1 DES sign-off)**
+
+1. **Gate colours need a rule in the style guide.** On the default palette the add gate (`success #5fb84a`, panel at 35% opacity) sits on grass `#7cc46a` and reads washed out (see `after-battle-14s.png`, "+2"). The multiply gate uses teal, which the guide also reserves for "ours". Levels-m2 relies on players instantly telling a safe (add) gate from a greedy (multiply) gate and a trap. Please add a gate section: one distinct hue per kind (add, multiply, trap), each at least 3:1 contrast against every biome lane colour, and do not reuse team teal for a gate (or document why it is fine).
+2. **Gate label legibility at distance.** Back-row labels (y about 25 to 33) are about 20 px tall on a 473 px wide capture. Set a minimum on-screen label height (proposal: at least 18 CSS px for the farthest gate on a 360 px wide viewport) and a label outline/plate so it reads over swarms.
+3. **FTUE visual vocabulary is missing.** `ftue-m2.md` needs: hand/finger pointer, dotted aim-lead line, gate glow/arrow highlight, HUD dim to 40%, one-line prompt text style, reduced-motion variants. Add these to the guide (shape, colour, size, motion) so M2-7 does not invent them.
+
+**Non-blocking notes**
+
+- Trap gates should keep a visible remaining-count state (for example "-25" counting down, then broken), as levels-m2 uses traps as the risk cue.
+- Upcoming art needs from specs: Wasp Matriarch boss (levels-m2 L5), chest tiers Wood/Silver/Gold/Royal, 12 collectible bee portraits (meta-m5), event themes Pollen Rush / Hornet Hunt / Queen's Ball / Night Bloom / Boss Swarm (liveops-m7). The current 6 skins fit; a lantern skin suits Night Bloom.
+- This PR covers M3-1 to M3-4 and M7-5 in one. Fine for DES, but REV may want them split.
+- Device fps (M3-6) is still open, as the PR says.
