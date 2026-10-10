@@ -17,18 +17,28 @@ _Renumbered from 003 (hivesurge-ba's PR 003 is chore/plan-m2-m7)._
 - `tests/levels.test.ts`: 6 tests. Original tuning preserved; exact JSON round-trip; malformed data rejected; 32-gate
   cap; integer values and counts; lane fit.
 
-**Test results:** `npm run lint` pass · `npm test` 60/60 (9 files) · `npm run build` pass: `index` 44.71 kB
-(15.75 kB gzip) + `three` 537.84 kB (134.09 kB gzip), plus Vite's >500 kB chunk warning.
+- **Schema extensions (DES proposal 1, widened M2-3):**
+  - `WaveDef` takes exactly one of `at` or `trigger`. Trigger waves spawn via `World.fireTrigger(name)`, once per
+    name (used by the FTUE in M2-7).
+  - New enemy `matriarch` (`UnitKind.Matriarch`: hp 120, speed 1.5, radius 1.0). It takes 1/3 damage per contact,
+    so it costs about 3 bees per hp; this is my reading of the spec's "kills 3 bees per contact".
+  - Optional `bossPhases[]` with `nestBelow`, `burst`, `repeat` (every N s) and `gateSpeedScale`. Gates can take
+    `fromPhase`; they stay off-lane and invisible until that phase.
+  - The validator checks phase order, `fromPhase` range and enemy kinds.
+  - Render: inactive gates are hidden, and the Matriarch reuses the hornet mesh at 2.2× scale (art in M3).
+  - Tests: `tests/levelSchemaExt.test.ts` (5).
 
-**Acceptance criteria (PLAN M2-3):**
+**Test results:** `npm run lint` pass · `npm test` 65/65 (10 files) · `npm run build` pass: `index` 47.39 kB
+(16.62 kB gzip) + `three` 537.84 kB (134.09 kB gzip), plus Vite's >500 kB chunk warning.
 
-- Levels load from `src/levels/*.json`: met.
-- Invalid JSON fails a unit test: met.
-- Clover Run unchanged in balance tests: met.
-- **Not yet:** the widened criterion (optional `waveTrigger`, `bossPhases` and Wasp Matriarch accepted by the schema,
-  with tests) is still to come in a follow-up commit on this branch.
+**Acceptance criteria (PLAN M2-3):** all met.
 
-**Playtest notes:** No gameplay change. Human playtest not done.
+- Levels load from `src/levels/*.json`.
+- Invalid JSON fails unit tests.
+- Clover Run is unchanged in the balance tests.
+- `waveTrigger` (the field is named `trigger`), `bossPhases` and the Matriarch are accepted by the schema, with tests.
+
+**Playtest notes:** No gameplay change for Clover Run. Human playtest not done.
 
 **Reviewer:** hivesurge-review
 

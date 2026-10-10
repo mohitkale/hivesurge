@@ -1,7 +1,24 @@
 import { crossesGate, gateSpawnCount, gateX } from './gates';
 import { SpatialGrid } from './grid';
 import { createRng } from './rng';
-import { UNIT_STATS, UnitKind, type BattleOutcome, type LevelDef, type SimEvent } from './types';
+import {
+  UNIT_STATS,
+  UnitKind,
+  type BattleOutcome,
+  type EnemyKind,
+  type LevelDef,
+  type SimEvent,
+  type WaveDef,
+} from './types';
+
+/** Matriarch takes 1/3 damage per contact: it costs about 3 bees per hp. */
+export const MATRIARCH_DAMAGE_TAKEN = 1 / 3;
+
+const ENEMY_UNIT: Record<EnemyKind, UnitKind> = {
+  wasp: UnitKind.Wasp,
+  hornet: UnitKind.Hornet,
+  matriarch: UnitKind.Matriarch,
+};
 import { UnitPool } from './units';
 
 export const SIM_DT = 1 / 60;
@@ -42,6 +59,12 @@ export class World {
   private readonly trapLeft: number[];
   private readonly gateXs: number[];
   private readonly waspGrid: SpatialGrid;
+  /** Timed waves sorted by `at`; trigger waves are spawned by fireTrigger(). */
+  private readonly timedWaves: WaveDef[];
+  private readonly firedTriggers = new Set<string>();
+  /** Current boss phase (0 = none entered yet). */
+  bossPhase = 0;
+  private repeatTimers: number[] = [];
 
   constructor(level: LevelDef) {
     if (level.gates.length > 32) throw new Error('max 32 gates per level');
@@ -52,6 +75,22 @@ export class World {
     this.trapLeft = level.gates.map((g) => (g.kind === 'sub' ? g.value : 0));
     this.gateXs = level.gates.map((g) => g.x);
     this.waspGrid = new SpatialGrid(level.laneWidth, level.laneLength, 1, WASP_CAP);
+    this.timedWaves = level.waves
+      .filter((w) => w.at !== undefined)
+      .sort((a, b) => (a.at as number) - (b.at as number));
+    for (let i = 0; i < level.gates.length; i++) if (!this.gateActive(i)) this.gateXs[i] = OFF_LANE;
+  }
+
+  /** Gates with `fromPhase` stay inactive (off-lane, invisible) until that boss phase. */
+  gateActive(i: number): boolean {
+    return (this.level.gates[i].fromPhase ?? 0) <= this.bossPhase;
+  }
+
+  /** Spawn all waves with this trigger name (once per name). */
+  fireTrigger(name: string): void {
+    if (this.firedTriggers.has(name)) return;
+    this.firedTriggers.add(name);
+    for (const w of this.level.waves) if (w.trigger === name) this.spawnWave(w);
   }
 
   get maxCannonX(): number {
@@ -102,8 +141,12 @@ export class World {
     if (this.outcome !== 'playing') return;
     const L = this.level;
     this.time += dt;
+    this.updateBossPhase();
+    const speedScale = L.bossPhases?.[this.bossPhase - 1]?.gateSpeedScale ?? 1;
     for (let i = 0; i < L.gates.length; i++)
-      this.gateXs[i] = gateX(L.gates[i], this.time, L.laneWidth);
+      this.gateXs[i] = this.gateActive(i)
+        ? gateX(L.gates[i], this.time * speedScale, L.laneWidth)
+        : OFF_LANE;
 
     // Cannon: ease toward aim, clamp to lane.
     const target = Math.max(-this.maxCannonX, Math.min(this.maxCannonX, input.aimX));
@@ -150,18 +193,45 @@ export class World {
     this.events.push({ type: 'end', outcome });
   }
 
+  private updateBossPhase(): void {
+    const phases = this.level.bossPhases;
+    if (!phases) return;
+    const frac = this.nestHp / this.level.nestHp;
+    while (this.bossPhase < phases.length && frac <= phases[this.bossPhase].nestBelow) {
+      const p = phases[this.bossPhase++];
+      for (const b of p.burst ?? []) this.spawnWave(b);
+      this.repeatTimers = (p.repeat ?? []).map(() => 0);
+    }
+  }
+
+  private spawnWave(w: Omit<WaveDef, 'at' | 'trigger'>): void {
+    const L = this.level;
+    const top = L.laneLength - 1;
+    const kind = ENEMY_UNIT[w.kind];
+    for (let k = 0; k < w.count; k++) {
+      const x = w.x + (this.rng() - 0.5) * 2 * w.spread;
+      const y = top + this.rng() * 1.5;
+      this.wasps.spawn(kind, clamp(x, L.laneWidth / 2 - 0.3), y);
+    }
+  }
+
   private spawnEnemies(dt: number): void {
     const L = this.level;
     const top = L.laneLength - 1;
-    while (this.nextWave < L.waves.length && L.waves[this.nextWave].at <= this.time) {
-      const w = L.waves[this.nextWave++];
-      const kind = w.kind === 'hornet' ? UnitKind.Hornet : UnitKind.Wasp;
-      for (let k = 0; k < w.count; k++) {
-        const x = w.x + (this.rng() - 0.5) * 2 * w.spread;
-        const y = top + this.rng() * 1.5;
-        this.wasps.spawn(kind, clamp(x, L.laneWidth / 2 - 0.3), y);
-      }
-    }
+    while (
+      this.nextWave < this.timedWaves.length &&
+      (this.timedWaves[this.nextWave].at as number) <= this.time
+    )
+      this.spawnWave(this.timedWaves[this.nextWave++]);
+    const repeats = L.bossPhases?.[this.bossPhase - 1]?.repeat;
+    if (repeats)
+      repeats.forEach((r, i) => {
+        this.repeatTimers[i] += dt;
+        if (this.repeatTimers[i] >= r.every) {
+          this.repeatTimers[i] -= r.every;
+          this.spawnWave(r);
+        }
+      });
     if (L.trickleInterval > 0) {
       this.trickleTimer += dt;
       // Pressure ramps up over the battle.
@@ -273,7 +343,7 @@ export class World {
         if (dx * dx + dy * dy > r * r) return false;
         const dmg = Math.min(b.hp[i], w.hp[j]);
         b.hp[i] -= dmg;
-        w.hp[j] -= dmg;
+        w.hp[j] -= w.kind[j] === UnitKind.Matriarch ? dmg * MATRIARCH_DAMAGE_TAKEN : dmg;
         if (w.hp[j] <= 0) this.stats.kills++;
         this.events.push({ type: 'clash', x: (bx + w.x[j]) / 2, y: (by + w.y[j]) / 2 });
         return b.hp[i] <= 0;
@@ -286,6 +356,8 @@ export class World {
     return this.events.splice(0, this.events.length);
   }
 }
+
+const OFF_LANE = 1e4;
 
 function clamp(v: number, half: number): number {
   return v < -half ? -half : v > half ? half : v;

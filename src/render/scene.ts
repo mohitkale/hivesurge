@@ -329,6 +329,7 @@ export class GameScene {
     for (let i = 0; i < this.gates.length; i++) {
       const gv = this.gates[i];
       const g = L.gates[i];
+      gv.group.visible = world.gateActive(i);
       gv.group.position.x = world.currentGateX(i);
       gv.pulse = Math.max(0, gv.pulse - dt * 6);
       const ps = 1 + gv.pulse * 0.12;
@@ -390,7 +391,8 @@ export class GameScene {
       const bob = Math.sin(this.t * 18 + i * 1.7) * 0.06;
       // Big units with folded overflow HP grow slightly so the extra power reads.
       const extra = isSmall ? Math.min(0.8, (pool.hp[i] - 1) * 0.08) : 0;
-      const sc = 1 + extra;
+      // Wasp Matriarch reuses the hornet mesh at boss scale (art pass: M3).
+      const sc = pool.kind[i] === UnitKind.Matriarch ? 2.2 : 1 + extra;
       this.q.setFromAxisAngle(this.v.set(0, 1, 0), yaw + pool.vx[i] * 0.15);
       this.m.compose(
         this.v.set(pool.x[i], 0.35 * sc + 0.1 + bob, -pool.y[i]),
