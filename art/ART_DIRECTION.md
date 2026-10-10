@@ -134,14 +134,14 @@ Rules:
 
 ## 8. Load budget (PLAN M3-2/M3-3/M3-4, kept for M7-5)
 
-| Budget                                                           | Limit       | Current                                                                                      |
-| ---------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
-| Triangles per unit (incl. skins)                                 | ≤ 300       | bee 220 · queen 270 · wasp 130 · hornet 142 · skins 220–268                                  |
-| Model assets (`art/models`, meshopt GLB, not shipped until M3-5) | ≤ 1.5 MB    | **116.6 KB** (26 files)                                                                      |
-| Audio (`public/assets/audio`, Opus)                              | ≤ 1 MB      | **133.9 KB** (9 cues incl. 16 s music loop)                                                  |
-| Icons (`public/assets/icons`, SVG)                               | ≥ 30 icons  | 41 icons, 19.3 KB (+ 6 FTUE SVGs, 2.7 KB)                                                    |
-| Textures                                                         | KTX2 if any | **none** (vertex colours only, 0 bytes GPU texture memory for units)                         |
-| Initial JS (M2-9)                                                | < 3 MB      | app chunk 50.9 kB + three chunk 544.2 kB (18.3 + 135.6 kB gzip), after the PR 002 code split |
+| Budget                                                                                       | Limit       | Current                                                                                      |
+| -------------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
+| Triangles per unit (incl. skins)                                                             | ≤ 300       | bee 220 · queen 270 · wasp 130 · hornet 142 · skins 220–268                                  |
+| Model assets (meshopt GLB: 5 runtime models in `public/assets/models`, rest in `art/models`) | ≤ 1.5 MB    | **116.6 KB** (26 files)                                                                      |
+| Audio (`public/assets/audio`, Opus)                                                          | ≤ 1 MB      | **133.9 KB** (9 cues incl. 16 s music loop)                                                  |
+| Icons (`public/assets/icons`, SVG)                                                           | ≥ 30 icons  | 41 icons, 19.3 KB (+ 6 FTUE SVGs, 2.7 KB)                                                    |
+| Textures                                                                                     | KTX2 if any | **none** (vertex colours only, 0 bytes GPU texture memory for units)                         |
+| Initial JS (M2-9)                                                                            | < 3 MB      | app chunk 50.9 kB + three chunk 544.2 kB (18.3 + 135.6 kB gzip), after the PR 002 code split |
 
 Non-unit props (cannon 264, nest 382 tris) have one instance each, so the per-unit budget does not apply.
 Re-check with `npx vitest run tests/art.test.ts`.

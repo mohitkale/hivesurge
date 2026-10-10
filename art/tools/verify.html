@@ -14,7 +14,7 @@
       const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
       for (const n of names) {
         try {
-          const g = await loader.loadAsync('/art/models/' + n);
+          const g = await loader.loadAsync('/assets/models/' + n);
           let t = 0;
           g.scene.traverse((o) => {
             if (o.isMesh)

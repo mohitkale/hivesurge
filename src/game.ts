@@ -1,3 +1,9 @@
+import {
+  glbEnabledFromUrl,
+  loadModelLibrary,
+  MODEL_BASE_URL,
+  type ModelLibrary,
+} from './art/glbLoader';
 import * as THREE from 'three';
 import { haptic, Sfx } from './audio/sfx';
 import { canOfferRewarded, canShowInterstitial } from './platform/adPolicy';
@@ -49,6 +55,8 @@ export class Game {
   private readonly quality = new QualityScaler(window.devicePixelRatio || 1);
   private world: World;
   private scene: GameScene;
+  /** M3-5 GLB models once loaded (null until then, or if loading failed). */
+  private models: ModelLibrary | null = null;
   private result = new ResultSession();
   private readonly pacer: AdPacer;
   private hud: Hud | null = null;
@@ -78,6 +86,13 @@ export class Game {
     applyTheme(document.documentElement, this.save.settings.colorBlind);
     this.sfx.setMuted(this.save.settings.muted);
     this.scene = this.makeScene();
+    // M3-5: GLB models load in the background; the next scene build (battle start) uses
+    // them. Any failure keeps the procedural models, so the game never waits on assets.
+    if (glbEnabledFromUrl(location.search))
+      void loadModelLibrary({
+        baseUrl: `${import.meta.env.BASE_URL}${MODEL_BASE_URL}`,
+        onError: (name, err) => console.warn(`[assets] ${name}: procedural fallback`, err),
+      }).then((lib) => (this.models = lib));
     this.platform = new MockPlatform(
       this.overlay,
       {
@@ -107,7 +122,12 @@ export class Game {
   }
 
   private makeScene(): GameScene {
-    const sc = new GameScene(this.canvas, this.world.level, palette(this.save.settings.colorBlind));
+    const sc = new GameScene(
+      this.canvas,
+      this.world.level,
+      palette(this.save.settings.colorBlind),
+      this.models,
+    );
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
     sc.setPixelRatio(this.quality.pixelRatio);
