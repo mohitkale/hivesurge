@@ -3,6 +3,14 @@ import { gateLabel } from '../sim/gates';
 import { UnitKind, type GateDef, type LevelDef } from '../sim/types';
 import type { UnitPool } from '../sim/units';
 import type { World } from '../sim/world';
+import {
+  frameCamera,
+  GLYPH_SHARE,
+  LABEL_TILT,
+  labelCentreY,
+  labelHeight,
+  labelScale,
+} from './gateLabel';
 import { Particles } from './particles';
 import { drawLabel, grassTexture, labelTexture } from './textures';
 import {
@@ -37,9 +45,6 @@ interface GateView {
   pulse: number;
   label: THREE.Mesh;
 }
-
-const LABEL_H = 1.1;
-const LABEL_GROW = 1.5;
 
 /** Maps sim (x, y-up-lane) to world (x, 0, -y). Camera sits behind the hive. */
 export class GameScene {
@@ -239,14 +244,14 @@ export class GameScene {
     const texture = labelTexture(gateLabel(g), color, g.kind === 'sub' ? 'trap' : '');
     // Labels grow with distance so the farthest row stays >= 18 CSS px on a
     // 360 px wide phone (art/ART_DIRECTION.md §Gates); tilted toward the camera.
-    const lh = LABEL_H * (1 + LABEL_GROW * (g.y / this.level.laneLength));
+    const lh = labelHeight(g.y, this.level.laneLength);
     const label = new THREE.Mesh(
       new THREE.PlaneGeometry(lh * 2, lh),
       new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: false }),
     );
     label.renderOrder = 10; // plate stays readable over swarms
-    label.position.y = 2.0 + lh / 2;
-    label.rotation.x = -0.75;
+    label.position.y = labelCentreY(lh);
+    label.rotation.x = LABEL_TILT;
     label.userData.h = lh;
     // Solid beam in the gate colour: the translucent panel alone washes out on grass.
     const beam = new THREE.Mesh(
@@ -293,6 +298,12 @@ export class GameScene {
     const portrait = h > w;
     this.camera.fov = portrait ? 62 : 48;
     this.camera.updateProjectionMatrix();
+    const ls = labelScale(this.camera.aspect);
+    for (const gv of this.gates) {
+      const lh = (gv.label.userData.h as number) * ls;
+      gv.label.scale.setScalar(ls);
+      gv.label.position.y = labelCentreY(lh);
+    }
   }
 
   /** Lane-space x under a screen point, or null. */
@@ -390,11 +401,9 @@ export class GameScene {
 
     // Camera with decaying shake
     this.shake = Math.max(0, this.shake - dt * 1.8);
-    const portrait = this.camera.aspect < 1;
-    const sx = (Math.random() - 0.5) * this.shake;
-    const sy = (Math.random() - 0.5) * this.shake;
-    this.camera.position.set(sx, (portrait ? 21 : 17) + sy, portrait ? 12 : 10);
-    this.camera.lookAt(0, 0, portrait ? -L.laneLength * 0.47 : -L.laneLength * 0.5);
+    frameCamera(this.camera, L.laneLength);
+    this.camera.position.x += (Math.random() - 0.5) * this.shake;
+    this.camera.position.y += (Math.random() - 0.5) * this.shake;
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -442,7 +451,7 @@ export class GameScene {
     const h = this.renderer.domElement.clientHeight;
     return this.gates.map((gv, i) => {
       gv.label.updateWorldMatrix(true, false);
-      const lh = gv.label.userData.h as number;
+      const lh = (gv.label.userData.h as number) * gv.label.scale.y;
       const a = this.v
         .set(0, lh / 2, 0)
         .applyMatrix4(gv.label.matrixWorld)
@@ -452,7 +461,7 @@ export class GameScene {
         .applyMatrix4(gv.label.matrixWorld)
         .project(this.camera).y;
       const platePx = (Math.abs(a - b) * h) / 2;
-      return { gateY: this.level.gates[i].y, platePx, glyphPx: platePx * (72 / 128) };
+      return { gateY: this.level.gates[i].y, platePx, glyphPx: platePx * GLYPH_SHARE };
     });
   }
 
