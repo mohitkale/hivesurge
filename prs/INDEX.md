@@ -28,7 +28,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 020 | monetization/sim-866e82b                             | hivesurge-monetization | `aabb84d` | merged (`03d856f`)                                                | 020-monetization-sim-866e82b.md                                   |
 | 021 | monetization/sim-91fed5c                             | hivesurge-monetization | `84c05db` | changes (lint: last_run.md unformatted; see REVIEW-021)           | 021-monetization-sim-91fed5c.md                                   |
 | 022 | qa/m1-pr002-playtest                                 | hivesurge-qa           | `51f944c` | merged (`9afc896`)                                                | 022-qa-m1-pr002-playtest.md                                       |
+| 023 | chore/plan-m2-qa-tasks                               | hivesurge-ba           | —         | open                                                              | 023-chore-plan-m2-qa-tasks.md                                     |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **023**.
+Next free number: **024**.
