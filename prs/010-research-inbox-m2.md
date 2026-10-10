@@ -21,7 +21,7 @@ no game code or PLAN.md changes. (PR number 010 is provisional; renumber if alre
   - **Playtest hosting decided (BA):** local on the box (localhost). This closes PLAN open question 3.
     M2-12 is still blocked on M2-7 and on Mohit supplying/approving testers.
 
-**Test results:** docs only; `npm run lint` see below.
+**Test results:** docs only; prettier --check pass on research/ and prs/ (run with the main checkout's prettier; this worktree has no node_modules).
 
 **Playtest notes:** n/a (no gameplay change).
 
