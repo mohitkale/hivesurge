@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+  <body style="margin: 0; background: #7cc46a">
+    <canvas id="c" width="1200" height="760"></canvas>
+    <script type="module">
+      import * as THREE from 'three';
+      import {
+        beeGeometry,
+        queenGeometry,
+        waspGeometry,
+        hornetGeometry,
+        cannonGeometry,
+        nestGeometry,
+      } from '/src/art/models.ts';
+      import { SKINS, skinGeometry } from '/src/art/skins.ts';
+      // Model sheet: top row large 3/4 view, middle row skins, bottom strip = in-game camera angle at tiny size.
+      const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+      r.outputColorSpace = THREE.SRGBColorSpace;
+      r.setScissorTest(true);
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+      const scene = new THREE.Scene();
+      scene.add(new THREE.HemisphereLight('#fff6e0', '#7a5aa0', 1.6));
+      const sun = new THREE.DirectionalLight('#fff', 1.6);
+      sun.position.set(-6, 14, 6);
+      scene.add(sun);
+      const cell = (g, x, y, w, h, dist, bg, pitch = 0.5) => {
+        const m = new THREE.Mesh(g, mat);
+        m.rotation.y = 0.7;
+        scene.add(m);
+        const cam = new THREE.PerspectiveCamera(35, w / h, 0.1, 100);
+        g.computeBoundingSphere();
+        const c = g.boundingSphere.center;
+        cam.position.set(c.x, c.y + dist * Math.sin(pitch), c.z + dist * Math.cos(pitch));
+        cam.lookAt(c);
+        r.setViewport(x, 760 - y - h, w, h);
+        r.setScissor(x, 760 - y - h, w, h);
+        scene.background = new THREE.Color(bg);
+        r.render(scene, cam);
+        scene.remove(m);
+      };
+      const units = [
+        ['bee', beeGeometry(), 3],
+        ['queen', queenGeometry(), 3.4],
+        ['wasp', waspGeometry(), 3.4],
+        ['hornet', hornetGeometry(), 3.4],
+        ['cannon', cannonGeometry(), 6],
+        ['nest', nestGeometry(9), 16],
+      ];
+      units.forEach(([, g, d], i) => cell(g, i * 200, 0, 200, 260, d, '#ffd9a8'));
+      SKINS.forEach((s, i) => cell(skinGeometry(s), i * 200, 260, 200, 240, 3, '#fff1dc'));
+      // Small-size readability: bee/wasp alternating at ~16 px from the gameplay pitch.
+      for (let i = 0; i < 30; i++)
+        cell(i % 2 ? waspGeometry() : beeGeometry(), 20 + i * 38, 560, 24, 24, 3.2, '#7cc46a', 1.0);
+      for (let i = 0; i < 30; i++)
+        cell(
+          i % 3 ? beeGeometry() : hornetGeometry(),
+          20 + i * 38,
+          640,
+          16,
+          16,
+          3.2,
+          '#7cc46a',
+          1.0,
+        );
+      document.title = 'ready';
+    </script>
+  </body>
+</html>
