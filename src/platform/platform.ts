@@ -16,7 +16,12 @@ export const CATALOG: Record<Sku, SkuInfo> = {
     price: '$2.99',
     grants: { coins: 500, gems: 50, noAds: true },
   },
-  gems_small: { id: 'gems_small', title: 'Pouch of Gems', price: '$4.99', grants: { gems: 120 } },
+  gems_small: {
+    id: 'gems_small',
+    title: 'Pouch of Gems',
+    price: '$4.99',
+    grants: { gems: 120, noAds: true }, // G6: every purchase removes forced ads
+  },
 };
 
 /**

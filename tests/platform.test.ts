@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { canShowInterstitial, INTERSTITIAL_MIN_GAP_MS } from '../src/platform/adPolicy';
 import { parseSave } from '../src/platform/save';
 
-const s = { lastInterstitialAt: 0, battlesCompleted: 5, noAds: false };
+const s = { lastInterstitialAt: 0, battlesCompleted: 5, noAds: false, ftueDone: true };
 const later = INTERSTITIAL_MIN_GAP_MS + 1;
 
 describe('ad policy', () => {
