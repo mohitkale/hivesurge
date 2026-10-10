@@ -3,7 +3,7 @@
 
 Run (from repo root):  python3 monetization/sim/economy_sim.py [--seed 42] [--runs 200] [--design-ref 209606b]
 
-Design tables are READ from git at --design-ref (default 209606b on design/m2-specs):
+Design tables are READ from git at --design-ref (default 866e82b on design/m2-specs):
   docs/design/meta-m5.md   -> bee roster, expectedP(n) table, enemy scaling clamp
   docs/design/liveops-m7.md -> season pass free/premium tracks, XP per tier
 Other tags: CODE = src/sim/rewards.ts (fix/pr-002-review); ASSUMPTION = MON placeholder (tune with playtests)."""
@@ -11,7 +11,7 @@ import random, re, subprocess, sys, statistics as st
 
 A = sys.argv
 arg = lambda k, d: type(d)(A[A.index(k) + 1]) if k in A else d
-SEED, RUNS, REF, DAYS = arg('--seed', 42), arg('--runs', 200), arg('--design-ref', '209606b'), 30
+SEED, RUNS, REF, DAYS = arg('--seed', 42), arg('--runs', 200), arg('--design-ref', '866e82b'), 30
 
 def design(path):
     return subprocess.run(['git', 'show', f'{REF}:{path}'], capture_output=True, text=True, check=True).stdout
@@ -37,18 +37,20 @@ SLOT_AT = [3, 5, 8, 12]  # META loadout slots unlock at level n
 EXP_PTS = []
 _EXP_SEC = META.split('### expectedP', 1)[1].split('Formula:', 1)[0]
 for r in rows(_EXP_SEC):
-    if len(r) == 4 and re.fullmatch(r'\d+( to \d+)?', r[0]) and r[2].isdigit():
+    if len(r) >= 3 and re.fullmatch(r'\d+( to \d+)?', r[0]) and r[2].isdigit():
         EXP_PTS.append((int(r[0].split(' to ')[-1]), int(r[2])))
 EXP_PTS.sort()
+_t = re.search(r'Beyond n = (\d+): `expectedP\(n\) = ([\d.]+) \+ ([\d.]+) x \(n - \d+\)`?, capped at (\d+)', META)
+TAIL = (int(_t.group(1)), float(_t.group(2)), float(_t.group(3)), float(_t.group(4)))
 def expectedP(n):
     if n <= EXP_PTS[0][0]: return EXP_PTS[0][1]
     for (a, pa), (b, pb) in zip(EXP_PTS, EXP_PTS[1:]):
         if n <= b: return pa + (pb - pa) * (n - a) / (b - a)
-    return min(112, 72 + 1.1 * (n - 50))  # META beyond n=50
+    return min(TAIL[3], TAIL[1] + TAIL[2] * (n - TAIL[0]))  # META tail formula
 m = re.search(r'clamp\(1 \+ ([\d.]+) x \(P - expectedP\(n\)\), ([\d.]+), ([\d.]+)\)', META)
 K, LO, HI = float(m.group(1)), float(m.group(2)), float(m.group(3))
 def enemy_scale(P, n): return max(LO, min(HI, 1 + K * (P - expectedP(n))))
-BASE_WIN, WIN_SENS = 0.70, 2.0  # ASSUMPTION: 70% at scale 1.0; each +1% enemies = -2 pts win rate
+BASE_WIN, WIN_SENS = 0.70, arg('--win-sens', 2.0)  # ASSUMPTION: 70% at scale 1.0; each +1% enemies = -2 pts win rate
 def win_rate(P, n): return max(0.05, min(0.95, BASE_WIN - WIN_SENS * (enemy_scale(P, n) - 1)))
 
 # ---- LIVE: season pass ------------------------------------------------------
@@ -97,6 +99,7 @@ def run(persona, seed):
     if p['starter']: s['coins'] += 500; s['gems'] += 50  # CODE CATALOG starter_pack
     slots, out = [], []
     def add_card(b, kind):
+        if BEE[b][1] == 'E': s['epic_' + kind] = s.get('epic_' + kind, 0) + 1
         lv = bees[b]
         if lv[0] == 0: lv[0] = 1
         else: lv[1] += 1
@@ -173,7 +176,7 @@ def run(persona, seed):
             upgrade()
         P = power()
         out.append(dict(day=d + 1, n=s['n'], P=P, exp=expectedP(s['n']), scale=enemy_scale(P, s['n']),
-                        tier=s['tier'], prem=s['cards_prem'], chest=s['cards_chest'], free_track=s['cards_free_track']))
+                        epic_prem=s.get('epic_cards_prem', 0), epic_all=sum(v for k, v in s.items() if k.startswith('epic_')), tier=s['tier'], prem=s['cards_prem'], chest=s['cards_chest'], free_track=s['cards_free_track']))
     return out
 
 def main():
@@ -200,6 +203,12 @@ def main():
     share = st.median(r[-1]['prem'] / tot(r[-1]) for r in res['payer_pass'])
     print(f"\nSeason pass (payer_pass, day 30): median tier {med('payer_pass',29,'tier'):g}; premium cards {med('payer_pass',29,'prem'):g} "
           f"of {st.median(tot(r[-1]) for r in res['payer_pass']):g} total cards -> premium share {share:.1%} (design cap 15%)")
+    eshare = st.median(r[-1]['epic_prem'] / r[-1]['epic_all'] for r in res['payer_pass'])
+    print(f"Premium Epic share of season Epics (payer_pass, day 30): {eshare:.1%}; cards/day {st.median(tot(r[-1]) for r in res['payer_pass'])/DAYS:.1f}")
+    for k in PERSONAS:
+        rr = [ratio(k, d) for d in range(DAYS)]; sc = [med(k, d, 'scale') for d in range(DAYS)]
+        print(f"{k}: median P/expP days 3-30 {st.median(rr[2:]):.0%} (min {min(rr[2:]):.0%}, max {max(rr[2:]):.0%}); "
+              f"median enemy scale {st.median(sc[2:]):.2f} (max {max(sc[2:]):.2f}); days scale>1.0: {sum(1 for x in sc if x > 1.0)}")
     print(f"Day-30 level n: no-ads {med('f2p_no_ads',29,'n'):g}, ads {med('f2p_ads',29,'n'):g}, payer {med('payer_pass',29,'n'):g}")
 
 if __name__ == '__main__':
