@@ -16,6 +16,11 @@ export const COLORS = {
   grass: '#7cc46a',
   danger: '#e2557a',
   success: '#5fb84a',
+  // Gate colours: one hue per kind, each >= 3:1 (WCAG) against every lane colour
+  // (tests/gate-contrast.test.ts). Never reuse team teal for a gate.
+  gateAdd: '#1a47b8', // blue
+  gateMul: '#5b1fb0', // violet
+  gateTrap: '#a10f2a', // crimson
 } as const;
 
 /**
@@ -29,6 +34,9 @@ export const CB_COLORS = {
   danger: '#d55e00', // trap: vermillion
   plum: '#cc79a7',
   orange: '#e69f00',
+  gateAdd: '#00508a', // Okabe-Ito blue, darkened for 3:1 on grass
+  gateMul: '#7a2a5e', // Okabe-Ito reddish purple, darkened
+  gateTrap: '#8a3800', // Okabe-Ito vermillion, darkened
 } as const;
 
 export type Palette = { [K in keyof typeof COLORS]: string };

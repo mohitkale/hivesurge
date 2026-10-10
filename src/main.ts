@@ -65,6 +65,8 @@ class Game {
 
   private makeScene(): GameScene {
     const sc = new GameScene(this.canvas, CLOVER_RUN, palette(this.save.settings.colorBlind));
+    // Dev-only hook for art/QA measurement scripts (stripped from production builds).
+    if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
     sc.setPixelRatio(this.quality.pixelRatio);
     return sc;
   }

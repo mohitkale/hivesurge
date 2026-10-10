@@ -20,13 +20,13 @@ import { COLORS, type Palette } from '../ui/theme';
 /** Original palette: honey yellow + teal (player) vs plum purple + orange (rivals). */
 let PALETTE: Palette & { trap: string; add: string } = {
   ...COLORS,
-  trap: COLORS.danger,
-  add: COLORS.success,
+  trap: COLORS.gateTrap,
+  add: COLORS.gateAdd,
 };
 let GATE_COLOR: Record<GateDef['kind'], string> = {
-  mul: COLORS.teal,
-  add: COLORS.success,
-  sub: COLORS.danger,
+  mul: COLORS.gateMul,
+  add: COLORS.gateAdd,
+  sub: COLORS.gateTrap,
 };
 
 interface GateView {
@@ -35,7 +35,11 @@ interface GateView {
   texture: THREE.CanvasTexture;
   lastShown: number;
   pulse: number;
+  label: THREE.Mesh;
 }
+
+const LABEL_H = 1.1;
+const LABEL_GROW = 1.5;
 
 /** Maps sim (x, y-up-lane) to world (x, 0, -y). Camera sits behind the hive. */
 export class GameScene {
@@ -64,8 +68,8 @@ export class GameScene {
   private t = 0;
 
   constructor(canvas: HTMLCanvasElement, level: LevelDef, pal: Palette = COLORS) {
-    PALETTE = { ...pal, trap: pal.danger, add: pal.success };
-    GATE_COLOR = { mul: pal.teal, add: pal.success, sub: pal.danger };
+    PALETTE = { ...pal, trap: pal.gateTrap, add: pal.gateAdd };
+    GATE_COLOR = { mul: pal.gateMul, add: pal.gateAdd, sub: pal.gateTrap };
     this.level = level;
     this.renderer = new THREE.WebGLRenderer({
       canvas,
@@ -227,18 +231,30 @@ export class GameScene {
       new THREE.MeshBasicMaterial({
         color,
         transparent: true,
-        opacity: 0.35,
+        opacity: 0.5,
         side: THREE.DoubleSide,
       }),
     );
     panel.position.y = 0.8;
     const texture = labelTexture(gateLabel(g), color, g.kind === 'sub' ? 'trap' : '');
+    // Labels grow with distance so the farthest row stays >= 18 CSS px on a
+    // 360 px wide phone (art/ART_DIRECTION.md §Gates); tilted toward the camera.
+    const lh = LABEL_H * (1 + LABEL_GROW * (g.y / this.level.laneLength));
     const label = new THREE.Mesh(
-      new THREE.PlaneGeometry(Math.min(2.4, g.width * 0.9), 1.1),
-      new THREE.MeshBasicMaterial({ map: texture, transparent: true }),
+      new THREE.PlaneGeometry(lh * 2, lh),
+      new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: false }),
     );
-    label.position.y = 2.2;
-    label.rotation.x = -0.35;
+    label.renderOrder = 10; // plate stays readable over swarms
+    label.position.y = 2.0 + lh / 2;
+    label.rotation.x = -0.75;
+    label.userData.h = lh;
+    // Solid beam in the gate colour: the translucent panel alone washes out on grass.
+    const beam = new THREE.Mesh(
+      new THREE.BoxGeometry(g.width, 0.22, 0.22),
+      new THREE.MeshLambertMaterial({ color }),
+    );
+    beam.position.y = 1.65;
+    group.add(beam);
     const postGeo = new THREE.CylinderGeometry(0.1, 0.1, 2.2, 6);
     const postMat = new THREE.MeshLambertMaterial({ color: '#3f8f3a' });
     const bloom = new THREE.MeshLambertMaterial({
@@ -260,6 +276,7 @@ export class GameScene {
       canvas: texture.image as HTMLCanvasElement,
       lastShown: g.value,
       pulse: 0,
+      label,
     });
   }
 
@@ -413,6 +430,28 @@ export class GameScene {
     big.count = nb;
     small.instanceMatrix.needsUpdate = true;
     big.instanceMatrix.needsUpdate = true;
+  }
+
+  /**
+   * On-screen height (CSS px) of each gate label plate and of its main glyphs
+   * (72/128 of the plate). Used by the legibility check in art/tools.
+   */
+  gateLabelPx(): { gateY: number; platePx: number; glyphPx: number }[] {
+    const h = this.renderer.domElement.clientHeight;
+    return this.gates.map((gv, i) => {
+      gv.label.updateWorldMatrix(true, false);
+      const lh = gv.label.userData.h as number;
+      const a = this.v
+        .set(0, lh / 2, 0)
+        .applyMatrix4(gv.label.matrixWorld)
+        .project(this.camera).y;
+      const b = this.v
+        .set(0, -lh / 2, 0)
+        .applyMatrix4(gv.label.matrixWorld)
+        .project(this.camera).y;
+      const platePx = (Math.abs(a - b) * h) / 2;
+      return { gateY: this.level.gates[i].y, platePx, glyphPx: platePx * (72 / 128) };
+    });
   }
 
   dispose(): void {
