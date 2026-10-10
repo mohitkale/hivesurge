@@ -1,4 +1,23 @@
-import { CATALOG, type Platform, type RewardedPlacement, type Sku } from './platform';
+import {
+  CATALOG,
+  type Platform,
+  type RewardedPlacement,
+  type RewardedResult,
+  type Sku,
+} from './platform';
+
+/**
+ * Mock ad fill modes (M2-21): `normal` shows the fake ad; `noFill` reports no ad available;
+ * `error` never loads and fails after the load timeout. Set with `?ads=nofill|error` or
+ * `setAdMode()` (tests).
+ */
+export type MockAdMode = 'normal' | 'noFill' | 'error';
+export const AD_LOAD_TIMEOUT_MS = 5000;
+
+export function adModeFromUrl(search: string): MockAdMode {
+  const v = new URLSearchParams(search).get('ads');
+  return v === 'nofill' ? 'noFill' : v === 'error' ? 'error' : 'normal';
+}
 
 /**
  * Sandbox adapter: fake ads and purchases rendered as clearly-labelled DOM
@@ -9,13 +28,29 @@ export class MockPlatform implements Platform {
   constructor(
     private readonly root: HTMLElement,
     private readonly hooks: { onAdStart: () => void; onAdEnd: () => void },
+    private mode: MockAdMode = 'normal',
+    private readonly loadTimeoutMs = AD_LOAD_TIMEOUT_MS,
   ) {}
 
-  showRewarded(placement: RewardedPlacement): Promise<boolean> {
-    return this.fakeAd(`Rewarded ad · ${placement}`, 3, true);
+  setAdMode(mode: MockAdMode): void {
+    this.mode = mode;
+  }
+
+  async showRewarded(placement: RewardedPlacement): Promise<boolean> {
+    return (await this.requestRewarded(placement)) === 'completed';
+  }
+
+  requestRewarded(placement: RewardedPlacement): Promise<RewardedResult> {
+    if (this.mode === 'noFill') return Promise.resolve('no_fill');
+    if (this.mode === 'error')
+      return new Promise((resolve) => setTimeout(() => resolve('error'), this.loadTimeoutMs));
+    return this.fakeAd(`Rewarded ad · ${placement}`, 3, true).then((ok) =>
+      ok ? 'completed' : 'closed',
+    );
   }
 
   async showInterstitial(placement: string): Promise<void> {
+    if (this.mode !== 'normal') return; // nothing to show
     await this.fakeAd(`Interstitial · ${placement}`, 2, false);
   }
 
