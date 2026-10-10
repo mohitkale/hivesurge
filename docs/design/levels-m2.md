@@ -170,3 +170,40 @@ Input: `levelIndex n` (>= 6), `seed = hash("hs", n)`. Band = position in 5-level
 ## Acceptance check
 
 Layouts, gates and target win rate per level: given for 4 handmade (L1 FTUE, L2, L3, L4) + 1 boss (L5), plus L6 to 10 via generator.
+
+## M2-17 tuning note: Clover Run casual win rate (2026-10-11)
+
+**Which level is which.** The QA playtest called Clover Run "level 1" because it was the only level in the slice. In the campaign (M2-5, branch `feat/m2-5-levels`) the order is:
+
+| Stage | Level           | Role                              | Target                                     |
+| ----- | --------------- | --------------------------------- | ------------------------------------------ |
+| 1     | ftue-meadow     | tutorial, played once             | 98% for any bot that fires; idle loses     |
+| 2     | dandelion-drift | first real choice                 | 92%                                        |
+| 3     | clover-run      | first "real" level, used by M2-17 | **casual 65 to 75% (aim 70%)**; idle loses |
+
+The 98% target is for ftue-meadow only. The M2-17 70% target is for Clover Run. Until the campaign merges, Clover Run is the slice's level 1, and the same numbers apply.
+
+**Knob changes (only these two):**
+
+| Field  | Old  | New      |
+| ------ | ---- | -------- |
+| nestHp | 2600 | **2350** |
+| hiveHp | 40   | **50**   |
+
+Gates, waves (enemy counts and timings), time limit, queen charge and trickle stay as shipped (waves: wasps 14/22/34/50/70/80 at 4/12/26/44/62/75 s, hornets 3/5/6 at 20/36/56 s).
+
+**Verified with the M2-5 bots** (`tests/bots.ts` at `22e94b0`, run in a scratch copy, seeds `level.seed + s x 7919`):
+
+| Variant                          | Idle (20 seeds) | Centre (200) | Casual (200) | Aim (40) |
+| -------------------------------- | --------------- | ------------ | ------------ | -------- |
+| shipped (2600 / 40)              | 0%              | 0%           | 41.5%        | 75%      |
+| nest 2400 / hive 40              | 0%              | 0%           | 65%          | 80%      |
+| nest 2300 / hive 50              | 0%              | 0%           | 73%          | 100%     |
+| **nest 2350 / hive 50 (chosen)** | **0%**          | **0%**       | **69%**      | **100%** |
+| nest 2000 / hive 50              | 0%              | 0%           | 97.5%        | 100%     |
+
+Shipped casual 41.5% matches QA's 1 win in 4. Nest HP is very sensitive (about 6 to 7 win-rate points per 100 HP), so do not move it more than plus or minus 50 without rerunning the bots.
+
+**Casual bot definition** (for M2-18 to add to `tests/bots.ts`): every 1.5 s it picks a target. It takes the best visible non-trap gate (mul scores 3x its value), but 35% of the time picks a random non-trap gate. It aims at the gate's current x with no lead, plus noise (sum of 3 uniforms, about sd 1.2 lane units). It lifts its finger (no fire) 15% of the time. It launches the queen 1 s after it is ready. It uses its own RNG seeded from the run seed.
+
+**Centre bot stays at 0%, on purpose.** The plan's "casual/centre about 70%" would mean aiming does not matter, and that breaks the existing test "aiming beats firing straight". Decision: the 65 to 75% band applies to the casual bot. The centre bot must stay below casual (it is currently 0%). BA: please read M2-18's acceptance as "casual bot 65 to 75%, idle loses, centre below casual".

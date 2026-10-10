@@ -69,6 +69,10 @@ Expected run: queen at about 14 to 18 s, win at about 30 to 40 s. Target win rat
 - Every prompt also has an audio cue and caption for accessibility (M2-11).
 - Analytics: `ftue_step` event `{step, msSinceFirstInput, timedOut}` for each step; QA passes if headless bot reaches step 4 exit in under 30 s.
 
+## Revive
+
+Revive offer rules (early close, ad failure, free fallback): see `revive-m2.md` (M2-20). No revive offer during FTUE.
+
 ## Acceptance check
 
 - Step flow present: yes. Max words per prompt: longest is 5 words ("Aim ahead of moving gates"). Aim-lead hint included: step 3.
