@@ -43,3 +43,16 @@ No secrets anywhere in these five PRs.
 
 - Stack merge attempted on a706888. 009 merged with the mechanical `makeScene` resolution (f45243b), but tests then failed 4 times on the gate-label test. Following the stop-before-blocker rule, I discarded that unpublished local merge commit (main was reset to a706888 inside my temp worktree; nothing was pushed). **Nothing from 009–030 is merged.**
 - PR 031 (design/revive-fix c48f208, docs only) was merged. See REVIEW-031.
+
+## Re-review after restack onto 5226bcc (2026-10-11)
+
+`git range-diff 22e94b0~1..7e5d68d 5226bcc..60b886d`: every commit is `=` except:
+
+- 009 `ad10acd`: the `makeScene` conflict is resolved by keeping both the level and the art dev hook. New fix commit `7cddb0f`: thistle-gauntlet gate y 27→24.5, wasp-queen-nest ×3 gate y 20→18 and phase-2 trap y 30→19, and balance tests get a 60 s timeout. The assertions are unchanged.
+- 014 `5b6da1c`: only rebase context in `scene.ts` (art's new scene).
+- 018 `bd334b8`: the flower-instancing hunk is dropped, because art 013 replaced the flowers. New doc commit `a49ce77`.
+- 024: the stray `404ffd7` (smoke JSON outputs) is not in the branch. It was never in the reviewed 7c1fc45 and survives on `backup/m2-12-smoke-outputs-404ffd7`.
+
+Nothing else changed. **Design nit:** in wasp-queen-nest, the phase-2 trap gate (y=19, width 4) now sits 1 unit behind the moving ×3 gate (y=18). Ask design to confirm this is intended.
+
+All 11 PRs were merged --no-ff in order. Lint, tests and build passed after each merge (tests 103→164). Final 030 merge: `ad1b7d3`.
