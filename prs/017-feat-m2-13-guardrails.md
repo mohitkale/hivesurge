@@ -1,4 +1,4 @@
-# PR 008 — feat/m2-13-guardrails (M2-13; base: feat/m2-16-size-budget, PR 007, on PR 010 M2-7)
+# PR 017 — feat/m2-13-guardrails (M2-13; base: feat/m2-16-size-budget, PR 015, on PR 014 M2-7)
 
 **Summary:** Adds tests and fixes for monetisation guardrails G1, G2, G5, G6, G13 and G17
 (`monetization/guardrails.md`). Sandbox only; no real ads, payments or keys.
