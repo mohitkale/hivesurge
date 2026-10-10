@@ -3,14 +3,14 @@
 _Number claimed in `prs/INDEX.md` on main (commit `24aabd7`)._
 
 **Summary:** Adds a dev perf overlay showing median fps, 1% low fps, draw calls (`renderer.info.render.calls`) with the
-peak, triangles with the peak, unit count and DPR (research PERF-A). It is off by default: open it with `?perf` or
+peak, triangles with the peak, unit count and DPR (research PERF-A). It is off by default: open it with `?debug` (PLAN 48bc57b) or
 toggle it with F3. `?stress=N` keeps about N units alive for perf runs. The lane-edge flowers are now one instanced
 mesh, which cuts static draw calls from about 109 to 63.
 
 **Changes**
 
 - `src/ui/perfStats.ts`: pure `PerfStats` (rolling window, median and 1% low fps, last and peak calls and triangles),
-  plus the `?perf` and `?stress` URL parsing (stress clamped to 1000).
+  plus the `?debug` and `?stress` URL parsing (stress clamped to 1000).
 - `src/ui/perfOverlay.ts` + `style.css`: overlay updated 4×/s. It exposes `data-calls`, `data-peak-calls`,
   `data-fps` and `data-units` for automated QA (M2-10).
 - `src/game.ts`: samples `renderer.info` after each render while visible. With `?stress=N` it tops up units every
@@ -39,6 +39,8 @@ dist 593.77 KiB.
 **Acceptance (PLAN M2-15):**
 
 - Peak swarm (500 units) on mobile emulation ≤ 100 draw calls: met (63 at 500–853 units).
+- Overlay shows fps, draw calls and unit count, toggled by `?debug`, hidden by default: met (it also shows
+  triangles and DPR).
 - The value is logged by QA in the M2-10 report: still for QA to do.
 
 **Reviewer:** hivesurge-review

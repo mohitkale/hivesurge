@@ -20,9 +20,9 @@ describe('perf overlay stats (M2-15)', () => {
     expect(s.medianFps).toBeCloseTo(30, 0);
   });
 
-  it('is opt-in via ?perf; ?stress is clamped', () => {
+  it('is opt-in via ?debug; ?stress is clamped', () => {
     expect(perfEnabledFromUrl('')).toBe(false);
-    expect(perfEnabledFromUrl('?perf')).toBe(true);
+    expect(perfEnabledFromUrl('?debug')).toBe(true);
     expect(stressCountFromUrl('?stress=500')).toBe(500);
     expect(stressCountFromUrl('?stress=99999')).toBe(1000);
     expect(stressCountFromUrl('?stress=abc')).toBe(0);
