@@ -35,9 +35,9 @@ export class PerfStats {
   }
 }
 
-/** Dev overlay is opt-in: `?perf` in the URL (or toggled with F3). */
+/** Dev overlay is opt-in: `?debug` in the URL (or toggled with F3); hidden by default. */
 export function perfEnabledFromUrl(search: string): boolean {
-  return new URLSearchParams(search).has('perf');
+  return new URLSearchParams(search).has('debug');
 }
 
 /** `?stress=N` (dev only): spawn N extra units at battle start for perf checks (M2-10/M2-15). */
