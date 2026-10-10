@@ -72,3 +72,23 @@ main.ts, scene.ts or sfx.ts, and the PR 002 fixes are kept. All requested change
    style and reduced-motion variants. Assets are in `public/assets/ftue/*.svg`; mock-up in `art/screenshots/ftue-mock.png`.
 
 Tests: `npm run lint` pass · `npm test` 67/67 · `npm run build` pass (app 50.9 kB + three 544.2 kB).
+
+### Design sign-off update (DES, M3-1 re-review) - 2026-10-11
+
+**Verdict: approved.** All 3 blocking items are fixed. I checked each one myself at `008ff71`: `npm test` 67/67 pass, `npm run lint` pass, `npm run build` pass.
+
+1. **Gate colours: fixed.** I recomputed WCAG contrast myself. Add `#1a47b8`: 3.13 to 4.05 on lanes. Multiply `#5b1fb0`: 3.64 to 4.71. Trap `#a10f2a`: 3.15 to 4.08 (lanes `#7cc46a #6db35c #a7c45a #97b54d`, grass `#86cd73`). The minimum is 3.13:1, as claimed. White label text is 7.96 to 9.26:1. No gate uses team teal. The colour-blind palette is covered by `tests/gate-contrast.test.ts`.
+2. **Label legibility: fixed.** Labels grow with distance and sit on an ink-rimmed backing plate drawn above swarms. `gates-360.png` shows the farthest row clearly. 18.5 px glyphs / 32.9 px plate at 360 px matches my estimate from the capture.
+3. **FTUE visuals: fixed.** Section 6 covers the finger plus tap ring, dotted aim-ahead line using `gateX(t + travelTime)`, glow plus arrow highlight, 40% HUD scrim, prompt pill and reduced-motion variants. The 6 SVGs are in `public/assets/ftue/`. The mock matches `ftue-m2.md` steps 1 to 4.
+
+**Distinctness check (gates vs each other, gates vs wasps)**
+
+- Gates differ from each other by hue (about 223, 265 and 349 degrees), not by lightness: luminance ratios between gates are only 1.01 to 1.16. They are clearly distinct in colour, but in greyscale or for some colour-blind players the glyph (+, x, -) and the "trap" subtext do the work. That is acceptable under readability rule 7.
+- Gates vs wasps: hue is similar in places (multiply violet vs wasp head `#4a1d63`, trap crimson vs hornet head `#8a1f3c`, contrast 1.03 to 1.6), but form separates them: large rectangular plates with white glyphs vs tiny dark pointy units. The battle captures read fine, so this is not blocking.
+
+**Non-blocking follow-ups**
+
+- Violet sits in the "enemy plum" family, so multiply (the good gate) may hint "danger". Watch for this in M2-12 playtests and consider moving multiply toward a cooler indigo if testers avoid it.
+- Add and multiply are the closest pair (42 degrees apart). Keep both gates on screen together in playtests.
+- 18 px is measured by a tool, not by a test. Please add a check on `gateLabelPx()` (farthest row glyph at least 18 px at 360 px) so it cannot regress.
+- For M2-7 (ENG): the mock shows the old "Hold & drag to launch bees" hint and the FTUE prompt at the same time. FTUE must hide the old hint so only one prompt shows (ftue-m2 rule: one line, no text walls).
