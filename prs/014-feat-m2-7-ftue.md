@@ -1,4 +1,6 @@
-# PR 010 — feat/m2-7-ftue (M2-7; base: feat/m2-5-levels, PR 009)
+# PR 014 — feat/m2-7-ftue (M2-7; base: feat/m2-5-levels, PR 009)
+
+_Renumbered from 010 per prs/INDEX.md._
 
 **Summary:** Implements the FTUE from `docs/design/ftue-m2.md` on level `ftue-meadow`. On first launch the game skips
 the menu and boots straight into the battle. Steps are action-gated (aim → gate → aim-ahead → queen → finish), with
@@ -26,6 +28,8 @@ save flag.
   - Draws the lead line in step 3.
   - Sets `ftueDone` on the first FTUE win, or at launch if any battle has been played (the spec's "second launch"
     rule). Replays and other levels use `autoTriggers` without prompts.
+- The generic "Hold & drag to launch bees" hint is hidden from the first FTUE frame, so only one prompt is on
+  screen (design feedback).
 - `src/ui/hud.ts` + `style.css`: `.ftue-prompt` (top third, one line, 150 ms fade, `aria-live`). Reduced motion swaps
   the bounce for a static outline.
 - `src/render/scene.ts`: dashed `leadLine`.

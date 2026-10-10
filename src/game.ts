@@ -186,6 +186,8 @@ export class Game {
     this.overlay.innerHTML = '';
     this.analytics.track('level_start', { level: this.world.level.id });
     this.hud = new Hud(this.hudRoot);
+    // FTUE shows a single prompt: hide the generic launch hint from the first frame.
+    if (this.ftue) this.hud.hideHint();
     this.hud.queenBtn.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
       this.input.queueQueen();
