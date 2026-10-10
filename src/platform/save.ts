@@ -15,10 +15,27 @@ export interface SaveData {
   noAds: boolean;
   battlesCompleted: number;
   lastInterstitialAt: number;
-  /** FTUE finished (first FTUE win, or a later launch after playing). */
+  /** FTUE finished (first win, or a later launch). Gates ads/offers (G1, G2). */
   ftueDone: boolean;
+  /** Daily ad counters for caps (G5); reset when `day` changes. */
+  adDay: AdDayCounters;
   settings: { muted: boolean; colorBlind: boolean; haptics: boolean };
 }
+
+export interface AdDayCounters {
+  /** Local calendar day, YYYY-MM-DD. */
+  day: string;
+  rewarded: number;
+  interstitial: number;
+  perPlacement: Record<string, number>;
+}
+
+export const emptyAdDay = (): AdDayCounters => ({
+  day: '',
+  rewarded: 0,
+  interstitial: 0,
+  perPlacement: {},
+});
 
 export const defaultSave = (): SaveData => ({
   version: 1,
@@ -31,6 +48,7 @@ export const defaultSave = (): SaveData => ({
   battlesCompleted: 0,
   lastInterstitialAt: 0,
   ftueDone: false,
+  adDay: emptyAdDay(),
   settings: { muted: false, colorBlind: false, haptics: true },
 });
 
@@ -55,6 +73,7 @@ export function parseSave(raw: string | null): SaveData {
       battlesCompleted: num(d.battlesCompleted),
       lastInterstitialAt: num(d.lastInterstitialAt),
       ftueDone: d.ftueDone === true,
+      adDay: parseAdDay(d.adDay),
       settings: {
         muted: d.settings?.muted === true,
         colorBlind: d.settings?.colorBlind === true,
@@ -85,6 +104,20 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     noAds: a.noAds || b.noAds,
     battlesCompleted: Math.max(a.battlesCompleted, b.battlesCompleted),
     ftueDone: a.ftueDone || b.ftueDone,
+  };
+}
+
+function parseAdDay(v: unknown): AdDayCounters {
+  if (!v || typeof v !== 'object') return emptyAdDay();
+  const o = v as Partial<AdDayCounters>;
+  const per: Record<string, number> = {};
+  if (o.perPlacement && typeof o.perPlacement === 'object')
+    for (const [k, n] of Object.entries(o.perPlacement)) per[k] = num(n);
+  return {
+    day: typeof o.day === 'string' ? o.day : '',
+    rewarded: num(o.rewarded),
+    interstitial: num(o.interstitial),
+    perPlacement: per,
   };
 }
 

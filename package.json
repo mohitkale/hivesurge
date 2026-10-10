@@ -4,7 +4,7 @@
   "description": "Hive Surge: original swarm-lane web game (vertical slice)",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && node scripts/size-budget.mjs",
+    "build": "node scripts/live-key-guard.mjs && tsc --noEmit && vite build && node scripts/live-key-guard.mjs && node scripts/size-budget.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint . && prettier --check .",

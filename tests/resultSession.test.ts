@@ -28,7 +28,12 @@ describe('ResultSession claim guard (REVIEW-002 #1)', () => {
 });
 
 describe('ResultSession rewarded flag (REVIEW-002 #2)', () => {
-  const eligible = { noAds: false, battlesCompleted: AD_FREE_BATTLES + 5, lastInterstitialAt: 0 };
+  const eligible = {
+    noAds: false,
+    battlesCompleted: AD_FREE_BATTLES + 5,
+    lastInterstitialAt: 0,
+    ftueDone: true,
+  };
   const now = INTERSTITIAL_MIN_GAP_MS * 10;
 
   it('without a rewarded ad an interstitial is allowed', () => {

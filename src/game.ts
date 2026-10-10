@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { haptic, Sfx } from './audio/sfx';
-import { canShowInterstitial } from './platform/adPolicy';
+import { canOfferRewarded, canShowInterstitial } from './platform/adPolicy';
+import { AdPacer } from './platform/adPacer';
+import { applyPurchase } from './platform/entitlements';
 import { ResultSession } from './platform/resultSession';
 import { MockPlatform } from './platform/mockPlatform';
 import { CATALOG, type Sku } from './platform/platform';
@@ -35,6 +37,7 @@ export class Game {
   private world: World;
   private scene: GameScene;
   private result = new ResultSession();
+  private readonly pacer: AdPacer;
   private hud: Hud | null = null;
   private phase: Phase = 'title';
   private acc = 0;
@@ -51,6 +54,7 @@ export class Game {
     // ftue-m2.md: FTUE counts as done on a later launch once a battle was played.
     if (!this.save.ftueDone && this.save.battlesCompleted > 0) this.save.ftueDone = true;
     this.world = new World(this.currentLevel());
+    this.pacer = new AdPacer(this.save.adDay);
     applyTheme(document.documentElement, this.save.settings.colorBlind);
     this.sfx.setMuted(this.save.settings.muted);
     this.scene = this.makeScene();
@@ -165,10 +169,7 @@ export class Game {
       handlers[`buy:${k}`] = async () => {
         if (await this.platform.purchase(k)) {
           this.analytics.track('purchase', { sku: k, price: CATALOG[k].price, sandbox: true });
-          const g = CATALOG[k].grants;
-          this.save.coins += g.coins ?? 0;
-          this.save.gems += g.gems ?? 0;
-          this.save.noAds = true; // any purchase removes forced ads
+          applyPurchase(this.save, k); // G6: any purchase removes forced ads
           this.persist();
         }
         this.showTitle();
@@ -248,6 +249,8 @@ export class Game {
   }
 
   private showWin(r: Rewards): void {
+    // G2 (no rewarded offers in FTUE) + G5 (caps).
+    const offerDouble = canOfferRewarded(this.save) && this.pacer.canRewarded('win_double');
     const stars = [0, 1, 2]
       .map((i) => `<span class="${i < r.stars ? '' : 'off'}">★</span>`)
       .join('');
@@ -255,12 +258,17 @@ export class Game {
       <h1>Nest broken!</h1><div class="stars">${stars}</div>
       <p class="reward">🪙 ${r.coins}</p>
       <p class="small">Peak swarm ${this.world.stats.peakBees} · ${Math.ceil(this.world.timeLeft)}s left</p>
-      <div class="row"><button class="btn primary ad" data-a="double">2X 🪙 ${r.coins * 2}</button>
-      <button class="btn" data-a="claim">No thanks</button></div></div></div>`;
-    this.analytics.track('ad_offered', { placement: 'win_double', type: 'rewarded' });
+      <div class="row">${
+        offerDouble
+          ? `<button class="btn primary ad" data-a="double">2X 🪙 ${r.coins * 2}</button>
+      <button class="btn" data-a="claim">No thanks</button>`
+          : '<button class="btn primary" data-a="claim">Collect</button>'
+      }</div></div></div>`;
+    if (offerDouble)
+      this.analytics.track('ad_offered', { placement: 'win_double', type: 'rewarded' });
     this.bind({
       double: async () => {
-        if (this.result.isClaimed) return;
+        if (this.result.isClaimed || !offerDouble) return;
         this.disableResultButtons();
         const ok = await this.watchRewarded('win_double');
         this.claim(ok ? applyMultiplier(r, 2) : r);
@@ -272,7 +280,12 @@ export class Game {
   private showLoss(r: Rewards): void {
     const pct = Math.ceil((1 - r.nestDamage) * 100);
     // Revive is offered only for close calls and once per battle (no offer on every loss).
-    const canRevive = this.world.revives === 0 && this.result.canOfferRevive && r.nestDamage >= 0.5;
+    const canRevive =
+      this.world.revives === 0 &&
+      this.result.canOfferRevive &&
+      r.nestDamage >= 0.5 &&
+      canOfferRewarded(this.save) &&
+      this.pacer.canRewarded('revive');
     this.overlay.innerHTML = `<div class="modal"><div class="card">
       <h1>So close!</h1><p class="reward">Nest at ${pct}% health</p>
       <p class="small">Tip: chain ×2 into ×3 and send the Queen ahead of big waves.</p>
@@ -310,8 +323,9 @@ export class Game {
     // FTUE is done after its first win (replays of level 1 run without prompts).
     if (this.ftue && this.world.outcome === 'won') this.save.ftueDone = true;
     const now = Date.now();
-    if (canShowInterstitial(this.save, now, rewardedShown)) {
+    if (canShowInterstitial(this.save, now, rewardedShown) && this.pacer.canInterstitial()) {
       this.save.lastInterstitialAt = now;
+      this.pacer.recordInterstitial();
       this.persist();
       this.phase = 'ad';
       this.analytics.track('ad_offered', { placement: 'level_transition', type: 'interstitial' });
@@ -335,6 +349,7 @@ export class Game {
     this.phase = 'ad';
     // Any rewarded ad shown (even closed early) blocks an interstitial on this transition.
     this.result.markRewardedShown();
+    this.pacer.recordRewarded(p);
     const ok = await this.platform.showRewarded(p);
     this.analytics.track('ad_watched', { placement: p, completed: ok, type: 'rewarded' });
     this.phase = prev;
