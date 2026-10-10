@@ -15,41 +15,44 @@
 
 Full sheet: [`economy-sources-sinks.csv`](economy-sources-sinks.csv) (CODE = `src/sim/rewards.ts` / `platform.ts` on `fix/pr-002-review`; META/LIVE = `docs/design/meta-m5.md` / `liveops-m7.md` on `design/m2-specs`; ASSUMPTION marked).
 
-## 30-day sim (M5-2a) — reproducible, reads design @ 209606b
+## 30-day sim (M5-2a) — reproducible, reads design @ 866e82b
 
-`python3 monetization/sim/economy_sim.py [--seed 42] [--runs 200] [--design-ref 209606b]`. Output is saved in [`sim/last_run.md`](sim/last_run.md).
+`python3 monetization/sim/economy_sim.py [--seed 42] [--runs 200] [--design-ref 866e82b] [--win-sens 2.0]`. Output, including a sensitivity run, is saved in [`sim/last_run.md`](sim/last_run.md).
 The script reads its tables from git at `--design-ref`:
 
-- `meta-m5.md`: bee roster, `expectedP(n)` points (= remote config `difficulty.expectedP`) and the enemy scaling `clamp(1 + 0.03(P − expectedP(n)), 0.90, 1.15)`.
-- `liveops-m7.md`: season pass free and premium tracks, and XP per tier.
+- `meta-m5.md`: bee roster, the `expectedP(n)` points and tail formula (n = stage, +1 per win; = remote config `difficulty.expectedP`), and the enemy scaling `clamp(1 + 0.03(P − expectedP(n)), 0.90, 1.15)`.
+- `liveops-m7.md`: season pass tracks and XP.
 - CODE `rewards.ts`: win/loss coins.
 
-P = equipped loadout only (slots at n = 3/5/8/12), worker excluded (META).
-Target = expectedP(n), i.e. 100% of the free ad-watcher by design definition.
+P = equipped loadout, worker excluded.
+ASSUMPTIONS (unchanged):
 
-ASSUMPTIONS:
+- 6 battles/day.
+- Win rate is 70% at enemy scale 1.0, minus `--win-sens` points per +1% enemies (default 2.0). This feedback is the key unknown and needs playtest data.
+- One chest unlocks per gap between sessions; the daily pack is a Wood chest; 3 of 5 weekly targets are completed.
+- C/R upgrade costs for L7–10 are extrapolated; hive rooms and events are not simulated.
 
-- 6 battles/day in 3 sessions; level n advances +1 per win.
-- Win rate is 70% at enemy scale 1.0 and drops 2 points per +1% enemies, so two-sided scaling feeds back into progression.
-- One chest unlocks per gap between sessions.
-- The rewarded daily pack is a Wood chest.
-- 3 of 5 weekly targets are completed.
-- C/R upgrade costs for L7–10 are extrapolated (x2 per level).
-- Hive rooms, idle coins, events and overflow conversion are not simulated.
+**Headlines (seed 42, 200 runs, win-sens 2.0), median P/expectedP over days 3–30:**
 
-Personas: `f2p_no_ads`, `f2p_ads` (the META baseline), and `payer_pass` (starter pack + season pass on day 1).
+| Persona                | P/expectedP  | Enemy scale  | Stage n at day 30 |
+| ---------------------- | ------------ | ------------ | ----------------- |
+| no-ads free            | 87% (74–93%) | 0.90 (floor) | 159               |
+| ad-watcher free        | 109%         | 1.14         | 94                |
+| payer (starter + pass) | 117%         | 1.15 (cap)   | 81                |
 
-**Headlines (seed 42, 200 runs):**
+- **Hard wall: none.** The longest stall for the no-ads player is 0 days. They sit at about 85%, as the design expected.
+- **Scaling now gets harder for payers:** yes, at the +15% cap every day from day 3.
+- **Premium cards:** 48 of 812 = 5.9% (27 cards/day, because payers win less). With win-sens 0: 4.8% of about 1,010 (33.7/day, which matches the design's ~33/day).
+- **Premium Epic share of season Epics:** 24.5% (21.3% at win-sens 0), vs the design's ~18%.
 
-- **No hard wall.** The no-ads free player gains levels every day; the longest stall is 0 days.
-- **Below expectedP.** The no-ads free player sits at a median of 50% of expectedP over days 3–30 (minimum 45%), so they are on the −10% floor (enemies 0.90) from day 2 onward.
-- **Premium card share:** 48 premium cards out of about 1,160 total cards over 30 days = **4.1%**, under the 15% cap.
+**Issues for DES:**
 
-**New issues for DES (not walls):**
-
-1. **The expectedP curve is too steep for the modelled pace.** Even the free ad-watcher baseline sits at only about 55–70% of expectedP, not 100%. That puts all personas on the 0.90 floor, so the scaling never makes payers' games harder. Either levels advance slower than 1 per win (the sim assumption), or the expectedP points are too high, or the card/coin intake is too low. Proposal: retune `difficulty.expectedP` from this sim's f2p_ads median, or define level pace.
-2. **Card intake mismatch.** liveops-m7.md assumes about 280 season cards from chests; the sim produces about 1,100 in 30 days (win chests, plus 2–3 Wood chests a day, plus login and free track). The premium share passes either way (48/280 ≈ 17% would exceed the cap), so the denominator matters. DES should confirm the intended chest pace.
-3. **Arithmetic in liveops-m7.md:** the premium cards total **48** (2+6+12+5+20+3), not 40, and **13 Epic** (2 Orchid + 2+5 Leafcutter + 4 Honey Guard), not 9. There are 3 Legendary.
+1. **Progression inversion (feedback loop).** expectedP was fitted to the ad-watcher's power when everyone sat on the 0.90 floor (old curve). Now ad-watchers and payers sit above expectedP, so enemies get +14–15% harder. With win-sens 2.0 they then win less and clear **fewer stages than no-ads players** (day 30: no-ads 159, ads 94, payer 81). Paying or watching ads slows campaign progress, and the payer also reaches only season tier 26, not 30.
+   - At win-sens 0.5–1.0 the gap shrinks (payer 108–118 vs no-ads 133–140) but still points the wrong way. At win-sens 0 all three are about equal (~127).
+   - Not a wall, but a fairness/UX risk: it reads as "paying makes the game harder".
+   - Options: scale only downward (floor only, no +15% upward), cap the upward scaling with an ease-off after losses, or refit expectedP iteratively with feedback on, and validate win-sens in playtests (QA M2-12).
+2. **Ad-watcher is not exactly 100%** even without feedback (104% at win-sens 0), because the fit came from a run with different win rates. It's minor; refit after fixing issue 1.
+3. **The premium Epic share** (21–25%) is above the design's 18% estimate. The total premium share is fine (≤6%), but if the cap applies per rarity, it fails.
 
 ## M5-11 guardrail check (no paid random items)
 
