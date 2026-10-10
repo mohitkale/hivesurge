@@ -27,7 +27,7 @@ Fixes PR 002 QA bug 1: closing the revive ad early burns the battle's only reviv
 
 - **Free revive once per session:** if the ad fails to load or has no fill, the button changes to "Revive (free)". The player gets the revive without an ad, at most **once per session** (`session.freeReviveUsed`). This is the player's fault-free fallback and keeps G8's spirit (the benefit is not gated by ad availability).
 - Second ad failure in the same session: the button shows "Ad not available" (disabled) for 3 s, then the offer closes normally.
-- Free revive is not given if the device is offline at the defeat moment AND the session has had 0 successful ad loads (likely ad blocker). Ad blockers get the normal defeat screen, not a free revive every session. Use the flag `adsEverLoadedThisSession`.
+- **Eligibility:** the free revive is granted only if at least one ad has loaded successfully this session (flag `adsEverLoadedThisSession`). There is no offline check. Reason: ad-blocked players look online to the game, so an offline check would let them get a free revive every session. Accepted edge case: an online player whose first ad of the session fails gets no free revive and sees the normal defeat screen.
 - The free revive does not count toward rewarded caps and is not an ad impression.
 
 ## Anti-exploit rules
@@ -56,7 +56,8 @@ Funnel in admin (M6-1): offered, requested, completed, granted, by level.
 1. Close early, then the offer returns with the countdown resumed, `revives === 0`, no reward.
 2. Close early twice, then the offer is gone and the defeat screen shows.
 3. Close early, then complete, then the revive is granted once. A second offer never appears.
-4. No fill gives a free revive. A second no fill in the same session shows "Ad not available".
-5. Interstitial is blocked after any revive ad on that transition.
-6. In FTUE (first 3 battles) no revive offer appears.
-7. Mock adapter: add `noFill` and `error` modes to `MockPlatform.showRewarded` to test these cases.
+4. After at least one ad has loaded this session, no fill gives a free revive. A second no fill in the same session shows "Ad not available".
+5. No ad has loaded yet this session (for example, an ad blocker or the first ad fails), then the ad fails: no free revive, normal defeat screen. This holds whether or not the device is online.
+6. Interstitial is blocked after any revive ad on that transition.
+7. In FTUE (first 3 battles) no revive offer appears.
+8. Mock adapter: add `noFill` and `error` modes to `MockPlatform.showRewarded` to test these cases.
