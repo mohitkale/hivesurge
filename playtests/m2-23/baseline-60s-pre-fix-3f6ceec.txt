@@ -1,0 +1,3 @@
+2026-10-10T22:55:33.550Z [warn] WebGL: INVALID_OPERATION: texImage3D: FLIP_Y or PREMULTIPLY_ALPHA isn't allowed for uploading 3D textures
+2026-10-10T22:55:33.555Z [warn] WebGL: INVALID_OPERATION: texImage3D: FLIP_Y or PREMULTIPLY_ALPHA isn't allowed for uploading 3D textures
+SUMMARY {"commit":"3f6ceec","seconds":60,"screensVisited":3,"webglWarnings":2,"sample":["WebGL: INVALID_OPERATION: texImage3D: FLIP_Y or PREMULTIPLY_ALPHA isn't allowed for uploading 3D textures","WebGL: INVALID_OPERATION: texImage3D: FLIP_Y or PREMULTIPLY_ALPHA isn't allowed for uploading 3D textures"],"star":{"aria":null,"lit":3}}
