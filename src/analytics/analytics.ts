@@ -3,7 +3,13 @@
  * survive reloads; a later sink (PostHog / Supabase table) can drain them.
  */
 export type AnalyticsEventName =
-  'level_start' | 'level_fail' | 'level_win' | 'ad_offered' | 'ad_watched' | 'purchase';
+  | 'level_start'
+  | 'level_fail'
+  | 'level_win'
+  | 'ad_offered'
+  | 'ad_watched'
+  | 'purchase'
+  | 'ftue_step';
 
 export interface AnalyticsEvent {
   name: AnalyticsEventName;
@@ -62,6 +68,7 @@ export class Analytics {
       ad_offered: 0,
       ad_watched: 0,
       purchase: 0,
+      ftue_step: 0,
     };
     for (const e of this.events()) if (e.name in out) out[e.name]++;
     return out;
