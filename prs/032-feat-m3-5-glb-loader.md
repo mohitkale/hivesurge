@@ -1,4 +1,4 @@
-# PR 032 (number pending claim) — feat/m3-5-glb-loader (M3-5; base: main 5226bcc)
+# PR 032 (number pending claim) — feat/m3-5-glb-loader (M3-5; base: main ad1b7d3, after the 009–030 stack merge)
 
 **Summary:** The battle scene now loads the art team's meshopt GLBs at runtime: bee, queen, wasp, hornet and cannon.
 Every model falls back to the procedural geometry from `src/art/models.ts` if it fails to load, so the game never
@@ -37,35 +37,31 @@ Proposed fix (art): keep `_WING` through gltfpack. Check whether a newer gltfpac
 or skip `-cc`/quantization for that stream. Then the loader can read `_WING`, which GLTFLoader maps to `_wing`, and
 drop the colour heuristic.
 
-**Headless browser check** (Chrome via `vite preview`, 390×844, one full battle each; logs and screenshots in
-`/workspace/hivesurge-artifacts/m3-5/`):
+**Headless browser check** at `2fca17f` (Chrome via `vite preview`, 390×844, one full battle each). Logs and
+screenshots are in `/workspace/hivesurge-artifacts/m3-5/` (`glbcheck-2fca17f.log`).
 
-| Mode                         | GLB requests                                            | Battle result screen | Page errors |
-| ---------------------------- | ------------------------------------------------------- | -------------------- | ----------- |
-| assets loaded                | 5 × 200                                                 | reached              | 0           |
-| GLBs blocked (request abort) | 5 × failed, 5 `[assets] … procedural fallback` warnings | reached              | 0           |
-| `?assets=off`                | none                                                    | reached              | 0           |
+| Mode                         | GLB requests                                          | Battle result screen | Page errors | texImage3D warnings |
+| ---------------------------- | ----------------------------------------------------- | -------------------- | ----------- | ------------------- |
+| assets loaded                | 5 × 200                                               | reached              | 0           | 0                   |
+| GLBs blocked (request abort) | 5 × failed, `[assets] … procedural fallback` warnings | reached              | 0           | 0                   |
+| `?assets=off`                | none                                                  | reached              | 0           | 0                   |
 
 The loaded and `?assets=off` battle screenshots look the same, as expected, because the GLBs were exported from the
-same procedural models. The `texImage3D` warnings seen in this run are the known pre-PR 027 issue; this base does not
-have that fix yet.
+same procedural models.
 
-**Sizes:** initial JS 4.78 kB (2.15 kB gzip), unchanged.
+**Sizes** (with the merged M2-16 budget script): initial JS 2.26 KiB gzip, within the 1 MiB limit. dist is 898 KiB,
+within the 5 MiB limit.
 
-- **Lazy chunks:** `GLTFLoader` 44.27 kB (13.18 gzip) and `meshopt_decoder` 26.48 kB (7.26 gzip). These are new.
-- **game chunk:** 61.13 kB (21.45 gzip). It was 53.38 kB (19.04 gzip).
-- **three chunk:** 577.00 kB (143.66 gzip). It was 544.15 kB (135.64 gzip), because core classes the loader references
-  are no longer tree-shaken.
-- **dist:** about 1.1 MB.
-
-The M2-9 budget is kept: initial JS is far under 1 MiB, and dist is under 5 MiB.
+- **Lazy chunks:** `GLTFLoader` 44.27 kB (13.17 gzip) and `meshopt_decoder` 26.48 kB (7.26 gzip). These are new.
+- **three chunk:** 577.27 kB (143.72 gzip). It is about 33 kB bigger, because core classes the loader references are
+  no longer tree-shaken.
 
 **Not done (follow-ups):**
 
 - LOD.
 - Runtime loading for biome props and skins. Those GLBs stay in `art/models/` until a runtime path uses them.
 
-**Test results:** `npm run lint` pass · `npm test` 92/92 · `npm run build` pass.
+**Test results:** `npm run lint` pass · `npm test` 170/170 · `npm run build` pass.
 
 **Acceptance (PLAN M3-5):**
 
