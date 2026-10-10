@@ -1,4 +1,4 @@
-import { crossesGate, gateSpawnCount, gateX } from './gates';
+import { crossesGate, gateSpawnCount, gateXAtAngle } from './gates';
 import { SpatialGrid } from './grid';
 import { createRng } from './rng';
 import {
@@ -62,6 +62,8 @@ export class World {
   private nextWave = 0;
   private readonly trapLeft: number[];
   private readonly gateXs: number[];
+  /** Accumulated motion angle per gate (integrated per tick). */
+  private readonly gateAngles: number[];
   private readonly waspGrid: SpatialGrid;
   /** Timed waves sorted by `at`; trigger waves are spawned by fireTrigger(). */
   private readonly timedWaves: WaveDef[];
@@ -79,6 +81,7 @@ export class World {
     this.trapLeft = level.gates.map((g) => (g.kind === 'sub' ? g.value : 0));
     this.gateXs = level.gates.map((g) => g.x);
     this.gatePasses = level.gates.map(() => 0);
+    this.gateAngles = level.gates.map(() => 0);
     this.waspGrid = new SpatialGrid(level.laneWidth, level.laneLength, 1, WASP_CAP);
     this.timedWaves = level.waves
       .filter((w) => w.at !== undefined)
@@ -89,6 +92,18 @@ export class World {
   /** Gates with `fromPhase` stay inactive (off-lane, invisible) until that boss phase. */
   gateActive(i: number): boolean {
     return (this.level.gates[i].fromPhase ?? 0) <= this.bossPhase;
+  }
+
+  /** Current boss-phase multiplier on moving-gate speed (1 outside boss phases). */
+  get gateSpeedScale(): number {
+    return this.level.bossPhases?.[this.bossPhase - 1]?.gateSpeedScale ?? 1;
+  }
+
+  /** Predicted x of gate i `seconds` from now at the current speed (aim-ahead / lead). */
+  gateXAhead(i: number, seconds: number): number {
+    const g = this.level.gates[i];
+    const ahead = g.motion ? seconds * g.motion.speed * this.gateSpeedScale : 0;
+    return gateXAtAngle(g, this.gateAngles[i] + ahead, this.level.laneWidth);
   }
 
   /** Spawn all waves with this trigger name (once per name). */
@@ -126,7 +141,9 @@ export class World {
     if (this.outcome !== 'lost' || this.revives > 0) return false;
     this.revives++;
     this.hiveHp = Math.max(this.hiveHp, Math.ceil(this.level.hiveHp / 2));
-    for (let i = 0; i < this.wasps.count; i++) if (this.wasps.y[i] < 15) this.wasps.hp[i] = 0;
+    // Clear ordinary wasps near the hive; bosses (Matriarch) survive a revive.
+    for (let i = 0; i < this.wasps.count; i++)
+      if (this.wasps.y[i] < 15 && this.wasps.kind[i] !== UnitKind.Matriarch) this.wasps.hp[i] = 0;
     this.wasps.sweepDead();
     if (this.timeLeft < 20) this.timeBonus += 20 - this.timeLeft;
     this.outcome = 'playing';
@@ -147,11 +164,14 @@ export class World {
     const L = this.level;
     this.time += dt;
     this.updateBossPhase();
-    const speedScale = L.bossPhases?.[this.bossPhase - 1]?.gateSpeedScale ?? 1;
-    for (let i = 0; i < L.gates.length; i++)
+    const speedScale = this.gateSpeedScale;
+    for (let i = 0; i < L.gates.length; i++) {
+      const m = L.gates[i].motion;
+      if (m) this.gateAngles[i] += dt * m.speed * speedScale;
       this.gateXs[i] = this.gateActive(i)
-        ? gateX(L.gates[i], this.time * speedScale, L.laneWidth)
+        ? gateXAtAngle(L.gates[i], this.gateAngles[i], L.laneWidth)
         : OFF_LANE;
+    }
 
     // Cannon: ease toward aim, clamp to lane.
     const target = Math.max(-this.maxCannonX, Math.min(this.maxCannonX, input.aimX));
