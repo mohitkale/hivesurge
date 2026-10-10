@@ -6,20 +6,18 @@ import type { World } from '../sim/world';
 import { Particles } from './particles';
 import { drawLabel, grassTexture, labelTexture, stripeTexture } from './textures';
 
-/** Original palette: honey yellow + teal (player) vs plum purple + orange (rivals). */
-export const PALETTE = {
-  honey: '#ffc83d',
-  teal: '#2ec4b6',
-  plum: '#6b2d8c',
-  orange: '#ff8a3d',
-  trap: '#e2557a',
-  add: '#5fb84a',
-};
+import { COLORS, type Palette } from '../ui/theme';
 
-const GATE_COLOR: Record<GateDef['kind'], string> = {
-  mul: PALETTE.teal,
-  add: PALETTE.add,
-  sub: PALETTE.trap,
+/** Original palette: honey yellow + teal (player) vs plum purple + orange (rivals). */
+let PALETTE: Palette & { trap: string; add: string } = {
+  ...COLORS,
+  trap: COLORS.danger,
+  add: COLORS.success,
+};
+let GATE_COLOR: Record<GateDef['kind'], string> = {
+  mul: COLORS.teal,
+  add: COLORS.success,
+  sub: COLORS.danger,
 };
 
 interface GateView {
@@ -55,9 +53,15 @@ export class GameScene {
   private cannonKick = 0;
   private t = 0;
 
-  constructor(canvas: HTMLCanvasElement, level: LevelDef) {
+  constructor(canvas: HTMLCanvasElement, level: LevelDef, pal: Palette = COLORS) {
+    PALETTE = { ...pal, trap: pal.danger, add: pal.success };
+    GATE_COLOR = { mul: pal.teal, add: pal.success, sub: pal.danger };
     this.level = level;
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance',
+    });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.scene.background = new THREE.Color('#ffd9a8');
@@ -125,7 +129,10 @@ export class GameScene {
     const colors = ['#ff6fa8', '#ffffff', '#b78cff', '#ffd23f'];
     for (let i = 0; i < 26; i++) {
       for (const side of [-1, 1]) {
-        const f = new THREE.Mesh(petal, new THREE.MeshLambertMaterial({ color: colors[(i + side + 4) % 4] }));
+        const f = new THREE.Mesh(
+          petal,
+          new THREE.MeshLambertMaterial({ color: colors[(i + side + 4) % 4] }),
+        );
         f.position.set(side * (L.laneWidth / 2 + 1.1 + ((i * 7) % 3) * 0.6), 0.3, -i * 1.8 + 3);
         this.scene.add(f);
       }
@@ -172,7 +179,10 @@ export class GameScene {
     const band = new THREE.MeshLambertMaterial({ color: PALETTE.orange });
     for (let i = 0; i < 5; i++) {
       const r = 2.6 - Math.abs(i - 1.6) * 0.55;
-      const ring = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.9, r, 0.9, 12), i % 2 ? band : mat);
+      const ring = new THREE.Mesh(
+        new THREE.CylinderGeometry(r * 0.9, r, 0.9, 12),
+        i % 2 ? band : mat,
+      );
       ring.position.y = 0.45 + i * 0.85;
       this.nest.add(ring);
     }
@@ -206,7 +216,12 @@ export class GameScene {
     const color = GATE_COLOR[g.kind];
     const panel = new THREE.Mesh(
       new THREE.PlaneGeometry(g.width, 1.6),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide,
+      }),
     );
     panel.position.y = 0.8;
     const texture = labelTexture(gateLabel(g), color, g.kind === 'sub' ? 'trap' : '');
@@ -218,7 +233,9 @@ export class GameScene {
     label.rotation.x = -0.35;
     const postGeo = new THREE.CylinderGeometry(0.1, 0.1, 2.2, 6);
     const postMat = new THREE.MeshLambertMaterial({ color: '#3f8f3a' });
-    const bloom = new THREE.MeshLambertMaterial({ color: g.kind === 'sub' ? '#4a1d63' : '#ff6fa8' });
+    const bloom = new THREE.MeshLambertMaterial({
+      color: g.kind === 'sub' ? '#4a1d63' : '#ff6fa8',
+    });
     for (const side of [-1, 1]) {
       const post = new THREE.Mesh(postGeo, postMat);
       post.position.set((side * g.width) / 2, 1.1, 0);
@@ -229,7 +246,19 @@ export class GameScene {
     group.add(panel, label);
     group.position.set(g.x, 0, -g.y);
     this.scene.add(group);
-    this.gates.push({ group, texture, canvas: texture.image as HTMLCanvasElement, lastShown: g.value, pulse: 0 });
+    this.gates.push({
+      group,
+      texture,
+      canvas: texture.image as HTMLCanvasElement,
+      lastShown: g.value,
+      pulse: 0,
+    });
+  }
+
+  setPixelRatio(r: number): void {
+    const size = this.renderer.getSize(new THREE.Vector2());
+    this.renderer.setPixelRatio(r);
+    this.renderer.setSize(size.x, size.y, false);
   }
 
   resize(w: number, h: number): void {
@@ -277,7 +306,8 @@ export class GameScene {
   }
   onEnd(won: boolean): void {
     const z = won ? -this.level.laneLength - 1 : 1;
-    for (let i = 0; i < 6; i++) this.particles.burst((i - 2.5) * 1.5, 2, z, won ? PALETTE.honey : PALETTE.plum, 12, 7, 1.4);
+    for (let i = 0; i < 6; i++)
+      this.particles.burst((i - 2.5) * 1.5, 2, z, won ? PALETTE.honey : PALETTE.plum, 12, 7, 1.4);
     if (won) this.nest.scale.set(1, 0.25, 1);
     this.addShake(0.5);
   }
@@ -307,7 +337,12 @@ export class GameScene {
         const left = world.trapRemaining(i);
         if (left !== gv.lastShown && gv.canvas) {
           gv.lastShown = left;
-          drawLabel(gv.canvas, left > 0 ? `−${left}` : '✓', left > 0 ? PALETTE.trap : '#999', left > 0 ? 'trap' : 'broken');
+          drawLabel(
+            gv.canvas,
+            left > 0 ? `−${left}` : '✓',
+            left > 0 ? PALETTE.trap : '#999',
+            left > 0 ? 'trap' : 'broken',
+          );
           gv.texture.needsUpdate = true;
         }
       }
@@ -318,7 +353,11 @@ export class GameScene {
     if (world.outcome !== 'won') {
       const hpShare = world.nestHp / L.nestHp;
       const base = 0.55 + 0.45 * hpShare;
-      this.nest.scale.set(base * (1 + this.nestPulse * 0.08), base * (1 - this.nestPulse * 0.1), base);
+      this.nest.scale.set(
+        base * (1 + this.nestPulse * 0.08),
+        base * (1 - this.nestPulse * 0.1),
+        base,
+      );
     }
 
     this.particles.update(dt);
@@ -328,7 +367,7 @@ export class GameScene {
     const portrait = this.camera.aspect < 1;
     const sx = (Math.random() - 0.5) * this.shake;
     const sy = (Math.random() - 0.5) * this.shake;
-    this.camera.position.set(sx, (portrait ? 21 : 17) + sy, portrait ? 9 : 8);
+    this.camera.position.set(sx, (portrait ? 21 : 17) + sy, portrait ? 12 : 10);
     this.camera.lookAt(0, 0, portrait ? -L.laneLength * 0.47 : -L.laneLength * 0.5);
     this.renderer.render(this.scene, this.camera);
   }
@@ -347,13 +386,17 @@ export class GameScene {
       const isSmall = pool.kind[i] === smallKind;
       const mesh = isSmall ? small : big;
       const idx = isSmall ? ns : nb;
-      if (idx >= mesh.count) continue;
+      if (idx >= mesh.instanceMatrix.count) continue;
       const bob = Math.sin(this.t * 18 + i * 1.7) * 0.06;
       // Big units with folded overflow HP grow slightly so the extra power reads.
       const extra = isSmall ? Math.min(0.8, (pool.hp[i] - 1) * 0.08) : 0;
       const sc = 1 + extra;
       this.q.setFromAxisAngle(this.v.set(0, 1, 0), yaw + pool.vx[i] * 0.15);
-      this.m.compose(this.v.set(pool.x[i], 0.35 * sc + 0.1 + bob, -pool.y[i]), this.q, this.s.set(sc, sc, sc));
+      this.m.compose(
+        this.v.set(pool.x[i], 0.35 * sc + 0.1 + bob, -pool.y[i]),
+        this.q,
+        this.s.set(sc, sc, sc),
+      );
       mesh.setMatrixAt(idx, this.m);
       if (isSmall) ns++;
       else nb++;
