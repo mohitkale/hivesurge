@@ -44,7 +44,7 @@ Bot data is labelled `bot` and never mixed with QA data.
 - The output files were written to `/tmp/m212` and are not committed. The full §4 run (5 runs × 3 profiles, 10
   battles or 15 min) is for QA/research.
 
-**Test results:** `npm run lint` pass · `npm test` (see report) · `npm run build` pass.
+**Test results:** `npm run lint` pass · `npm test` 121/121 · `npm run build` pass.
 
 **Reviewer:** hivesurge-review
 
