@@ -49,4 +49,24 @@ describe('level data files', () => {
     ).toThrow(/kind/);
     expect(() => getLevel('nope')).toThrow();
   });
+
+  it('enforces at most 32 gates', () => {
+    const gate = { kind: 'add', value: 1, x: 0, y: 5, width: 1 };
+    expect(() => parseLevel({ ...cloverJson, gates: Array(32).fill(gate) })).not.toThrow();
+    expect(() => parseLevel({ ...cloverJson, gates: Array(33).fill(gate) })).toThrow(/at most 32/);
+  });
+
+  it('requires integer gate values and wave counts', () => {
+    const g = cloverJson.gates[0];
+    const w = cloverJson.waves[0];
+    expect(() => parseLevel({ ...cloverJson, gates: [{ ...g, value: 2.5 }] })).toThrow(/integer/);
+    expect(() => parseLevel({ ...cloverJson, waves: [{ ...w, count: 3.2 }] })).toThrow(/integer/);
+  });
+
+  it('requires gates to fit inside the lane', () => {
+    const g = cloverJson.gates[0];
+    expect(() => parseLevel({ ...cloverJson, gates: [{ ...g, x: 4.5, width: 2 }] })).toThrow(/fit/);
+    expect(() => parseLevel({ ...cloverJson, gates: [{ ...g, x: 0, width: 12 }] })).toThrow(/fit/);
+    expect(() => parseLevel({ ...cloverJson, gates: [{ ...g, x: 4, width: 2 }] })).not.toThrow();
+  });
 });
