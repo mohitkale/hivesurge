@@ -48,7 +48,10 @@ export class Input {
 
   private ndc(e: PointerEvent) {
     const r = this.el.getBoundingClientRect();
-    return { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 };
+    return {
+      x: ((e.clientX - r.left) / r.width) * 2 - 1,
+      y: -((e.clientY - r.top) / r.height) * 2 + 1,
+    };
   }
 
   private onDown = (e: PointerEvent) => {
