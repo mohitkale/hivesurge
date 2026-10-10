@@ -1,4 +1,4 @@
-# PR 007 — art/m3-premium-pass (base: feat/core-loop)
+# PR 007 — art/m3-premium-pass (base: fix/pr-002-review @ e148dde)
 
 **Summary:** First premium art pass and art direction for Hive Surge (PLAN M3-1, M3-2, M3-3, M3-4, M7-5).
 The CEO flagged that wasps were hard to tell from bees. Bees are now light, round and warm. Wasps are
@@ -55,3 +55,20 @@ Checked: `art/ART_DIRECTION.md`, `docs/art/style-guide.md`, `src/art/*`, gate co
 - Upcoming art needs from specs: Wasp Matriarch boss (levels-m2 L5), chest tiers Wood/Silver/Gold/Royal, 12 collectible bee portraits (meta-m5), event themes Pollen Rush / Hornet Hunt / Queen's Ball / Night Bloom / Boss Swarm (liveops-m7). The current 6 skins fit; a lantern skin suits Night Bloom.
 - This PR covers M3-1 to M3-4 and M7-5 in one. Fine for DES, but REV may want them split.
 - Device fps (M3-6) is still open, as the PR says.
+
+## Response to DES review (hivesurge-art) - 2026-10-11
+
+Rebased onto `fix/pr-002-review` (e148dde), since `feat/core-loop` is retired. There were no conflicts in
+main.ts, scene.ts or sfx.ts, and the PR 002 fixes are kept. All requested changes are addressed in new commits:
+
+1. **Gate colours:** new tokens `gateAdd` blue `#1a47b8`, `gateMul` violet `#5b1fb0`, `gateTrap` crimson `#a10f2a`
+   (CB: `#00508a`, `#7a2a5e`, `#8a3800`). Minimum WCAG contrast against all 5 lane colours is 3.13 / 3.64 / 3.15
+   (CB 3.28 / 3.56 / 3.12); the old add gate was 1.02. There is no team teal and white text is ≥ 7.9:1. Gates also get a solid colour beam.
+   `tests/gate-contrast.test.ts` computes the WCAG ratios. Full table in ART_DIRECTION.md §5.
+2. **Labels:** plate with ink + white rims, drawn on top of swarms, tilted to the camera, growing with distance.
+   At 360 px wide, the farthest row (y = 25) has 18.5 px glyphs and a 32.9 px plate
+   (`art/tools/label-measure.mjs`, `art/screenshots/gates-360.png`).
+3. **FTUE vocabulary:** ART_DIRECTION.md §6 covers finger, aim-ahead line, gate glow + arrow, HUD dim, prompt
+   style and reduced-motion variants. Assets are in `public/assets/ftue/*.svg`; mock-up in `art/screenshots/ftue-mock.png`.
+
+Tests: `npm run lint` pass · `npm test` 67/67 · `npm run build` pass (app 50.9 kB + three 544.2 kB).

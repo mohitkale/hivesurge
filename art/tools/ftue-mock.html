@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        gap: 16px;
+        background: #2a1838;
+        font-family: system-ui, sans-serif;
+      }
+      .f {
+        position: relative;
+        width: 360px;
+        height: 780px;
+        background: url(/art/screenshots/gates-360.png) center/cover;
+        overflow: hidden;
+      }
+      .hud {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .dim .top,
+      .dim .bar {
+        opacity: 0.4;
+      }
+      .top {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 90px;
+        background: linear-gradient(#0000, #0000);
+      }
+      .prompt {
+        position: absolute;
+        top: 28%;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        padding: 10px 22px;
+        border-radius: 999px;
+        background: rgba(42, 24, 56, 0.72);
+        border: 3px solid rgba(255, 248, 236, 0.9);
+        color: #fff8ec;
+        font: 900 22px/1.1 system-ui;
+        -webkit-text-stroke: 0;
+        text-shadow: 0 2px 0 #2a1838;
+      }
+      .cap {
+        position: absolute;
+        bottom: 4px;
+        left: 6px;
+        color: #fff;
+        font: 700 13px system-ui;
+        text-shadow: 0 1px 2px #000;
+      }
+      img {
+        position: absolute;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- A: step 1 aim (finger + tap ring). Motion version: finger sweeps L-R 1.2 s ease-in-out. -->
+    <div class="f">
+      <div class="prompt">Hold and drag to aim</div>
+      <img src="/assets/ftue/tap-ring.svg" style="left: 132px; top: 616px; width: 96px" />
+      <img src="/assets/ftue/finger.svg" style="left: 170px; top: 640px; width: 72px" />
+      <span class="cap">Step 1: finger + tap ring (sweeps)</span>
+    </div>
+    <!-- B: step 2/3 gate highlight + arrow + lead line -->
+    <div class="f">
+      <div class="prompt">Aim ahead of moving gates</div>
+      <img
+        src="/assets/ftue/gate-glow.svg"
+        style="left: 192px; top: 338px; width: 116px; height: 66px"
+      />
+      <img src="/assets/ftue/gate-arrow.svg" style="left: 230px; top: 268px; width: 40px" />
+      <img
+        src="/assets/ftue/aim-line.svg"
+        style="
+          left: 190px;
+          top: 372px;
+          width: 24px;
+          height: 278px;
+          transform: rotate(8deg);
+          transform-origin: bottom;
+        "
+      />
+      <span class="cap">Steps 2-3: gate glow + arrow + aim-ahead line</span>
+    </div>
+    <!-- C: step 4 HUD dim 40%, queen spotlight; reduced-motion = static ring, no bounce -->
+    <div class="f">
+      <div
+        style="
+          position: absolute;
+          inset: 0;
+          background: rgba(20, 8, 30, 0.6);
+          -webkit-mask: radial-gradient(circle 70px at 312px 698px, #0000 98%, #000 100%);
+          mask: radial-gradient(circle 70px at 312px 698px, #0000 98%, #000 100%);
+        "
+      ></div>
+      <div class="prompt">Tap the queen!</div>
+      <img src="/assets/ftue/tap-ring.svg" style="left: 262px; top: 648px; width: 100px" />
+      <img
+        src="/assets/ftue/finger.svg"
+        style="left: 250px; top: 690px; width: 64px; transform: rotate(-20deg)"
+      />
+      <span class="cap">Step 4: HUD dimmed to 40%, queen spotlit (reduced motion: static)</span>
+    </div>
+    <script>
+      addEventListener('load', () => (document.title = 'ready'));
+    </script>
+  </body>
+</html>

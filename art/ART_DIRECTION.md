@@ -98,7 +98,31 @@ with distance (`h = 1.1 × (1 + 1.5 × y / laneLength)` world units).
 18.5 px and the plate is 32.9 px; the nearest row is 19.6 / 34.8 px. Screenshot: `art/screenshots/gates-360.png`.
 **Trap state:** the count goes down (`−25` … `−1`), then the label greys out as "✓ broken" (non-blocking DES note, kept).
 
-## 6. Style and technique
+## 6. FTUE visual vocabulary (DES change request 3, for `docs/design/ftue-m2.md` / M2-7)
+
+Assets: `public/assets/ftue/*.svg` (2.7 KB total). Mock-up: `art/screenshots/ftue-mock.png`
+(`art/tools/ftue-mock.html`). Sizes are CSS px on a 360 px wide viewport. Every overlay uses ink
+`#2a1838` outlines and cream `#fff8ec` / honey `#ffc83d` fills, so it never shares a gate hue and never
+uses team teal.
+
+| Element        | Shape and asset                                                                                                                   | Colour                                                                      | Size                                                                     | Motion (default)                                                                                                                                                    | Reduced motion                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Finger pointer | Cartoon index finger, `finger.svg`, plus `tap-ring.svg` under the fingertip                                                       | cream fill, 5 px ink outline, honey nail                                    | 72 px tall (64 px on the Queen button)                                   | Step 1: drags left↔right ±60 px over the cannon, 1.2 s ease-in-out loop; ring scales 0.8→1.1 and fades on each "press". Timeout (4 s): grows to 1.25× + haptic tick | Static finger at centre, ring static at 100 %, no sweep. A small ↔ chevron pair is drawn instead of motion |
+| Aim-ahead line | Dotted line, `aim-line.svg` (dots r 5 px, 24 px spacing) ending in a target ring at the gate's future x (`gateX(t + travelTime)`) | cream dots, ink rim; ring honey on ink                                      | 10 px dots, 26 px ring                                                   | Dots scroll toward the target at 40 px/s; the ring follows the gate's future x                                                                                      | Dots static; ring position updates at most 4×/s (no scrolling)                                             |
+| Gate highlight | 9-slice glow frame `gate-glow.svg` around the label plate + bouncing `gate-arrow.svg` above it                                    | honey frame + soft halo, ink 2 px rim, honey arrow                          | frame = plate + 8 px; arrow 40 × 50 px                                   | Arrow bobs 8 px at 1.5 Hz; halo opacity pulses 0.6↔1 at 1 Hz                                                                                                        | Arrow static; halo solid at 100 %; no pulse                                                                |
+| HUD dim        | Full-screen ink scrim with a circular cut-out over the target (Queen button)                                                      | `rgba(20,8,30,0.6)`, so the HUD reads at about 40 %                         | cut-out = target radius + 14 px                                          | Scrim fades in over 150 ms; target bounces 1.0→1.08 at 2 Hz                                                                                                         | Scrim appears instantly; no bounce; target gets a static 4 px honey ring                                   |
+| Prompt text    | One line, centred, top third (about 28 % from top), on the pill `prompt-plate.svg`                                                | cream `#fff8ec` text, ink text-shadow 0 2 px, ink 72 % pill, cream 3 px rim | HUD font 900 weight, 22 px (`TYPE.lg`+), ≤ 8 words, pill padding 10 × 22 | Fades in 150 ms, out 120 ms (`MOTION.fast`)                                                                                                                         | Appears and disappears instantly                                                                           |
+
+Rules:
+
+1. Only one pointer (finger OR arrow) at a time. Text and pointer must agree.
+2. Overlays never cover the cannon line of fire or the gate label they point at.
+3. Reduced motion follows `prefers-reduced-motion` and the in-game setting. No looping translation or
+   scale, and no flashing above 3 Hz (also true in the default version).
+4. Every prompt has a caption/audio cue (M2-11). The visuals do not replace them.
+5. Nest HP bar flash (step 5): bar outline flashes honey 2× at 2 Hz. In reduced motion it is a static honey outline.
+
+## 7. Style and technique
 
 - Flat-shaded `MeshLambertMaterial`, vertex colours, faceted normals. No textures, no PBR, no outlines.
 - Each unit is ONE merged geometry with an `aWing` attribute (−1/0/+1). Wings flap in the vertex shader
@@ -107,21 +131,21 @@ with distance (`h = 1.1 × (1 + 1.5 × y / laneLength)` world units).
 - Icons: 64×64 grid, 4 px ink outline, rounded joins, palette fills, readable at 24 px.
 - Audio: synthesised from math expressions (`art/tools/make-audio.sh`), Ogg/Opus mono 48 kHz.
 
-## 7. Load budget (PLAN M3-2/M3-3/M3-4, kept for M7-5)
+## 8. Load budget (PLAN M3-2/M3-3/M3-4, kept for M7-5)
 
-| Budget                                             | Limit       | Current                                                              |
-| -------------------------------------------------- | ----------- | -------------------------------------------------------------------- |
-| Triangles per unit (incl. skins)                   | ≤ 300       | bee 220 · queen 270 · wasp 130 · hornet 142 · skins 220–268          |
-| Model assets (`public/assets/models`, meshopt GLB) | ≤ 1.5 MB    | **116.6 KB** (26 files)                                              |
-| Audio (`public/assets/audio`, Opus)                | ≤ 1 MB      | **133.9 KB** (9 cues incl. 16 s music loop)                          |
-| Icons (`public/assets/icons`, SVG)                 | ≥ 30 icons  | 41 icons, 19.3 KB                                                    |
-| Textures                                           | KTX2 if any | **none** (vertex colours only, 0 bytes GPU texture memory for units) |
-| Initial JS (M2-9)                                  | < 3 MB      | 593.6 kB (153.1 kB gzip). Art adds about 14 kB to the bundle         |
+| Budget                                             | Limit       | Current                                                                                      |
+| -------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
+| Triangles per unit (incl. skins)                   | ≤ 300       | bee 220 · queen 270 · wasp 130 · hornet 142 · skins 220–268                                  |
+| Model assets (`public/assets/models`, meshopt GLB) | ≤ 1.5 MB    | **116.6 KB** (26 files)                                                                      |
+| Audio (`public/assets/audio`, Opus)                | ≤ 1 MB      | **133.9 KB** (9 cues incl. 16 s music loop)                                                  |
+| Icons (`public/assets/icons`, SVG)                 | ≥ 30 icons  | 41 icons, 19.3 KB                                                                            |
+| Textures                                           | KTX2 if any | **none** (vertex colours only, 0 bytes GPU texture memory for units)                         |
+| Initial JS (M2-9)                                  | < 3 MB      | app chunk 50.9 kB + three chunk 544.2 kB (18.3 + 135.6 kB gzip), after the PR 002 code split |
 
 Non-unit props (cannon 264, nest 382 tris) have one instance each, so the per-unit budget does not apply.
 Re-check with `npx vitest run tests/art.test.ts`.
 
-## 8. Pipeline
+## 9. Pipeline
 
 - Source of truth: `src/art/models.ts`, `biomes.ts`, `skins.ts`, `palette.ts` (used at runtime too).
 - `npx tsx art/tools/export-assets.ts` (needs `gltfpack`; set `GLTFPACK=`) writes meshopt-compressed GLBs.
