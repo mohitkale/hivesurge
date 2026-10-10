@@ -59,7 +59,9 @@ Owner: DES. Implements in M7-3, all driven by remote config (M6-5), tested with 
 - Other tiers: free 150 coins, premium 300 coins.
 - After tier 30: bonus reward every 600 XP (max 10). Free track: Silver chest (earned, odds shown). Premium track: 150 coins + 15 gems (fixed).
 - Named bees for tiers 1, 18, 20 and 25 may rotate per season (remote config `season.premiumBees`), but each season's list is fixed and shown on the pass screen before purchase.
-- Power cap: premium card rewards total 40 cards across 6 tiers, including 9 Epic and 3 Legendary. That must stay under 15% of the player's total season card intake (about 280 cards from chests at 6 battles/day). Current share is about 14%. M5-2a sim to confirm.
+- Power cap: premium card rewards total **48 cards across 6 tiers: 21 Common, 11 Rare, 13 Epic, 3 Legendary** (tier 1: 2E; tier 5: 4C + 2R; tier 12: 6C + 4R + 2E; tier 18: 5E; tier 20: 10C + 6R + 4E; tier 25: 3L). Cap: premium cards at most 15% of season card intake.
+- Season card intake (free, ad-watcher, 28 days) is about 1,000 cards, not 280. The 280 figure counted only one chest per day. At about 4.2 wins/day (one chest each, short Wood/Silver timers, ad halvings), chests give about 18 cards/day. Daily Wood + daily-bonus Wood add 6/day, streak and weekly chests add about 6.5/day, and the free pass track adds about 64/season. Total about 33/day, or about 920 to 1,000 per 28 days. M5-2a measures 1,160 in 30 days (about 1,080 per 28 days), which agrees.
+- Premium share = 48 / (about 1,000 + 48) = **4.6%** (sim: 48 / 1,160 = 4.1%), well under 15%. Epic-only share: 13 premium Epics vs about 60 Epics from chests per season, about 18%. Watch this in playtests, but it is not capped.
 
 ## Rotating events
 
