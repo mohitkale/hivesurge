@@ -21,6 +21,8 @@ backend (M4), Stripe test-mode monetisation (M5) and an admin panel (M6). Record
   PT-A folded into M2-12; PERF-D dropped (unit meshes already set `frustumCulled = false`).
 - `PLAN.md` (design): M2-4, M2-6, M5-1, M6-1, M7-2 specs written, not yet validated, linked to `docs/design/`;
   eng proposals merged into M2-3, M2-5, M2-7, M7-1 and added as M5-2a, M5-4a/b/c, M6-2a.
+- `PLAN.md` (QA PR 002 playtest): M1 status pending tag `v0.1.0-slice`; new M2-17/18 (level 1 to ~70% win), M2-19 (real-device
+  touch + FPS at 300+ units), M2-20–M2-24 (PR 002 non-blocking bugs); M2-15 overlay behind `?debug`; M2-11 checks star rating.
 - `STATUS.md`: added to main (from `feat/core-loop`) with dated decision 28.
 - `CONTRIBUTING.md`: clean-room line now points generically to `/workspace/mob-control-plan/`.
 
