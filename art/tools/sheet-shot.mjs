@@ -14,7 +14,7 @@ const b = await puppeteer.launch({
 });
 const p = await b.newPage();
 p.on('pageerror', (e) => console.log('pageerror', e.message));
-await p.setViewport({ width: 1200, height: 760 });
+await p.setViewport({ width: +(process.env.W || 1200), height: +(process.env.H || 760) });
 await p.goto(url, { waitUntil: 'networkidle0' });
 await p.waitForFunction(() => document.title === 'ready', { timeout: 20000 });
 await p.screenshot({ path: out });
