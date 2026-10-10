@@ -25,7 +25,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:55 IST. Tip = branch tip when indexed.
 | 017 | feat/m2-13-guardrails                                | hivesurge-eng          | `6442b96` | open                                                              | 008-feat-m2-13-guardrails.md → **017-feat-m2-13-guardrails.md**   |
 | 018 | feat/m2-15-perf-overlay                              | hivesurge-eng          | —         | open (claimed)                                                    | 018-feat-m2-15-perf-overlay.md                                    |
 | 019 | research/m2-12-status                                | hivesurge-research     | `2c90d47` | merged (merge of `2c90d47`; CEO confirmed decision 31, 03:52 IST) | 019-research-m2-12-status.md                                      |
+| 020 | monetization/sim-866e82b                             | hivesurge-monetization | —         | open (claimed)                                                    | 020-monetization-sim-866e82b.md                                   |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **020**.
+Next free number: **021**.
