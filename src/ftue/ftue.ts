@@ -1,4 +1,3 @@
-import { gateX } from '../sim/gates';
 import { CANNON_Y, type PlayerInput, type World } from '../sim/world';
 
 /** Worker speed (UNIT_STATS) used for the aim-ahead line. */
@@ -81,7 +80,7 @@ export class Ftue {
     return this.step === FtueStep.Done;
   }
 
-  /** Lead line target x for step 3: `gateX(t + travelTime)` of the moving gate; null otherwise. */
+  /** Lead line target x for step 3: the moving gate's x at t + travelTime (`world.gateXAhead`); null otherwise. */
   leadTargetX(w: World): number | null {
     if (this.step !== FtueStep.Lead) return null;
     return leadX(w, this.movingGate);
@@ -150,7 +149,7 @@ export class Ftue {
 export function leadX(w: World, gate: number): number {
   const g = w.level.gates[gate];
   const travel = (g.y - CANNON_Y) / WORKER_SPEED;
-  return gateX(g, w.time + travel, w.level.laneWidth);
+  return w.gateXAhead(gate, travel);
 }
 
 /** FTUE runs only for a player who has not finished it, on the FTUE level. */
