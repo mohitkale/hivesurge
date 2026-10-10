@@ -4,7 +4,7 @@ import { CLOVER_RUN } from '../src/sim/levels';
 import cloverJson from '../src/levels/clover-run.json';
 
 describe('level data files', () => {
-  it('loads Clover Run from JSON with the original tuning', () => {
+  it('loads Clover Run from JSON with the M2-18 tuning', () => {
     expect(CLOVER_RUN).toBe(getLevel('clover-run'));
     expect(LEVELS.map((l) => l.id)).toContain('clover-run');
     expect(CLOVER_RUN).toMatchObject({
@@ -12,8 +12,8 @@ describe('level data files', () => {
       laneWidth: 10,
       laneLength: 40,
       timeLimit: 90,
-      nestHp: 2600,
-      hiveHp: 40,
+      nestHp: 2350,
+      hiveHp: 50,
       fireInterval: 0.11,
       queenCharge: 7,
       trickleInterval: 0.9,
