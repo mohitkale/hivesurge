@@ -49,13 +49,15 @@ Each bee is a loadout card that modifies the cannon or spawns. Rarity sets drop 
 
 - Slot 1 unlocks at stage 3, slot 2 at 5, slot 3 at 8, slot 4 at 12 (stage = n, see expectedP). Worker is always the base shooter and does not take a slot.
 - One copy of each bee. Total power `P = sum(bee level x rarityWeight)` with weights C1 R2 E3 L4 is shown on screen and used by matchmaking for events.
-- Balance rule: a full max loadout must not lift aim-bot win rate on a level more than 25 points; generator scales E by `clamp(1 + 0.03 x (P - expectedP(n)), 0.90, 1.15)` (at most plus 15% harder, at most 10% easier). See expectedP below.
+- Balance rule: a full max loadout must not lift aim-bot win rate on a level more than 25 points.
+- **Enemy scaling is easier-only (catch-up help).** Stage difficulty comes only from the stage curve (levels-m2 bands and generator formulas). Loadout power never makes enemies harder, so upgrading or spending always pays off. Below expectedP, the generator scales enemy hp total E by `clamp(1 + 0.03 x (P - expectedP(n)), 0.90, 1.00)`. At or above expectedP the scale is exactly 1.00; the most it eases is 10%.
+- **Loss-streak assist (optional, stacks with the above):** after 2 consecutive losses on the same stage, E x 0.95. After 3 or more, E x 0.90. The combined floor is 0.80 (at most 20% easier). It resets on a win or a stage change, is shown as a small "Wind at your back" leaf icon, and is never sold or affected by purchases. Remote config `difficulty.lossAssist = [[2, 0.95], [3, 0.90]]`, `difficulty.scaleFloor = 0.80`.
 
 ### expectedP(n): expected player power at stage n
 
 **Level pace (what n is).** n is the **stage number**: the highest campaign stage the player has cleared. A win on the current stage advances n by 1, and a loss does not. There is no separate "player level" in difficulty math. Account XP (`playerLevel`/`xp` in the save) drives only cosmetic rank and the hive room cap, never enemy scaling. Loadout slot unlocks (slots 1 to 4 at stages 3, 5, 8, 12) also use n. Pace for the baseline (6 battles/day, about 70% win plus revives): about 5 stages/day, so stage 159 at day 30 (M5-2a run 4c33a8e).
 
-Baseline player: **free (no purchases), watches rewarded ads** at the M5-5 caps (3 chest-time halvings/day plus daily pack), plays 6 battles/day, opens the free daily Wood chest, completes dailies, free season track only. Payers sit above the baseline (limited by the plus 15% cap). No-ads free players sit below it (softened by the minus 10% floor).
+Baseline player: **free (no purchases), watches rewarded ads** at the M5-5 caps (3 chest-time halvings/day plus daily pack), plays 6 battles/day, opens the free daily Wood chest, completes dailies, free season track only. Payers sit above the baseline and get no extra difficulty. No-ads free players sit below it and get up to 10% catch-up easing.
 
 P = sum over equipped bees of (bee level x rarityWeight), with weights C1 R2 E3 L4. Worker is excluded.
 
