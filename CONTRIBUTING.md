@@ -17,7 +17,7 @@
 
 Original names, art, audio, UI layouts and levels only. No assets, sounds, fonts, icons, screenshots or
 level layouts from any existing game; never use other games' trademarks in names, metadata or ads.
-See `mob-control-web-plan.md` §8.3.
+See the clean-room section of the original plan docs in `/workspace/mob-control-plan/`.
 
 ## Commands
 
