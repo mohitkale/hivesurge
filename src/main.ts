@@ -225,7 +225,7 @@ class Game {
   private showLoss(r: Rewards): void {
     const pct = Math.ceil((1 - r.nestDamage) * 100);
     // Revive is offered only for close calls and once per battle (no offer on every loss).
-    const canRevive = this.world.revives === 0 && r.nestDamage >= 0.5;
+    const canRevive = this.world.revives === 0 && this.result.canOfferRevive && r.nestDamage >= 0.5;
     this.overlay.innerHTML = `<div class="modal"><div class="card">
       <h1>So close!</h1><p class="reward">Nest at ${pct}% health</p>
       <p class="small">Tip: chain ×2 into ×3 and send the Queen ahead of big waves.</p>
@@ -235,7 +235,8 @@ class Game {
     if (canRevive) this.analytics.track('ad_offered', { placement: 'revive', type: 'rewarded' });
     this.bind({
       revive: async () => {
-        if (this.result.isClaimed) return;
+        if (this.result.isClaimed || !this.result.canOfferRevive) return;
+        this.result.markReviveAttempted();
         this.disableResultButtons();
         if ((await this.watchRewarded('revive')) && this.world.revive()) {
           this.result = new ResultSession();

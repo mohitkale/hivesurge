@@ -22,20 +22,22 @@ desktop still required** (checklist items 2, 4–6, 9, 11–13).
 
 **Status:** awaiting review + playtest
 
-## Review fixes (REVIEW-002) — branch `fix/pr-002-review`, stacked on `feat/core-loop`
+## Review fixes (REVIEW-002) — branch `fix/pr-002-review`, rebased onto `main` b60e960 (main's PLAN.md/STATUS.md kept)
 
-1. **Double claim (blocking #1):** new `src/platform/resultSession.ts` (`ResultSession`, one per battle end).
-   `claim()` returns early unless `tryClaim()` succeeds; all result buttons are disabled on first click
-   (2X, No thanks, Retry, Home, Revive). Tests: `tests/resultSession.test.ts`.
-2. **Interstitial after rewarded (blocking #2):** `watchRewarded()` marks the session before showing the ad,
-   so any rewarded ad shown — completed or closed early — passes `rewardedShown = true` to
-   `canShowInterstitial`. Tests: `tests/resultSession.test.ts`.
-3. **Bundle (nit):** `vite.config.ts` `manualChunks` puts three.js in its own chunk.
-4. **Nit:** revive only resumes battle if `world.revive()` returns true.
+1. **Double claim (blocking #1):** `src/platform/resultSession.ts` (`ResultSession`, one per battle end). `claim()`
+   returns early unless `tryClaim()` succeeds; all result buttons are disabled on first click.
+2. **Interstitial after rewarded (blocking #2):** `watchRewarded()` marks the session before showing the ad, so any
+   rewarded ad shown (completed or closed early) passes `rewardedShown = true` to `canShowInterstitial`.
+3. **Revive once per battle:** an early-closed revive ad no longer re-offers revive (`canOfferRevive` /
+   `markReviveAttempted`); revive only resumes if `world.revive()` returns true.
+4. **Bundle:** `manualChunks` puts three.js in its own chunk. The 800 kB `chunkSizeWarningLimit` override is removed,
+   so Vite's default 500 kB warning now shows for the three chunk (537.84 kB) — intentionally visible until M2-9.
 
-**Test results after fixes:** `npm run lint` pass · `npm test` 52/52 pass (8 files) · `npm run build` pass:
-`index-*.js` 42.34 kB (14.90 kB gzip) + `three-*.js` 537.84 kB (134.09 kB gzip); before: single 579.68 kB
-(148.63 kB gzip) chunk.
+Tests: `tests/resultSession.test.ts` (6 tests) cover 1–3.
 
-**Still open:** blocking #3 (human playtest) — needs QA. Fix commit should be fast-forwarded into
-`feat/core-loop` (that branch is checked out in the shared checkout, so it was not moved here).
+**Test results after fixes:** `npm run lint` pass · `npm test` 54/54 (8 files) · `npm run build` pass:
+`index-*.js` 42.56 kB (14.96 kB gzip) + `three-*.js` 537.84 kB (134.09 kB gzip), with the >500 kB chunk warning.
+Before: single 579.68 kB (148.63 kB gzip) chunk.
+
+**Still open:** blocking #3 (human playtest, QA). `feat/core-loop` itself was not rebased (it is checked out in the
+shared checkout); this branch replaces it for merging, or `feat/core-loop` should be reset to it by the owner.

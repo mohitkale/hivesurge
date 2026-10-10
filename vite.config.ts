@@ -5,7 +5,6 @@ export default defineConfig({
   server: { host: true },
   build: {
     target: 'es2020',
-    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         // Three.js in its own long-cache vendor chunk, separate from game code.

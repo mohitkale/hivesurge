@@ -42,3 +42,19 @@ describe('ResultSession rewarded flag (REVIEW-002 #2)', () => {
     expect(canShowInterstitial(eligible, now, s.rewardedShown)).toBe(false);
   });
 });
+
+describe('ResultSession revive offer (REVIEW-002 nit)', () => {
+  it('offers revive once; an early-closed revive ad does not re-offer it', () => {
+    const s = new ResultSession();
+    expect(s.canOfferRevive).toBe(true);
+    s.markReviveAttempted();
+    s.markRewardedShown(); // ad closed early (ok = false), loss screen re-rendered
+    expect(s.canOfferRevive).toBe(false);
+  });
+
+  it('no revive offer after rewards were claimed', () => {
+    const s = new ResultSession();
+    s.tryClaim();
+    expect(s.canOfferRevive).toBe(false);
+  });
+});

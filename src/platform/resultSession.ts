@@ -7,6 +7,7 @@
 export class ResultSession {
   private claimed = false;
   private rewarded = false;
+  private reviveTried = false;
 
   /** Returns true only on the first call. */
   tryClaim(): boolean {
@@ -21,6 +22,18 @@ export class ResultSession {
 
   markRewardedShown(): void {
     this.rewarded = true;
+  }
+
+  /**
+   * Revive is offered at most once per battle: once its ad has been shown
+   * (completed or closed early) it is never offered again on this result.
+   */
+  markReviveAttempted(): void {
+    this.reviveTried = true;
+  }
+
+  get canOfferRevive(): boolean {
+    return !this.reviveTried && !this.claimed;
   }
 
   get rewardedShown(): boolean {
