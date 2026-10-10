@@ -1,0 +1,31 @@
+{
+  "id": "dandelion-drift",
+  "name": "Dandelion Drift",
+  "seed": 201,
+  "laneWidth": 10,
+  "laneLength": 36,
+  "timeLimit": 80,
+  "nestHp": 1200,
+  "hiveHp": 50,
+  "fireInterval": 0.11,
+  "queenCharge": 6,
+  "trickleInterval": 0,
+  "gates": [
+    { "kind": "mul", "value": 2, "x": -2.5, "y": 9, "width": 3.2 },
+    { "kind": "add", "value": 2, "x": 2.5, "y": 9, "width": 3.4 },
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": 0,
+      "y": 18,
+      "width": 3.0,
+      "motion": { "amplitude": 2.5, "speed": 0.8 }
+    }
+  ],
+  "waves": [
+    { "at": 5, "kind": "wasp", "count": 15, "x": 0, "spread": 3 },
+    { "at": 15, "kind": "wasp", "count": 25, "x": -2, "spread": 3 },
+    { "at": 28, "kind": "wasp", "count": 40, "x": 2, "spread": 3.5 },
+    { "at": 45, "kind": "wasp", "count": 60, "x": 0, "spread": 4 }
+  ]
+}
