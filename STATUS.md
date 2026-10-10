@@ -4,7 +4,7 @@ _Last updated: 2026-10-11 (IST)._ Source plan: `/workspace/mob-control-plan/mob-
 
 ## Current state
 
-- **Milestone M1 (vertical slice) — awaiting review + human playtest.** Code on `feat/core-loop` (PR 002), stacked on `chore/process-docs` (PR 001). `main` holds only the scaffold.
+- **Milestone M1 (vertical slice) — code approved, awaiting QA human playtest.** 2026-10-11 (CEO): PR 002 branch is now `fix/pr-002-review` (e148dde, rebased on main with REVIEW-002 fixes); `feat/core-loop` is retired (kept, not deleted, no history rewritten). PR 001 (`bb45228`) and ba's PR 003 (`b60e960`) are merged to main.
 - Playable: title → battle on "Clover Run" → win (stars, coins, 2X via sandbox ad) or loss (near-miss %, revive via sandbox ad, free retry) → paced interstitial → title. Sandbox shop with 3 mock SKUs.
 - `npm run lint` ✅ · `npm test` ✅ (48 tests, 7 files) · `npm run build` ✅ (JS 580 kB / 149 kB gzip) · `npm run dev` ✅ (headless smoke playtest).
 
@@ -43,7 +43,7 @@ _Last updated: 2026-10-11 (IST)._ Source plan: `/workspace/mob-control-plan/mob-
 
 ## Next steps toward MVP (see PLAN.md for owners)
 
-1. Human playtest PR 002 on a real phone + desktop; review; merge PR 001 then 002; tag `v0.1.0-slice`.
+1. QA human playtest of PR 002 (`fix/pr-002-review`); after it passes merge in order **PR 002 → PR 005** (`feat/m2-3-levels-json`) **→ PR 006** (`feat/m2-9-code-split`), then tag `v0.1.0-slice`.
 2. M2: levels as JSON + 4 levels + boss; FTUE < 30 s; low-end perf pass; code-split Three.js toward < 3 MB initial load.
 3. M4 meta & monetisation (sandbox): rewarded boosts/chest skip/daily pack/away doubler; interstitials via portal SDK test modes; mock IAP → Stripe **test mode**; chests + collectible bees; cards/loadout; Hive base buildings; Supabase cloud save.
 4. M3 art pass and M5 live ops (events, streaks, season pass, procedural levels, tuning dashboard).
