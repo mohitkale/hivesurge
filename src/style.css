@@ -312,3 +312,11 @@ body {
   right: 12px;
   top: calc(36px + env(safe-area-inset-top));
 }
+
+.boot-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+}
