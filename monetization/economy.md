@@ -66,3 +66,7 @@ Day-30 stage (no-ads / ads / payer) under other settings:
 - cost at least $2.
 
 **Current result: PASS (exit 0).** `season_pass.contents` is generated from the 209606b premium track: named bee cards, coins, gems and cosmetics only. Free-track chests are earned in play and their odds are shown, so they are out of scope. Gem chest skips only speed up chests earned in play; REV should confirm this in M5-10.
+
+## Gem income assumption (M2-21a)
+
+The sim credits 35 weekly gems (boss 20 + event 15) to **every** persona. That is 140 of the ~230 free gems in 30 days. All gem-income results, including the M2-21a revive coverage in `revive-m2-21a.md`, depend on this assumption. Without it, free income is about 90 gems per 30 days and revive coverage at 10 gems is about 38–41%. Treat the numbers as upper bounds until weekly-target completion is measured.

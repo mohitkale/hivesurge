@@ -59,6 +59,11 @@ Test mode only.
 
 New output (ASSUMPTIONS: 50% of losses reach ≥ 50% nest damage; weekly boss and event gem targets are completed. Gems from 3-star daily targets and every-10th-level gems are not counted, so income is conservative):
 
+> **Weekly-gem assumption (affects every gem number below):** the sim credits **35 gems every week to every persona** (weekly boss target 20 + event points target 15; `WEEKLY_GEMS` in `economy_sim.py`), on the assumption that every player completes both targets.
+> That is 140 of the ~230 free gems in 30 days (about 60%).
+> Re-running with `WEEKLY_GEMS = 0` (100 runs) gives about 90 free gems per 30 days (3.0/day), and coverage at 10 gems drops from 96–100% to about 38–41%.
+> Treat the coverage figures below as an upper bound until playtest data shows weekly-target completion rates. If completion is low, revisit the price (C8 remote config) before the gem revive ships.
+
 | Persona    | Free gems / 30 d  | Revive-eligible defeats / 30 d | Gems to gem-revive them all at 10 | Free income covers |
 | ---------- | ----------------- | ------------------------------ | --------------------------------- | ------------------ |
 | no-ads     | 230 (7.7/day)     | 24 (0.8/day)                   | 240                               | 96%                |
@@ -73,7 +78,7 @@ At 15 gems, coverage drops to about 65%. That would put pressure on free players
 
 ## Conditions for ENG (GO with conditions)
 
-- **C1:** extend `ReviveOffer` with `takeGems()`. Grant only after an atomic gem debit, and never when `revives > 0` or the offer is closed.
+- **C1 (pending ENG, M2-21c):** extend `ReviveOffer` with `takeGems()` (not implemented yet). Grant only after an atomic gem debit, and never when `revives > 0` or the offer is closed.
 - **C2:** gem caps (2/session, 3/day) in `AdPacer`-style counters; the daily counter is persisted, the session counter is not.
 - **C3:** hide the gem button while the `free` button is shown.
 - **C4:** no IAP or gem-store link from the offer; when the balance is too low, show the button disabled.
