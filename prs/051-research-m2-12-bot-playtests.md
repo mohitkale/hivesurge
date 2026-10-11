@@ -1,4 +1,4 @@
-# PR 047 — research/m2-12-bot-playtests (base: main @ 36f9a21)
+# PR 051 — research/m2-12-bot-playtests (base: main @ 36f9a21)
 
 **Summary:** M2-12 under decision 31. Adds a headless bot-session runner on the real sim (200 sessions per bot per
 level, 6 bots), extends the browser bot runner with an fps sampler, and adds the **PROVISIONAL** local playtest
@@ -14,7 +14,7 @@ sessions. No game code changes. Game served on 127.0.0.1 only.
 - `playtests/m2-12/README.md`, `playtests/m2-12/qa/README.md` (new): how to run; where QA saves results.
 - `playtests/m2-12/results/`: 6,000 headless sessions + 6 browser runs (bot data).
 - `research/m2-12-local-playtest-report.md` (new): PROVISIONAL report.
-- `prs/INDEX.md`: claims 047.
+- `prs/INDEX.md`: claims 051.
 
 **Headline (bot data):** casual 1st-try win L1–L5 = 100 / 98.5 / 74.5 / 16 / 0% (targets 98/92/80/70/55). Mindless
 sweeper 100% on L1–L4 and 0% on the boss. Casual campaign: 0/200 finish, 60.5% quit at L4. FTUE first win 12.6–26.2 s.
