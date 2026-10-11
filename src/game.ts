@@ -556,13 +556,17 @@ export class Game {
       this.persist();
       this.phase = 'ad';
       this.analytics.track('ad_offered', { placement: 'level_transition', type: 'interstitial' });
-      await this.platform.showInterstitial('level_transition');
-      this.reviveSession.noteAdLoaded();
-      this.analytics.track('ad_watched', {
-        placement: 'level_transition',
-        type: 'interstitial',
-        completed: true,
-      });
+      // revive-m2.md: only an ad that actually loaded counts for the free-revive eligibility.
+      const shown = await this.platform.showInterstitial('level_transition');
+      this.reviveSession.noteInterstitial(shown);
+      if (shown) {
+        this.analytics.track('ad_watched', {
+          placement: 'level_transition',
+          type: 'interstitial',
+          completed: true,
+        });
+      } else
+        this.analytics.track('ad_failed', { placement: 'level_transition', reason: 'no_fill' });
     }
     this.persist();
     if (replay) this.startBattle();

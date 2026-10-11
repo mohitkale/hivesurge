@@ -40,7 +40,8 @@ export interface Platform {
   showRewarded(placement: RewardedPlacement): Promise<boolean>;
   /** Like showRewarded, but tells closed-early apart from no fill / load error. */
   requestRewarded(placement: RewardedPlacement): Promise<RewardedResult>;
-  showInterstitial(placement: string): Promise<void>;
+  /** Resolves true only if an interstitial actually loaded and showed (false: no fill / error). */
+  showInterstitial(placement: string): Promise<boolean>;
   /** Resolves true only when the purchase is confirmed (webhook in production). */
   purchase(sku: Sku): Promise<boolean>;
   gameplayStart(): void;
