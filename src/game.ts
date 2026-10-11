@@ -517,10 +517,7 @@ export class Game {
       this.reviveOffer = null;
       // A fresh result for the next battle end; keep the "rewarded ad shown" block (G4).
       // A gem revive blocks the interstitial like a rewarded ad (revive-m2.md, G4).
-      const shown = this.result.rewardedShown || step.source === 'gems';
-      this.result = new ResultSession();
-      this.result.markReviveGranted();
-      if (shown) this.result.markRewardedShown();
+      this.result = ResultSession.afterRevive(this.result, step.source);
       this.overlay.innerHTML = '';
       this.input.enabled = true;
       this.phase = 'battle';

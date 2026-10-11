@@ -1,4 +1,6 @@
 import { readFileSync } from 'node:fs';
+import { ResultSession } from '../src/platform/resultSession';
+import { canShowInterstitial } from '../src/platform/adPolicy';
 import { describe, expect, it } from 'vitest';
 import { canOfferRewarded, FTUE_BATTLES } from '../src/platform/adPolicy';
 import {
@@ -323,5 +325,34 @@ describe('M2-21c save merge (048 follow-up)', () => {
       day: '2026-10-11',
       count: 0,
     });
+  });
+});
+
+describe('G4 across a revive (048 + PR 051)', () => {
+  const ADS_ON = { lastInterstitialAt: 0, battlesCompleted: 20, noAds: false, ftueDone: true };
+  const NOW_MS = 10 * 60 * 1000;
+
+  it('gem revive (no ad shown) blocks the interstitial at the end of the revived battle', () => {
+    const atLoss = new ResultSession();
+    const atEnd = ResultSession.forBattleEnd(ResultSession.afterRevive(atLoss, 'gems'), true);
+    expect(atEnd.rewardedShown).toBe(true);
+    expect(canShowInterstitial(ADS_ON, NOW_MS, atEnd.rewardedShown)).toBe(false);
+  });
+
+  it('rewarded revive ad: the flag still carries to the battle end (PR 051)', () => {
+    const atLoss = new ResultSession();
+    atLoss.markRewardedShown();
+    const atEnd = ResultSession.forBattleEnd(ResultSession.afterRevive(atLoss, 'ad'), true);
+    expect(atEnd.rewardedShown).toBe(true);
+    expect(atEnd.canOfferRevive).toBe(false);
+  });
+
+  it('free revive with no ad shown does not block the interstitial', () => {
+    const atEnd = ResultSession.forBattleEnd(
+      ResultSession.afterRevive(new ResultSession(), 'free'),
+      true,
+    );
+    expect(atEnd.rewardedShown).toBe(false);
+    expect(canShowInterstitial(ADS_ON, NOW_MS, atEnd.rewardedShown)).toBe(true);
   });
 });
