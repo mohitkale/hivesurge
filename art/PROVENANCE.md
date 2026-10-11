@@ -8,7 +8,7 @@ Regenerate with `python3 art/tools/make-provenance.py` after changing an asset.
   repo. No third-party assets, samples, fonts, textures or reference images were used (clean-room; see
   `prs/REVIEW-m3-clean-room.md`).
 - **Tools:** Python 3, ffmpeg + libopus, Node + tsx, three.js (geometry only), gltfpack **1.3.0** (pinned in
-  `src/art/catalog.ts`; `art/tools/rebuild-glbs.sh` refuses other versions).
+  `src/art/catalog.ts`; `art/tools/rebuild-glbs.sh` exits 2 for any other version, including a `GLTFPACK=` override).
 - **Licence:** **TBD (Mohit decides).** Until then, all rights reserved by the project owner.
 
 ## Generators
@@ -31,17 +31,23 @@ Date = first commit of the file. sha256 = first 16 hex chars.
 
 | File                                        | Bytes | sha256             | Generator                                            | Added      |
 | ------------------------------------------- | ----- | ------------------ | ---------------------------------------------------- | ---------- |
+| `art/models/biome-clover-bush.glb`          | 3904  | `e83acecd4f55176e` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-11 |
 | `art/models/biome-clover-clover.glb`        | 3296  | `0f5d7de971b3b829` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
+| `art/models/biome-clover-dandelion.glb`     | 2832  | `abff9b5d7431c2a7` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-11 |
 | `art/models/biome-clover-fencePost.glb`     | 2352  | `6d77d0ed2c6aa913` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-clover-flowerLilac.glb`   | 4184  | `213d6a9157b396dd` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-clover-flowerPink.glb`    | 4180  | `a8bd8786a9c323e7` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-clover-flowerWhite.glb`   | 4180  | `ba59689db5d188ce` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
+| `art/models/biome-clover-hill.glb`          | 2580  | `6538ed956b3f9ae6` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-11 |
 | `art/models/biome-clover-mushroom.glb`      | 3320  | `524d1cbcfdef0d8c` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-clover-pebble.glb`        | 2524  | `7a43db9f37d33d4a` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-orchard-appleTree.glb`    | 3336  | `317b8d22c52f08c8` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-orchard-crate.glb`        | 2236  | `e91c81e4923165ed` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-orchard-fencePost.glb`    | 2352  | `8552f509037448b7` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-orchard-flowerOrange.glb` | 4180  | `d0f23224b82e2f03` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
+| `art/models/biome-orchard-hayBale.glb`      | 2392  | `4754759481ff3f8b` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-11 |
+| `art/models/biome-orchard-hedge.glb`        | 3904  | `a9dbd623a5ae9ddc` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-11 |
+| `art/models/biome-orchard-hill.glb`         | 2580  | `23529b7c159d3d15` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-11 |
 | `art/models/biome-orchard-mushroom.glb`     | 3280  | `14605c631175de1d` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-orchard-pearTree.glb`     | 3332  | `51faa193ef3fe30b` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-orchard-pebble.glb`       | 2524  | `96311ac6d8f15625` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |

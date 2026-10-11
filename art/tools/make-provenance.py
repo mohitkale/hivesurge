@@ -55,7 +55,7 @@ Regenerate with `python3 art/tools/make-provenance.py` after changing an asset.
   repo. No third-party assets, samples, fonts, textures or reference images were used (clean-room; see
   `prs/REVIEW-m3-clean-room.md`).
 - **Tools:** Python 3, ffmpeg + libopus, Node + tsx, three.js (geometry only), gltfpack **1.3.0** (pinned in
-  `src/art/catalog.ts`; `art/tools/rebuild-glbs.sh` refuses other versions).
+  `src/art/catalog.ts`; `art/tools/rebuild-glbs.sh` exits 2 for any other version, including a `GLTFPACK=` override).
 - **Licence:** **TBD (Mohit decides).** Until then, all rights reserved by the project owner.
 
 ## Generators
