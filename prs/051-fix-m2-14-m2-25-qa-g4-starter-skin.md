@@ -1,4 +1,4 @@
-# PR 051 pending): fix/m2-14-m2-25-qa-g4-starter-skin
+# PR 051: fix/m2-14-m2-25-qa-g4-starter-skin
 
 QA fail on main `36f9a21` for M2-14 and M2-25 (QA PR 050). Base: main `5f453c7`. Bug B (revive countdown vs G13) is left alone; it's waiting on a ruling.
 
