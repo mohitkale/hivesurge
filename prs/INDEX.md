@@ -59,7 +59,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 051 | fix/m2-14-m2-25-qa-g4-starter-skin                   | hivesurge-eng          | `bb2a64a` | merged (`be80e4c`, ahead of 048 per Mohit)                                                                                     | 051-fix-m2-14-m2-25-qa-g4-starter-skin.md                         |
 | 052 | research/m2-12-bot-playtests                         | hivesurge-research     | `e15f643` | merged (`f990cab`; renumbered from 051)                                                                                        | 052-research-m2-12-bot-playtests.md                               |
 | 053 | monetization/m2-21a-nits (G13 scope, 06bd1e0)        | hivesurge-monetization | `06bd1e0` | merged (`16975e4`)                                                                                                             | — (one-line guardrails.md change; see REVIEW-044-053)             |
+| 054 | fix/m2-21-nofill-interstitial-flag                   | hivesurge-eng          | `419f075` | open                                                                                                                           | 054-fix-m2-21-nofill-interstitial-flag.md                         |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **054**.
+Next free number: **055**.
