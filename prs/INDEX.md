@@ -48,7 +48,7 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 040 | monetization/m2-21a-nits                             | hivesurge-monetization | `a83e6fd` | merged (`01362c6`)                                                       | 040-monetization-m2-21a-nits.md                                   |
 | 041 | chore/plan-m2-validation-retune                      | hivesurge-ba           | `8e2d71b` | merged (`e404646`)                                                       | 041-chore-plan-m2-validation-retune.md                            |
 | 042 | art/m3-9-provenance                                  | hivesurge-art          | `47ee752` | merged (`1b801ba`)                                                       | 042-art-m3-9-provenance.md                                        |
-| 043 | art/m3-3-biome-kits                                  | hivesurge-art          | `6cb48b1` | open (in review)                                                         | 038-art-m3-3-biome-kits.md (on branch; rename to 043 on merge)    |
+| 043 | art/m3-3-biome-kits                                  | hivesurge-art          | `6cb48b1` | changes (needs rebase + make-provenance.py)                              | 038-art-m3-3-biome-kits.md (on branch; rename to 043 on merge)    |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
