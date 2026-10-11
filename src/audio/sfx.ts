@@ -52,6 +52,21 @@ export class Sfx {
     osc.connect(filter).connect(gain).connect(this.master);
     osc.start();
     this.hum = { osc, gain };
+    if (this.cuesWanted) this.loadCues();
+  }
+
+  private cuesWanted = false;
+  private cuesLoading = false;
+
+  /**
+   * M3-7: fetch the Opus cues. Called after the first gameplayStart, never at boot or on
+   * unlock, so audio files are not requested before the first battle. If the AudioContext
+   * does not exist yet, loading starts on the next unlock(). Synth fallback until then.
+   */
+  loadCues(): void {
+    this.cuesWanted = true;
+    if (!this.ctx || this.cuesLoading) return;
+    this.cuesLoading = true;
     void this.load();
   }
 

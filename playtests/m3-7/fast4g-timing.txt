@@ -1,0 +1,4 @@
+M3-7 load test · 2026-10-11T00:59:30.705Z · http://127.0.0.1:4187/ · Chrome headless, Fast 4G (PredefinedNetworkConditions), cache disabled, fresh context per run, 390x844
+run 1: first battle 872 ms (limit 3000) · DOMContentLoaded 373 ms · load 373 ms · bytes before battle 169.5 KiB · M3 assets before battle 0 · after 14 · page errors 0 · PASS
+run 2: first battle 850 ms (limit 3000) · DOMContentLoaded 374 ms · load 383 ms · bytes before battle 169.5 KiB · M3 assets before battle 0 · after 14 · page errors 0 · PASS
+run 3: first battle 787 ms (limit 3000) · DOMContentLoaded 360 ms · load 366 ms · bytes before battle 169.5 KiB · M3 assets before battle 0 · after 14 · page errors 0 · PASS
