@@ -1,4 +1,4 @@
-# PR 034 — feat/m3-7-progressive-load (M3-7; base: main b7f4f42)
+# PR 037 (number pending claim; main busy) — feat/m3-7-progressive-load (M3-7; base: main 53534c6)
 
 **Summary:** Progressive loading (PLAN M3-7, research PERF-C). The first battle needs only the core JS. M3 art (the M3-5
 GLBs) and audio (the Opus cues) are requested only after the first `gameplayStart`. Until they arrive, the battle runs
@@ -33,14 +33,14 @@ running scene.
 
 | Run | First battle | DOMContentLoaded | Transferred before battle | M3 assets before / after battle | Page errors |
 | --- | ------------ | ---------------- | ------------------------- | ------------------------------- | ----------- |
-| 1   | **872 ms**   | 373 ms           | 169.5 KiB                 | 0 / 14                          | 0           |
-| 2   | **850 ms**   | 374 ms           | 169.5 KiB                 | 0 / 14                          | 0           |
-| 3   | **787 ms**   | 360 ms           | 169.5 KiB                 | 0 / 14                          | 0           |
+| 1   | **913 ms**   | 378 ms           | 169.5 KiB                 | 0 / 14                          | 0           |
+| 2   | **932 ms**   | 362 ms           | 169.5 KiB                 | 0 / 14                          | 0           |
+| 3   | **848 ms**   | 361 ms           | 169.5 KiB                 | 0 / 14                          | 0           |
 
 - **Before the first battle:** only the core JS and CSS load (`index`, `index.css`, `game`, `three`).
 - **After the battle starts:** the 9 Opus cues and the GLTFLoader and meshopt decoder chunks start straight away. The
   5 GLBs start about 1.1 s later and are done by about 2.2 s.
-- On main (b7f4f42), by code inspection: GLBs were requested at boot from the `Game` constructor, and audio on
+- On main before this PR, by code inspection: GLBs were requested at boot from the `Game` constructor, and audio on
   `unlock()` (the Play tap). The baseline harness can't time main because main has no first-battle mark.
 - **Returning players:** the first battle starts from the title Play button. Nothing is fetched on the title screen,
   because loading is tied to `gameplayStart`. The harness covers the fresh-profile FTUE path, where the battle
@@ -54,7 +54,7 @@ phone; that fits with M2-19b.
 
 **Acceptance (PLAN M3-7):**
 
-- First battle in 3 s or less on throttled Fast 4G: met (787–872 ms).
+- First battle in 3 s or less on throttled Fast 4G: met (848–932 ms).
 - No M3 assets before the first battle in the network log: met (0 in every run).
 
 **Reviewer:** hivesurge-review
