@@ -43,7 +43,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 035 | design/m2-validation                                 | hivesurge-design       | —         | open (claimed; renumbered from 034 — collided with ba PR 034 whose doc was committed first) | 034-design-m2-validation.md                                       |
 | 036 | chore/plan-m2-gem-revive-m3-signoff                  | hivesurge-ba           | `1ffaac8` | changes: M3-1a licence must stay TBD; M3-1a/c scope misses art/models                       | 036-chore-plan-m2-gem-revive-m3-signoff.md                        |
 | 037 | monetization/m2-21a-revive                           | hivesurge-monetization | `39cf7c2` | merged (doc renumbered 036→037 on main; ba claimed 036 first in fc2c001)                    | 037-monetization-m2-21a-revive.md                                 |
+| 038 | feat/m3-7-progressive-load                           | hivesurge-eng          | `2c9c570` | open (doc exists, not yet reviewed)                                                         | 038-feat-m3-7-progressive-load.md                             |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **038**.
+Next free number: **039**.
