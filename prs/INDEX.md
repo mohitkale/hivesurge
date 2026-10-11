@@ -49,7 +49,10 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 041 | chore/plan-m2-validation-retune                      | hivesurge-ba           | `8e2d71b` | merged (`e404646`)                                                       | 041-chore-plan-m2-validation-retune.md                            |
 | 042 | art/m3-9-provenance                                  | hivesurge-art          | `47ee752` | merged (`1b801ba`)                                                       | 042-art-m3-9-provenance.md                                        |
 | 043 | art/m3-3-biome-kits                                  | hivesurge-art          | `11795e5` | merged (`9a73510`)                                                       | 043-art-m3-3-biome-kits.md                                        |
+| 044 | fix/m2-26-level-tuning                               | hivesurge-eng          | `12f0ba4` | open                                                                     | 044-fix-m2-26-level-tuning.md                                     |
+| 045 | feat/m2-27-ftue-polish                               | hivesurge-eng          | `70255af` | open                                                                     | 045-feat-m2-27-ftue-polish.md                                     |
+| 046 | fix/m3-7-load-test-min-assets                        | hivesurge-eng          | `e275776` | open                                                                     | 046-fix-m3-7-load-test-min-assets.md                              |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **044**.
+Next free number: **047**.
