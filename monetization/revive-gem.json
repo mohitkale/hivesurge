@@ -1,0 +1,13 @@
+{
+  "placement": "revive",
+  "price_gems": 10,
+  "escalation": false,
+  "max_revives_per_battle_total": 1,
+  "max_gem_revives_per_session": 2,
+  "max_gem_revives_per_day": 3,
+  "ftue_battles_without_offer": 3,
+  "buy_gems_upsell_from_offer": false,
+  "offer_on_event_final_level": false,
+  "countdown_pauses_on_gem_confirm": true,
+  "default_button": "none"
+}

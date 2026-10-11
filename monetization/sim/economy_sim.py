@@ -97,6 +97,9 @@ LOGIN = [('coins', 100), ('chest', 'wood'), ('gems', 5), ('coins', 300), ('chest
 DAILY_TARGET_COINS = 260  # LIVE pool, ASSUMPTION mix of 3 coin targets
 DAILY_XP = 3 * 20 + 50    # LIVE: 20/target + 50 daily bonus
 WEEKLY_XP = 3 * 100       # ASSUMPTION: 3 of 5 weekly targets completed
+WEEKLY_GEMS = 20 + 15  # LIVE weekly boss (20) + event points (15) targets; ASSUMPTION both completed
+REVIVE_ELIG_SHARE = 0.5  # ASSUMPTION share of losses with nest damage >= 50% (REVIVE_NEST_DAMAGE, CODE revive.ts)
+FTUE_BATTLES = 3  # G2
 PITY, SLOTS, BATTLES, SESSIONS = 40, 4, 6, 3  # META / ASSUMPTION
 PERSONAS = {  # ASSUMPTION persona definitions
     'f2p_no_ads': dict(ads=False, pass_=False, starter=False),
@@ -106,7 +109,7 @@ PERSONAS = {  # ASSUMPTION persona definitions
 
 def run(persona, seed):
     rng, p = random.Random(seed), PERSONAS[persona]
-    s = dict(coins=0, gems=0, pity=0, n=1, xp=0, tier=0, cards_chest=0, cards_prem=0, cards_free_track=0)
+    s = dict(coins=0, gems=0, pity=0, n=1, xp=0, tier=0, cards_chest=0, cards_prem=0, cards_free_track=0, gin=0, rev_elig=0, battles=0)
     bees = {b: [0, 0] for b in BEE}; bees['worker'][0] = 1
     if p['starter']: s['coins'] += 500; s['gems'] += 50  # CODE CATALOG starter_pack
     slots, out = [], []
@@ -125,7 +128,7 @@ def run(persona, seed):
             add_card(rng.choice(BYRAR[r]), kind)
         if t == 'royal': add_card(rng.choice(BYRAR['E']), kind)
     def grant(txt, kind):
-        g = parse_reward(txt); s['coins'] += g['coins']; s['gems'] += g['gems']
+        g = parse_reward(txt); s['coins'] += g['coins']; s['gems'] += g['gems']; s['gin'] += g['gems'] if kind == 'cards_free_track' else 0
         for c in g['chests']: open_chest(c, kind)
         for b, k in g['cards'].items():
             for _ in range(k): add_card(b, kind)
@@ -161,8 +164,9 @@ def run(persona, seed):
     for d in range(DAYS):
         kind, val = LOGIN[d % 7]
         if kind == 'coins': s['coins'] += val
-        elif kind == 'gems': s['gems'] += val
+        elif kind == 'gems': s['gems'] += val; s['gin'] += val
         else: open_chest(val)
+        if d % 7 == 6: s['gems'] += WEEKLY_GEMS; s['gin'] += WEEKLY_GEMS
         open_chest('wood')                      # META free daily Wood
         s['coins'] += DAILY_TARGET_COINS; open_chest('wood')  # LIVE daily bonus Wood chest
         if p['ads']: open_chest('wood')         # META/M5-5 rewarded daily pack (ASSUMPTION: = Wood)
@@ -172,6 +176,7 @@ def run(persona, seed):
         for sess in range(SESSIONS):
             if slots: open_chest(slots.pop(0))  # ASSUMPTION: 1 chest unlocks per gap between sessions
             for _ in range(BATTLES // SESSIONS):
+                s['battles'] += 1
                 P = power(); wr = win_rate(P, s['n'], s.get('ls', 0))
                 if rng.random() < wr:
                     s['n'] += 1; add_xp(30); s['ls'] = 0
@@ -183,12 +188,13 @@ def run(persona, seed):
                     s['coins'] += c
                 else:
                     s['coins'] += rng.randint(*LOSS_COINS); add_xp(10); s['ls'] = s.get('ls', 0) + 1
+                    if s['battles'] > FTUE_BATTLES and rng.random() < REVIVE_ELIG_SHARE: s['rev_elig'] += 1
             if slots and p['ads'] and chest_ads < 3 and UNLOCK_MIN[slots[0]] <= 60:  # M5-5: ad halves timer, 3/day
                 open_chest(slots.pop(0)); chest_ads += 1
             upgrade()
         P = power()
         out.append(dict(day=d + 1, n=s['n'], P=P, exp=expectedP(s['n']), scale=enemy_scale(P, s['n']), epic_lvl=sum(bees[b][0] for b in BYRAR['E']) / len(BYRAR['E']), epic_max=max(bees[b][0] for b in BYRAR['E']),
-                        epic_prem=s.get('epic_cards_prem', 0), epic_all=sum(v for k, v in s.items() if k.startswith('epic_')), tier=s['tier'], prem=s['cards_prem'], chest=s['cards_chest'], free_track=s['cards_free_track']))
+                        epic_prem=s.get('epic_cards_prem', 0), epic_all=sum(v for k, v in s.items() if k.startswith('epic_')), gin=s['gin'], rev_elig=s['rev_elig'], tier=s['tier'], prem=s['cards_prem'], chest=s['cards_chest'], free_track=s['cards_free_track']))
     return out
 
 def main():
@@ -225,6 +231,12 @@ def main():
         print(f"{k}: day-30 median Epic level (mean of {len(BYRAR['E'])} Epics, unowned=0) {med(k,29,'epic_lvl'):.2f}, best Epic {med(k,29,'epic_max'):g}, season tier {med(k,29,'tier'):g}")
     gap = st.median(r[-1]['epic_lvl'] for r in res['payer_pass']) - st.median(r[-1]['epic_lvl'] for r in res['f2p_no_ads'])
     print(f"Epic-level gap payer - no-ads (day 30): {gap:+.2f} -> tier-18-to-gems trigger (>1): {'YES' if gap > 1 else 'no'}")
+    REV_PRICE = arg('--revive-gems', 10)
+    print(f"\nGem revive (M2-21a, price {REV_PRICE} gems, 1 revive/battle): free gem income vs revive-eligible defeats over {DAYS} days")
+    for k in PERSONAS:
+        gi, re_ = med(k, DAYS - 1, 'gin'), med(k, DAYS - 1, 'rev_elig')
+        print(f"{k}: free gems earned {gi:g} ({gi/DAYS:.1f}/day); revive-eligible defeats {re_:g} ({re_/DAYS:.2f}/day); "
+              f"gems to gem-revive all {re_*REV_PRICE:g}; free income covers {min(1, gi/max(1, re_*REV_PRICE)):.0%}")
     print(f"Day-30 level n: no-ads {med('f2p_no_ads',29,'n'):g}, ads {med('f2p_ads',29,'n'):g}, payer {med('payer_pass',29,'n'):g}")
 
 if __name__ == '__main__':
