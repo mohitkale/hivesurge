@@ -1,4 +1,4 @@
-# PR (number pending): fix/m3-7-load-test-min-assets
+# PR 046: fix/m3-7-load-test-min-assets
 
 Follow-up to M3-7 review: `playtests/m3-7/load-test.mjs` now fails when fewer than 14 M3 assets (5 GLBs and 9 Opus cues) load after the first battle.
 
