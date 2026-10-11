@@ -31,13 +31,8 @@ export function reviveGemConfig(
   return { gemPrice: int(remote?.gemPrice, d.gemPrice, 1000), gemCaps: { session, day } };
 }
 
-/** Persisted daily gem-revive counter (C2: the daily counter is saved, the session one is not). */
-export interface GemReviveDay {
-  day: string;
-  count: number;
-}
-
-export const emptyGemReviveDay = (): GemReviveDay => ({ day: '', count: 0 });
+export { emptyGemReviveDay, type GemReviveDay } from './save';
+import type { GemReviveDay } from './save';
 
 /** C2: 2 gem revives per session (memory), 3 per day (persisted in the save). */
 export class GemReviveCaps {

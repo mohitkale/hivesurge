@@ -1,11 +1,19 @@
 import type { KeyValueStore } from '../analytics/analytics';
-import { emptyGemReviveDay, type GemReviveDay } from './reviveGems';
 
 /**
  * Save data is a single versioned document. `revision` increases on every
  * local write and `updatedAt` records when, so a future cloud backend
  * (Supabase `saves` table with optimistic concurrency) can reconcile.
  */
+/* Kept here (not in reviveGems.ts) so the entry chunk does not pull in the gem revive code. */
+/** Persisted daily gem-revive counter (C2: the daily counter is saved, the session one is not). */
+export interface GemReviveDay {
+  day: string;
+  count: number;
+}
+
+export const emptyGemReviveDay = (): GemReviveDay => ({ day: '', count: 0 });
+
 export interface SaveData {
   version: 1;
   revision: number;
