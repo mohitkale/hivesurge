@@ -12,6 +12,9 @@ M3-9 clean-room review outcome. PR number claimed on main first (`fc2c001`).
   M3-1c (reproducible GLB rebuilds); M3-2 budgets pass, 50 fps part moved to new QA task M3-2a (tied to M2-19a);
   M3-9 done.
 
+**Review fixes (REVIEW-036):** M3-1a licence now "TBD pending Mohit" (authorship still recorded); M3-1a/M3-1c
+widened to the 21 GLBs in `art/models/`, M3-1c pins the gltfpack version; M2-21a/M2-21c point to merged PR 037 (`53534c6`).
+
 **Test results:** docs only; `npm run lint` pass.
 
 **Playtest notes:** n/a (no gameplay change).
