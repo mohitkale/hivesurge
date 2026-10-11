@@ -213,6 +213,26 @@ export class GameScene {
     return mesh;
   }
 
+  /**
+   * M3-7: swap GLB geometries into the running scene once they arrive (loaded after the
+   * first gameplayStart). Models that failed keep their procedural geometry.
+   */
+  applyModels(lib: ModelLibrary): void {
+    const swap = (mesh: THREE.Mesh, name: Parameters<typeof scaledModel>[1], scale: number) => {
+      const g = scaledModel(lib, name, scale);
+      if (!g) return;
+      mesh.geometry.dispose();
+      mesh.geometry = g;
+      if (!this.glbUsed.includes(name)) this.glbUsed.push(name);
+    };
+    swap(this.bees.worker, 'unit-bee', 0.42);
+    swap(this.bees.queen, 'unit-queen', 0.95);
+    swap(this.wasps.wasp, 'unit-wasp', 0.5);
+    swap(this.wasps.hornet, 'unit-hornet', 0.85);
+    const barrel = this.cannon.getObjectByName('barrel') as THREE.Mesh | undefined;
+    if (barrel) swap(barrel, 'prop-cannon', 1);
+  }
+
   /** GLB model if loaded, else the procedural fallback (M3-5). */
   private model(
     name: Parameters<typeof scaledModel>[1],

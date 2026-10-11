@@ -1,0 +1,73 @@
+M3-7 load test · 2026-10-11T01:02:05.167Z · http://127.0.0.1:4187/ · Chrome headless, Fast 4G (PredefinedNetworkConditions), cache disabled, fresh context per run, 390x844
+
+## run 1 (first battle at 913 ms)
+start_ms  end_ms  KiB     phase          M3?  url
+     187     361    2.5  before-battle       /assets/index-oKadtIP9.js
+     191     364    2.1  before-battle       /assets/index-BKY6aqy9.css
+     370     592   26.0  before-battle       /assets/game-onRIrqk9.js
+     370     708  138.9  before-battle       /assets/three-CCMZqmpV.js
+     913     913    0.0  after-battle        --- hs:first-battle ---
+     913    1111   13.1  after-battle        /assets/GLTFLoader-CnFlPvtG.js
+     919    1092    1.0  after-battle   M3   /assets/audio/fire.ogg
+     919    1093    1.1  after-battle   M3   /assets/audio/pop.ogg
+     919    1094    1.4  after-battle   M3   /assets/audio/thud.ogg
+     919    1095    1.5  after-battle   M3   /assets/audio/hurt.ogg
+     924    1101    2.9  after-battle   M3   /assets/audio/queen.ogg
+     924    1291    7.1  after-battle   M3   /assets/audio/lose.ogg
+     924    1292    7.8  after-battle   M3   /assets/audio/win.ogg
+     924    1313   14.1  after-battle   M3   /assets/audio/hum.ogg
+     924    1398   96.5  after-battle   M3   /assets/audio/music.ogg
+     924    1302    7.3  after-battle        /assets/meshopt_decoder.module-DXTYc6wn.js
+    2141    2344    6.2  after-battle   M3   /assets/models/unit-bee.glb
+    2144    2344    6.9  after-battle   M3   /assets/models/unit-queen.glb
+    2144    2340    4.4  after-battle   M3   /assets/models/unit-wasp.glb
+    2144    2340    4.6  after-battle   M3   /assets/models/unit-hornet.glb
+    2144    2340    5.6  after-battle   M3   /assets/models/prop-cannon.glb
+
+## run 2 (first battle at 932 ms)
+start_ms  end_ms  KiB     phase          M3?  url
+     179     351    2.5  before-battle       /assets/index-oKadtIP9.js
+     179     352    2.1  before-battle       /assets/index-BKY6aqy9.css
+     358     584   26.0  before-battle       /assets/game-onRIrqk9.js
+     358     695  138.9  before-battle       /assets/three-CCMZqmpV.js
+     932     932    0.0  after-battle        --- hs:first-battle ---
+     933    1124   13.1  after-battle        /assets/GLTFLoader-CnFlPvtG.js
+     933    1104    1.0  after-battle   M3   /assets/audio/fire.ogg
+     933    1107    1.1  after-battle   M3   /assets/audio/pop.ogg
+     934    1107    1.4  after-battle   M3   /assets/audio/thud.ogg
+     934    1108    1.5  after-battle   M3   /assets/audio/hurt.ogg
+     934    1115    2.9  after-battle   M3   /assets/audio/queen.ogg
+     934    1312    7.8  after-battle   M3   /assets/audio/win.ogg
+     934    1307    7.1  after-battle   M3   /assets/audio/lose.ogg
+     934    1329   14.1  after-battle   M3   /assets/audio/hum.ogg
+     934    1413   96.5  after-battle   M3   /assets/audio/music.ogg
+     934    1320    7.3  after-battle        /assets/meshopt_decoder.module-DXTYc6wn.js
+    1904    2101    6.2  after-battle   M3   /assets/models/unit-bee.glb
+    1904    2098    4.4  after-battle   M3   /assets/models/unit-wasp.glb
+    1904    2101    6.9  after-battle   M3   /assets/models/unit-queen.glb
+    1905    2105    4.6  after-battle   M3   /assets/models/unit-hornet.glb
+    1905    2105    5.6  after-battle   M3   /assets/models/prop-cannon.glb
+
+## run 3 (first battle at 848 ms)
+start_ms  end_ms  KiB     phase          M3?  url
+     179     351    2.5  before-battle       /assets/index-oKadtIP9.js
+     179     353    2.1  before-battle       /assets/index-BKY6aqy9.css
+     355     575   26.0  before-battle       /assets/game-onRIrqk9.js
+     355     691  138.9  before-battle       /assets/three-CCMZqmpV.js
+     848     848    0.0  after-battle        --- hs:first-battle ---
+     849    1037   13.1  after-battle        /assets/GLTFLoader-CnFlPvtG.js
+     852    1022    1.0  after-battle   M3   /assets/audio/fire.ogg
+     853    1023    1.1  after-battle   M3   /assets/audio/pop.ogg
+     854    1026    1.4  after-battle   M3   /assets/audio/thud.ogg
+     854    1029    1.5  after-battle   M3   /assets/audio/hurt.ogg
+     855    1031    2.9  after-battle   M3   /assets/audio/queen.ogg
+     855    1211    7.8  after-battle   M3   /assets/audio/win.ogg
+     856    1213    7.1  after-battle   M3   /assets/audio/lose.ogg
+     856    1241   14.1  after-battle   M3   /assets/audio/hum.ogg
+     857    1327   96.5  after-battle   M3   /assets/audio/music.ogg
+     857    1231    7.3  after-battle        /assets/meshopt_decoder.module-DXTYc6wn.js
+    1371    1555    6.2  after-battle   M3   /assets/models/unit-bee.glb
+    1371    1554    6.9  after-battle   M3   /assets/models/unit-queen.glb
+    1374    1568    4.4  after-battle   M3   /assets/models/unit-wasp.glb
+    1374    1573    4.6  after-battle   M3   /assets/models/unit-hornet.glb
+    1374    1573    5.6  after-battle   M3   /assets/models/prop-cannon.glb

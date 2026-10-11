@@ -1,3 +1,4 @@
+import { DeferredAssets, FIRST_BATTLE_MARK } from './platform/deferredAssets';
 import {
   glbEnabledFromUrl,
   loadModelLibrary,
@@ -86,13 +87,6 @@ export class Game {
     applyTheme(document.documentElement, this.save.settings.colorBlind);
     this.sfx.setMuted(this.save.settings.muted);
     this.scene = this.makeScene();
-    // M3-5: GLB models load in the background; the next scene build (battle start) uses
-    // them. Any failure keeps the procedural models, so the game never waits on assets.
-    if (glbEnabledFromUrl(location.search))
-      void loadModelLibrary({
-        baseUrl: `${import.meta.env.BASE_URL}${MODEL_BASE_URL}`,
-        onError: (name, err) => console.warn(`[assets] ${name}: procedural fallback`, err),
-      }).then((lib) => (this.models = lib));
     this.platform = new MockPlatform(
       this.overlay,
       {
@@ -274,7 +268,28 @@ export class Game {
     this.acc = 0;
     this.phase = 'battle';
     this.platform.gameplayStart();
+    if (!this.deferred.isStarted) performance.mark(FIRST_BATTLE_MARK);
+    this.deferred.onGameplayStart();
   }
+
+  /**
+   * M3-7: M3 art and audio are requested only after the first gameplayStart. The battle
+   * starts on procedural models + synth audio; GLBs are swapped into the running scene
+   * when they arrive (M3-5: any failure keeps the procedural models).
+   */
+  private readonly deferred = new DeferredAssets([
+    () => {
+      if (!glbEnabledFromUrl(location.search)) return;
+      void loadModelLibrary({
+        baseUrl: `${import.meta.env.BASE_URL}${MODEL_BASE_URL}`,
+        onError: (name, err) => console.warn(`[assets] ${name}: procedural fallback`, err),
+      }).then((lib) => {
+        this.models = lib;
+        this.scene.applyModels(lib);
+      });
+    },
+    () => this.sfx.loadCues(),
+  ]);
 
   private endBattle(): void {
     if (this.ftue) {
