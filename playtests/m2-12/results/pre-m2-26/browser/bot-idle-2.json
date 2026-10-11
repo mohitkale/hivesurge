@@ -1,0 +1,94 @@
+[
+  {
+    "name": "level_start",
+    "ts": 1791683492493,
+    "session": "mv363ae5lpqe",
+    "props": {
+      "level": "ftue-meadow"
+    }
+  },
+  {
+    "name": "level_fail",
+    "ts": 1791683568240,
+    "session": "mv363ae5lpqe",
+    "props": {
+      "level": "ftue-meadow",
+      "time": 75,
+      "nestLeft": 100,
+      "hiveLeft": 60,
+      "peakBees": 0,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791683569438,
+    "session": "mv363ae5lpqe",
+    "props": {
+      "level": "ftue-meadow"
+    }
+  },
+  {
+    "name": "level_fail",
+    "ts": 1791683644698,
+    "session": "mv363ae5lpqe",
+    "props": {
+      "level": "ftue-meadow",
+      "time": 75,
+      "nestLeft": 100,
+      "hiveLeft": 60,
+      "peakBees": 0,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791683645869,
+    "session": "mv363ae5lpqe",
+    "props": {
+      "level": "ftue-meadow"
+    }
+  },
+  {
+    "name": "level_fail",
+    "ts": 1791683721075,
+    "session": "mv363ae5lpqe",
+    "props": {
+      "level": "ftue-meadow",
+      "time": 75,
+      "nestLeft": 100,
+      "hiveLeft": 60,
+      "peakBees": 0,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791683722178,
+    "session": "mv363ae5lpqe",
+    "props": {
+      "level": "ftue-meadow"
+    }
+  },
+  {
+    "name": "level_fail",
+    "ts": 1791683797359,
+    "session": "mv363ae5lpqe",
+    "props": {
+      "level": "ftue-meadow",
+      "time": 75,
+      "nestLeft": 100,
+      "hiveLeft": 60,
+      "peakBees": 0,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791683799364,
+    "session": "mv363ae5lpqe",
+    "props": {
+      "level": "ftue-meadow"
+    }
+  }
+]
