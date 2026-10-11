@@ -103,13 +103,13 @@ describe('T-G6 any purchase grants noAds', () => {
   for (const sku of Object.keys(CATALOG) as Sku[]) {
     it(`${sku} catalog entry and entitlement set noAds`, () => {
       expect(CATALOG[sku].grants.noAds).toBe(true);
-      const w = { coins: 0, gems: 0, noAds: false };
+      const w = { coins: 0, gems: 0, noAds: false, skins: [] as string[] };
       applyPurchase(w, sku);
       expect(w.noAds).toBe(true);
     });
   }
   it('gems_small still grants its gems', () => {
-    const w = { coins: 0, gems: 0, noAds: false };
+    const w = { coins: 0, gems: 0, noAds: false, skins: [] as string[] };
     applyPurchase(w, 'gems_small');
     expect(w.gems).toBe(120);
   });

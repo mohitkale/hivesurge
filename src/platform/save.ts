@@ -13,6 +13,8 @@ export interface SaveData {
   gems: number;
   bestStars: Record<string, number>;
   noAds: boolean;
+  /** Owned bee skins (e.g. 'starter' from the Starter Pack). */
+  skins: string[];
   battlesCompleted: number;
   lastInterstitialAt: number;
   /** FTUE finished (first win, or a later launch). Gates ads/offers (G1, G2). */
@@ -45,6 +47,7 @@ export const defaultSave = (): SaveData => ({
   gems: 0,
   bestStars: {},
   noAds: false,
+  skins: [],
   battlesCompleted: 0,
   lastInterstitialAt: 0,
   ftueDone: false,
@@ -70,6 +73,9 @@ export function parseSave(raw: string | null): SaveData {
       gems: num(d.gems),
       bestStars: stars,
       noAds: d.noAds === true,
+      skins: Array.isArray(d.skins)
+        ? [...new Set(d.skins.filter((x): x is string => typeof x === 'string'))]
+        : [],
       battlesCompleted: num(d.battlesCompleted),
       lastInterstitialAt: num(d.lastInterstitialAt),
       ftueDone: d.ftueDone === true,
@@ -102,6 +108,7 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     gems: Math.max(a.gems, b.gems),
     bestStars: stars,
     noAds: a.noAds || b.noAds,
+    skins: [...new Set([...a.skins, ...b.skins])], // purchases are sticky
     battlesCompleted: Math.max(a.battlesCompleted, b.battlesCompleted),
     ftueDone: a.ftueDone || b.ftueDone,
   };

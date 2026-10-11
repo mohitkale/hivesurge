@@ -39,4 +39,16 @@ export class ResultSession {
   get rewardedShown(): boolean {
     return this.rewarded;
   }
+
+  /**
+   * Result state for a battle that just ended (QA M2-14 bug A, G4). A battle continued by a
+   * revive is the same level transition as the revive offer, so a rewarded ad shown there
+   * still blocks the interstitial on this result's claim. A fresh battle starts clean.
+   */
+  static forBattleEnd(prev: ResultSession, revivedThisBattle: boolean): ResultSession {
+    const next = new ResultSession();
+    if (revivedThisBattle && prev.rewardedShown) next.markRewardedShown();
+    if (revivedThisBattle) next.markReviveGranted();
+    return next;
+  }
 }

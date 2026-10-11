@@ -10,7 +10,8 @@ export interface SkuInfo {
   id: Sku;
   title: string;
   price: string;
-  grants: { coins?: number; gems?: number; noAds?: boolean };
+  /** `skin`: bee skin id unlocked by the purchase (monetization/skus.json). */
+  grants: { coins?: number; gems?: number; noAds?: boolean; skin?: string };
 }
 
 export const CATALOG: Record<Sku, SkuInfo> = {
@@ -19,7 +20,7 @@ export const CATALOG: Record<Sku, SkuInfo> = {
     id: 'starter_pack',
     title: 'Starter Pack',
     price: '$2.99',
-    grants: { coins: 500, gems: 50, noAds: true },
+    grants: { coins: 500, gems: 50, noAds: true, skin: 'starter' },
   },
   gems_small: {
     id: 'gems_small',
