@@ -14,5 +14,22 @@ for s in skus:
     for c in s.get('contents',[]):
         if c.get('random'): fail.append(f"{s['id']} tier {c['tier']}: {c['item']} is random content in a paid track (M5-11)")
     if s['usd']<2: fail.append(f"{s['id']}: < $2 web price floor (iap-catalog.md)")
-print("\n".join(fail) or f"OK: {len(skus)} SKUs fixed-content, all grant noAds, all >= $2")
+# G19 (M2-21a): gem-priced revive config, monetization/revive-gem.json
+rv=json.loads((pathlib.Path(__file__).parent.parent/'revive-gem.json').read_text())
+gems_small=next(x for x in skus if x['id']=='gems_small')
+usd_per_gem=gems_small['usd']/gems_small['grants']['gems']
+G19={
+ 'price fixed (no escalation)': rv['escalation'] is False,
+ 'one revive per battle across ad/free/gem': rv['max_revives_per_battle_total']==1,
+ 'gem revive daily cap <= 3': 0 < rv['max_gem_revives_per_day'] <= 3,
+ 'session cap <= daily cap': rv['max_gem_revives_per_session'] <= rv['max_gem_revives_per_day'],
+ 'no offer in FTUE (>= 3 battles, G2)': rv['ftue_battles_without_offer'] >= 3,
+ 'no buy-gems upsell from revive offer': rv['buy_gems_upsell_from_offer'] is False,
+ 'no gem revive on event final level': rv['offer_on_event_final_level'] is False,
+ 'countdown pauses on gem confirm': rv['countdown_pauses_on_gem_confirm'] is True,
+ 'no pre-selected/default paid button': rv['default_button']=='none',
+ 'price <= $0.50 equivalent at gems_small rate': rv['price_gems']*usd_per_gem <= 0.50,
+}
+fail += [f"revive-gem.json: G19 '{k}' violated" for k,ok in G19.items() if not ok]
+print("\n".join(fail) or f"OK: {len(skus)} SKUs fixed-content, all grant noAds, all >= $2; G19 gem revive {rv['price_gems']} gems (~${rv['price_gems']*usd_per_gem:.2f}) passes {len(G19)} checks")
 sys.exit(1 if fail else 0)

@@ -25,3 +25,4 @@ pollen,source,chests (odds shown),3/6/12/20 cards,per chest,pity L at 40,META,de
 pollen,sink,bee level-up,see POLLEN table,per level,max level,META,design
 pollen,overflow,convert at max,C5 R15 E50 L200 coins,,,META,design (not simulated)
 ad_time,source,chest timer halve rewarded,halve remaining,per chest,3/day,META + ad-placements.md,design
+gems,sink,gem revive (M2-21a),10 flat,per eligible defeat,1/battle 2/session 3/day,monetization/revive-m2-21a.md,proposed
