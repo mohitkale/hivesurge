@@ -1,6 +1,6 @@
 # PR 048: feat/m2-21c-gem-revive
 
-M2-21c gem revive, per docs/design/revive-m2.md (PR 039 merged), monetization/revive-m2-21a.md C1–C8 and G19. Base: main `36f9a21`.
+M2-21c gem revive, per docs/design/revive-m2.md (PR 039 merged), monetization/revive-m2-21a.md C1–C8 and G19. Base: main `9b969f9`.
 
 ## Final rule implemented
 
