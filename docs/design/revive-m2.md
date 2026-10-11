@@ -10,7 +10,7 @@ Fixes PR 002 QA bug 1: closing the revive ad early burns the battle's only reviv
 
 - Shown on defeat when: not in FTUE (G2, first 3 battles), `revives === 0` this battle, nest damage at least 50% (current rule), and rewarded caps not hit (G5: 12/session, 30/day, revive 10/day per ad-placements).
 - The offer has a **10 s countdown** (ring around the button). When it reaches 0, the offer closes and the normal defeat screen remains (Retry / Home). The countdown pauses while an ad is on screen and resumes when the ad returns.
-- Buttons: "Revive (watch ad)" and "No thanks", same size and style (G9).
+- Buttons: three, see "Gem revive (M2-21b)" below.
 
 ## Outcomes
 
@@ -29,6 +29,46 @@ Fixes PR 002 QA bug 1: closing the revive ad early burns the battle's only reviv
 - Second ad failure in the same session: the button shows "Ad not available" (disabled) for 3 s, then the offer closes normally.
 - **Eligibility:** the free revive is granted only if at least one ad has loaded successfully this session (flag `adsEverLoadedThisSession`). There is no offline check. Reason: ad-blocked players look online to the game, so an offline check would let them get a free revive every session. Accepted edge case: an online player whose first ad of the session fails gets no free revive and sees the normal defeat screen.
 - The free revive does not count toward rewarded caps and is not an ad impression.
+
+## Gem revive (M2-21b)
+
+Pricing, caps and guardrails come from MON (`monetization/revive-m2-21a.md`, `monetization/revive-gem.json`, guardrail G19). This section covers the layout and how it fits the rules above.
+
+### Layout
+
+```
++------------------------------------------+
+|        Revive the hive?   (10 s ring)    |
+| [ Watch ad ] [ Revive 10 gems ] [No thanks] |
++------------------------------------------+
+```
+
+- Three buttons in one row (stacked on viewports under 340 px): **"Revive (watch ad)"**, **"Revive (10 gems)"** with the gem icon, **"No thanks"**.
+- All the same size, shape, font and contrast (G9). There is **no default or pre-highlighted choice**: no focus ring on open, no glow, pulse or "recommended" tag, and no button pre-selected for Enter or Space. Keyboard focus starts on the panel title. Order is fixed (ad, gems, no thanks) and is never shuffled.
+- **Price: 10 gems flat** (MON-defined, `revive.gemPrice` in remote config, default 10). The label always shows the live config price. No escalation.
+- Tapping the gem button opens a small confirm sheet: price, current balance and balance after, with two equal buttons, "Spend 10 gems" and "Back". The 10 s countdown pauses while the sheet is open. "Back" returns to the offer with the countdown resumed. The gem debit is atomic (`takeGems()`), and the revive is granted only after the debit commits.
+
+### Not enough gems
+
+- The gem button stays visible but is **disabled**, still showing the price (for example "Revive (10 gems)" greyed at 40% opacity with a lock icon), plus a caption under it: "You have 4". Screen readers get "Revive for 10 gems, unavailable, you have 4".
+- **No buy-gems link, no shop redirect, no store pop-up** from the offer or from the defeat screen that follows (G13, G19). Tapping the disabled button does nothing (no tooltip that sells).
+
+### Fit with the other rules
+
+| Situation                                  | Ad button                                | Gem button                                                  | No thanks |
+| ------------------------------------------ | ---------------------------------------- | ----------------------------------------------------------- | --------- |
+| Normal offer                               | shown                                    | shown (or disabled if balance < price)                      | shown     |
+| After 1 early ad close                     | shown (retry)                            | shown                                                       | shown     |
+| After 2 early ad closes                    | removed                                  | **shown** (gem path still allowed while the countdown runs) | shown     |
+| Ad fails and free revive available         | becomes "Revive (free)"                  | **hidden** (nobody pays for a free option)                  | shown     |
+| Ad fails, free revive used or not eligible | "Ad not available" for 3 s, then removed | shown                                                       | shown     |
+| Gem caps hit (2/session or 3/day)          | shown                                    | hidden                                                      | shown     |
+| Event final level (`isEventFinalLevel`)    | shown                                    | **hidden** (no pay-to-finish pressure)                      | shown     |
+| FTUE (first 3 battles)                     | no offer at all                          | no offer                                                    | n/a       |
+
+- **One revive per battle total** across ad, free and gems (`world.revive()` refuses when `revives > 0`). A granted gem revive closes the offer.
+- A gem revive blocks the interstitial on this transition (treated like `markRewardedShown`, G4).
+- **Event final level flag:** `isEventFinalLevel` is now owned by **M7-3** (levels carry the flag). Until M7-3 lands there are no live events, so the check is always false. M2-21c reads it through a stub that defaults to false.
 
 ## Anti-exploit rules
 
@@ -61,3 +101,10 @@ Funnel in admin (M6-1): offered, requested, completed, granted, by level.
 6. Interstitial is blocked after any revive ad on that transition.
 7. In FTUE (first 3 battles) no revive offer appears.
 8. Mock adapter: add `noFill` and `error` modes to `MockPlatform.showRewarded` to test these cases.
+9. Gem revive: enough gems, confirm, then debit 10, revive granted, `revive_granted{source:'gems'}`. A second offer never appears.
+10. Not enough gems: button disabled, shows price and balance, tap does nothing, no store navigation is ever triggered.
+11. Free revive shown: gem button hidden. After the free revive is used and the ad still fails: gem button shown.
+12. Confirm sheet open pauses the countdown; "Back" resumes it.
+13. Gem caps: third gem revive in a session, or fourth in a day, means the gem button is hidden.
+14. `isEventFinalLevel = true` hides the gem button (stub false until M7-3).
+15. No button has focus, highlight or animation on open (snapshot test).
