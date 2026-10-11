@@ -27,3 +27,34 @@
 - or deliberately keep it open for gems, update line 24 and test 2, and add it to M2-21c as a code change.
 
 If the offer stays open, check with MON whether keeping it open for gems after an ad was closed twice is OK under G19.
+
+## Re-review @ 76f2960 (2026-10-11)
+
+**Verdict: changes requested (one formula), not merged.** Docs only. Lint passes. No secrets.
+
+**Now consistent:**
+
+- Line 24 (retry limit): after the second early close the offer stays open with the ad button disabled ("Ad limit reached", same size), the gem button active if valid, and "No thanks". It closes if the gem option is not valid.
+- Line 26 says explicitly: **"Code change required in M2-21c: PR 030 currently closes the offer after 2 early closes."**
+- Line 31: a second ad failure follows the same rule, closing after 3 s if there are no gems.
+- The state table rows (2 closes, ad fails / free used).
+- Test 2 (both branches) and test 4.
+- The analytics event `revive_declined` has reason `button | timeout | no_option` and `gemButtonState`.
+
+**Matches merged 037 and 040:**
+
+- 10 gems; caps 2 per session and 3 per day (button hidden when hit).
+- One revive per battle total (`world.revive()`).
+- A gem revive blocks the interstitial (`markRewardedShown`, G4).
+- No buy-gems link.
+- Gem button hidden while the free revive is shown.
+
+**Blocking (anti-exploit item 5, edited in this PR).** The normative formula reads:
+
+    Offer open = !revived && !claimed && countdown > 0 && (adButtonEnabled || gemButtonEnabled)
+
+It has no term for the **free-revive button**. In the table row "Ad fails and free revive available" the gem button is hidden and the ad slot shows "Revive (free)", so an implementation of this formula would close the offer exactly when the free revive is offered. That contradicts the PR 031 rule and tests 4 and 11.
+
+**Fix:** add `|| freeButtonShown`, or say "any enabled revive button (ad, free, gems)". Also cover the 3 s "Ad not available" window, during which the offer stays open even if no button is enabled.
+
+**Nit (pre-existing wording in the same item):** `markReviveAttempted()` was renamed `markReviveGranted()` in PR 030. The early-close counter lives in `ReviveOffer.closes`, not in `ResultSession`. Update item 5 so ENG has the right names.
