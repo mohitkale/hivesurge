@@ -1,4 +1,5 @@
 import type { KeyValueStore } from '../analytics/analytics';
+import { emptyGemReviveDay, type GemReviveDay } from './reviveGems';
 
 /**
  * Save data is a single versioned document. `revision` increases on every
@@ -21,6 +22,8 @@ export interface SaveData {
   ftueDone: boolean;
   /** Daily ad counters for caps (G5); reset when `day` changes. */
   adDay: AdDayCounters;
+  /** M2-21c (C2): gem revives today; the per-session count is not saved. */
+  reviveGemDay: GemReviveDay;
   settings: { muted: boolean; colorBlind: boolean; haptics: boolean };
 }
 
@@ -52,6 +55,7 @@ export const defaultSave = (): SaveData => ({
   lastInterstitialAt: 0,
   ftueDone: false,
   adDay: emptyAdDay(),
+  reviveGemDay: emptyGemReviveDay(),
   settings: { muted: false, colorBlind: false, haptics: true },
 });
 
@@ -80,6 +84,10 @@ export function parseSave(raw: string | null): SaveData {
       lastInterstitialAt: num(d.lastInterstitialAt),
       ftueDone: d.ftueDone === true,
       adDay: parseAdDay(d.adDay),
+      reviveGemDay: {
+        day: typeof d.reviveGemDay?.day === 'string' ? d.reviveGemDay.day : '',
+        count: num(d.reviveGemDay?.count),
+      },
       settings: {
         muted: d.settings?.muted === true,
         colorBlind: d.settings?.colorBlind === true,

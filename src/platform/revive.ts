@@ -7,8 +7,13 @@
  *   in this session (ad blockers never get a free revive). A further failure shows
  *   "Ad not available" for UNAVAILABLE_MS, then the offer closes.
  * - Nothing here is saved; reloading the page resets it (and ends the battle as a loss).
+ * - M2-21c gem revive: a third option. Gems are *valid* when affordable, within caps and not
+ *   hidden (hidden while the free revive is shown, when caps are reached, or on an event's
+ *   final level). After 2 early closes, or after an ad failure with no free revive, the ad
+ *   button is disabled and the offer stays open only while gems are valid.
  */
 import type { RewardedResult } from './platform';
+import { debitGems, type GemReviveCaps, type GemWallet } from './reviveGems';
 
 export const MAX_EARLY_CLOSES = 2;
 export const OFFER_COUNTDOWN_S = 10;
@@ -40,10 +45,21 @@ export function shouldOfferRevive(e: ReviveEligibility): boolean {
   return e.rewardedAllowed && e.capsOk && e.revives === 0 && e.nestDamage >= REVIVE_NEST_DAMAGE;
 }
 
-export type ReviveButton = 'ad' | 'free' | 'unavailable' | 'none';
+/** Ad slot state. `limit` = "Ad limit reached" (2 early closes); `unavailable` = "Ad not available". */
+export type ReviveButton = 'ad' | 'free' | 'unavailable' | 'limit' | 'none';
+
+export type GemButtonState = 'enabled' | 'disabled' | 'hidden';
+
+/** Gem option context for one offer (absent = no gem option, PR 030 behaviour). */
+export interface GemOption {
+  wallet: GemWallet;
+  price: number;
+  caps: GemReviveCaps;
+  eventFinalLevel: boolean;
+}
 
 export type ReviveStep =
-  | { kind: 'grant'; source: 'ad' | 'free'; attempt: number }
+  | { kind: 'grant'; source: 'ad' | 'free' | 'gems'; attempt: number; price?: number }
   | { kind: 'offer' } // back to the offer (button state may have changed)
   | { kind: 'unavailable' } // show "Ad not available" for UNAVAILABLE_MS, then close
   | { kind: 'closed' }; // offer gone, normal defeat screen
@@ -58,8 +74,39 @@ export class ReviveOffer {
   countdown = OFFER_COUNTDOWN_S;
   /** True while an ad is on screen: the countdown pauses. */
   adOnScreen = false;
+  /** Gem confirm sheet open: the countdown pauses (C5). */
+  confirmOpen = false;
+  /** "Ad not available" 3 s notice running (nothing enabled; see afterNotice). */
+  noticeActive = false;
 
-  constructor(private readonly session: ReviveSession) {}
+  constructor(
+    private readonly session: ReviveSession,
+    private readonly gems: GemOption | null = null,
+  ) {}
+
+  /** Gem button: hidden while the free revive is shown (C3), when caps are reached, on an event final level (C6). */
+  get gemState(): GemButtonState {
+    const g = this.gems;
+    if (!g || this.button === 'free' || !g.caps.ok || g.eventFinalLevel) return 'hidden';
+    if (g.wallet.gems < g.price) return 'disabled'; // C4: shown with price, no buy link
+    return this.noticeActive ? 'disabled' : 'enabled';
+  }
+
+  /** Gems are valid: affordable, within caps and not hidden. */
+  get gemsValid(): boolean {
+    const g = this.gems;
+    return (
+      !!g && this.button !== 'free' && g.caps.ok && !g.eventFinalLevel && g.wallet.gems >= g.price
+    );
+  }
+
+  get gemPrice(): number {
+    return this.gems?.price ?? 0;
+  }
+
+  get adEnabled(): boolean {
+    return this.open && this.button === 'ad' && this.closes < MAX_EARLY_CLOSES && !this.confirmOpen;
+  }
 
   get open(): boolean {
     return !this.granted && !this.closed && this.countdown > 0;
@@ -67,7 +114,7 @@ export class ReviveOffer {
 
   /** Advance the countdown (paused while an ad is on screen). Returns true when it ran out now. */
   tick(dt: number): boolean {
-    if (!this.open || this.adOnScreen) return false;
+    if (!this.open || this.adOnScreen || this.confirmOpen) return false;
     this.countdown = Math.max(0, this.countdown - dt);
     if (this.countdown === 0) {
       this.closed = true;
@@ -79,7 +126,7 @@ export class ReviveOffer {
 
   /** Player tapped "Revive (watch ad)". Returns the attempt number (1..3) or 0 if not allowed. */
   request(): number {
-    if (!this.open || this.button !== 'ad') return 0;
+    if (!this.adEnabled) return 0;
     this.adOnScreen = true;
     return ++this.attempts;
   }
@@ -96,7 +143,11 @@ export class ReviveOffer {
     if (result === 'closed') {
       this.session.noteAdLoaded();
       this.closes++;
-      if (this.closes >= MAX_EARLY_CLOSES) return this.close();
+      if (this.closes >= MAX_EARLY_CLOSES) {
+        // revive-m2.md: the offer stays open with "Ad limit reached" while gems are valid.
+        this.button = 'limit';
+        return this.gemsValid ? { kind: 'offer' } : this.close();
+      }
       return { kind: 'offer' };
     }
     // no_fill or error: nothing was shown.
@@ -105,7 +156,42 @@ export class ReviveOffer {
       return { kind: 'offer' };
     }
     this.button = 'unavailable';
+    this.noticeActive = true;
     return { kind: 'unavailable' };
+  }
+
+  /** The 3 s "Ad not available" notice ended: stay open only while gems are valid. */
+  afterNotice(): ReviveStep {
+    this.noticeActive = false;
+    if (this.open && this.gemsValid) return { kind: 'offer' };
+    return this.close();
+  }
+
+  /** Gem button tapped: open the confirm sheet (pauses the countdown). */
+  openGemConfirm(): boolean {
+    if (!this.open || this.gemState !== 'enabled') return false;
+    this.confirmOpen = true;
+    return true;
+  }
+
+  /** "Back" on the confirm sheet: the countdown resumes. */
+  backFromConfirm(): void {
+    this.confirmOpen = false;
+  }
+
+  /**
+   * C1: "Spend N gems". Grants only after an atomic debit, never when the battle was already
+   * revived (`revives > 0`) or the offer is closed. Returns null (nothing debited) if refused.
+   */
+  takeGems(revives: number): ReviveStep | null {
+    const g = this.gems;
+    if (!g || revives > 0 || !this.open || !this.confirmOpen || !this.gemsValid) return null;
+    if (!debitGems(g.wallet, g.price)) return null;
+    g.caps.record();
+    this.confirmOpen = false;
+    this.granted = true;
+    this.button = 'none';
+    return { kind: 'grant', source: 'gems', attempt: this.attempts, price: g.price };
   }
 
   /** Player tapped "Revive (free)". */
@@ -117,7 +203,7 @@ export class ReviveOffer {
     return { kind: 'grant', source: 'free', attempt: this.attempts };
   }
 
-  /** "No thanks", or the "Ad not available" pause finished. */
+  /** "No thanks". */
   decline(): ReviveStep {
     return this.close();
   }
