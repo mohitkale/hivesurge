@@ -19,7 +19,7 @@ export interface BiomeKit {
   /** Prop id placed as posts along both lane rails. */
   railPost: string;
   /** Large set pieces outside the lane (hills, trees, bushes): prop id + count per side. */
-  backdrop: { id: string; perSide: number; scale: number }[];
+  backdrop: { id: string; perSide: number; scale: number; offset?: number }[];
 }
 
 /** Budgets for one kit (PLAN M3-3, within the M3 model budget). Enforced in tests/biomes.test.ts. */
@@ -191,7 +191,7 @@ export const BIOMES: Record<string, BiomeKit> = {
     railPost: 'fencePost',
     backdrop: [
       { id: 'bush', perSide: 6, scale: 1.6 },
-      { id: 'hill', perSide: 4, scale: 2.2 },
+      { id: 'hill', perSide: 4, scale: 1.5, offset: 6 },
     ],
   },
   orchard: {
@@ -231,7 +231,7 @@ export const BIOMES: Record<string, BiomeKit> = {
       { id: 'appleTree', perSide: 5, scale: 2.2 },
       { id: 'pearTree', perSide: 4, scale: 2.0 },
       { id: 'hedge', perSide: 3, scale: 1.5 },
-      { id: 'hill', perSide: 3, scale: 2.4 },
+      { id: 'hill', perSide: 3, scale: 1.6, offset: 6 },
     ],
   },
 };
@@ -286,7 +286,7 @@ export function layoutBiome(kit: BiomeKit, laneWidth: number, laneLength: number
         const t = (k + 0.5 + (b.id.length % 3) * 0.17) / b.perSide;
         out.push({
           id: b.id,
-          x: side * (half + 4 + ((k * 5 + b.id.length) % 4) * 1.3),
+          x: side * (half + 4 + (b.offset ?? 0) + ((k * 5 + b.id.length) % 4) * 1.3),
           z: 2 - t * (laneLength + 6),
           rotY: k * 2.1 + side,
           scale: b.scale * (0.85 + ((k * 3) % 4) * 0.08),
