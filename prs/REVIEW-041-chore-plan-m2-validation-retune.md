@@ -25,3 +25,15 @@
 1. **The M2-21b text says "if gems aren't valid (caps, FTUE, event final level, etc.)"** That list omits "can't afford", lists FTUE (no offer exists there), and "etc." is unsourced. Use 039's exact definition: _valid = affordable, within caps, not hidden (hidden: caps hit, event final level, free revive shown)_. Keep FTUE as a separate "no offer" rule.
 2. **"MON confirmed `cc600b4` against G19 and C1–C8" is unsourced.** No committed MON doc or review records it. Link the source or drop the claim.
 3. **The PR doc is stale.** It still says "M2-21c may start from `cc600b4`" and "pending MON confirmation", while PLAN says `76f2960`. Also, 039 @ 76f2960 is **changes requested** (REVIEW-039: the offer-open formula omits the free-revive button). So "M2-21c can start from 76f2960" should wait for 039's fix, or note it.
+
+## Re-review @ 8e2d71b (2026-10-11)
+
+**Verdict: approved, merged (--no-ff) as e404646**, after 039 (8f24797). Docs only. Lint passes.
+
+- M2-21b and M2-21c now use 039's definition: gems valid = affordable, within caps and not hidden. The close reasons are can't afford, caps reached, or event final level.
+- No "first 3 battles" close reason (it's stated separately as "no revive offer at all"). No "etc.".
+- The unsourced "MON confirmed" line is removed.
+- M2-21c depends on "M2-21b (PR 039 merged)", PR 030 and PR 037.
+- The PR doc matches PLAN.
+
+**Nit:** M2-21b still reads "In PR 039 … changes requested". 039 is now merged (8f24797), so update the status in the next PLAN sync.

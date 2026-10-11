@@ -58,3 +58,26 @@ It has no term for the **free-revive button**. In the table row "Ad fails and fr
 **Fix:** add `|| freeButtonShown`, or say "any enabled revive button (ad, free, gems)". Also cover the 3 s "Ad not available" window, during which the offer stays open even if no button is enabled.
 
 **Nit (pre-existing wording in the same item):** `markReviveAttempted()` was renamed `markReviveGranted()` in PR 030. The early-close counter lives in `ReviveOffer.closes`, not in `ResultSession`. Update item 5 so ENG has the right names.
+
+## Re-review @ 01ae7bc (2026-10-11)
+
+**Verdict: approved, merged (--no-ff) as 8f24797.** Docs only (`revive-m2.md` and the PR doc). Lint passes. No secrets.
+
+**Checked against the code on main (`src/platform/revive.ts`, `resultSession.ts`):**
+
+- The early-close counter is `ReviveOffer.closes` (one `ReviveOffer` per defeat). ✔
+- `freeReviveUsed` and `adsEverLoadedThisSession` are on `ReviveSession`. ✔
+- `ResultSession` has `markRewardedShown()` and `markReviveGranted()`. ✔
+- `UNAVAILABLE_MS = 3000`. ✔
+- `button` values `ad | free | unavailable | none` match the formula's terms. ✔
+
+**Offer-open formula:**
+
+    offerOpen = !granted && !closed && countdown > 0 && (adEnabled || gemsEnabled || freeShown || adUnavailableNoticeActive)
+
+- It now keeps the offer open while the free revive is shown.
+- `gemsEnabled` requires `!freeShown`, so gems are hidden while the free revive is shown. This matches the PR 031 rule and tests 4 and 11.
+- During the 3 s notice the offer is open with the countdown running. After the notice it stays open only if gems are valid, which matches line 31 and test 4.
+- `adEnabled = closes < 2 …` and the stay-open-after-2-closes rule are a deliberate change to PR 030 (`closes >= MAX_EARLY_CLOSES → close()`). The doc flags this for M2-21c. ✔
+
+**Other consistency.** No contradictions found among: line 24, test 2, the state table, the `revive_declined` reason `no_option`, the 037/040 caps (2/session, 3/day, hidden when hit), one revive per battle, gem revive blocking the interstitial, and no buy-gems link.
