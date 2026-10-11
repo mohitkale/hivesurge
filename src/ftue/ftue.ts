@@ -27,6 +27,15 @@ export const FTUE_PROMPTS: Record<FtueStep, string> = {
   [FtueStep.Done]: '',
 };
 
+/**
+ * validation-m2.md #1 (M2-27): each prompt stays up at least this long before the next step,
+ * so fast players still read prompts 2 to 4.
+ */
+export const MIN_PROMPT_DWELL_S = 1.5;
+
+/** validation-m2.md #3 (M2-27): step 3 timeout halves the moving gate's speed. */
+export const LEAD_TIMEOUT_SPEED_MUL = 0.5;
+
 /** Seconds before a step's timeout fallback (spec column "Timeout fallback"). */
 const TIMEOUTS: Partial<Record<FtueStep, number>> = {
   [FtueStep.Aim]: 4,
@@ -70,11 +79,12 @@ export class Ftue {
 
   /** Step 4's prompt waits for a full queen meter (spec trigger "queen meter full"). */
   get prompt(): string {
-    if (this.step === FtueStep.Queen && !this.queenReady) return '';
+    if (this.step === FtueStep.Queen && !this.queenPromptShown) return '';
     return FTUE_PROMPTS[this.step];
   }
 
-  private queenReady = false;
+  /** Step 4's prompt appeared (meter full); it then stays for the dwell even after the launch. */
+  private queenPromptShown = false;
 
   get done(): boolean {
     return this.step === FtueStep.Done;
@@ -90,36 +100,43 @@ export class Ftue {
   update(w: World, input: PlayerInput, dt: number): void {
     if (this.done) return;
     w.hiveShield = this.step < FtueStep.Finish;
-    this.queenReady = w.queenReady;
+    if (this.step === FtueStep.Queen && w.queenReady) this.queenPromptShown = true;
     // The queen step's clock (and timeout) starts when the meter is full.
-    if (this.step !== FtueStep.Queen || w.queenReady) this.stepTime += dt;
+    if (this.step !== FtueStep.Queen || this.queenPromptShown) this.stepTime += dt;
     if (input.firing && this.firstInputAt < 0) this.firstInputAt = w.time;
     const timeout = TIMEOUTS[this.step];
     if (timeout !== undefined && this.stepTime >= timeout && !this.emphasis) {
       this.emphasis = true;
       this.stepTimedOut = true;
+      if (this.step === FtueStep.Lead) w.gateSpeedMul[this.movingGate] = LEAD_TIMEOUT_SPEED_MUL;
     }
+    // Prompt steps advance only after the prompt has been on screen for the minimum dwell.
+    const dwellOk = this.stepTime >= MIN_PROMPT_DWELL_S;
     switch (this.step) {
       case FtueStep.Boot:
         if (this.stepTime >= 1.5) this.advance(w);
         break;
       case FtueStep.Aim:
         if (input.firing) this.fireHeld += dt;
-        if (this.fireHeld >= 1.0) this.advance(w);
+        if (this.fireHeld >= 1.0 && dwellOk) this.advance(w);
         break;
       case FtueStep.Gate:
-        if (w.gatePasses[this.gateX2] - this.gateMark >= 10) this.advance(w);
+        if (w.gatePasses[this.gateX2] - this.gateMark >= 10 && dwellOk) this.advance(w);
         break;
       case FtueStep.Lead:
-        if (w.gatePasses[this.movingGate] - this.gateMark >= 5) this.advance(w);
+        if (w.gatePasses[this.movingGate] - this.gateMark >= 5 && dwellOk) this.advance(w);
         break;
       case FtueStep.Queen:
-        if (w.stats.queens > 0) this.advance(w);
+        // Dwell applies only once the prompt is visible; a queen launched before the meter
+        // prompt appeared completes the step at once (no prompt flashes by).
+        if (w.stats.queens > 0 && (!this.queenPromptShown || dwellOk)) this.advance(w);
         break;
       case FtueStep.Finish:
         if (w.outcome !== 'playing') this.advance(w);
         break;
     }
+    // Entering step 4 with a full meter shows its prompt on this tick.
+    if (this.step === FtueStep.Queen && w.queenReady) this.queenPromptShown = true;
   }
 
   private advance(w: World): void {
@@ -130,6 +147,7 @@ export class Ftue {
           this.firstInputAt < 0 ? 0 : Math.round((w.time - this.firstInputAt) * 1000),
         timedOut: this.stepTimedOut,
       });
+    if (this.step === FtueStep.Lead) w.gateSpeedMul[this.movingGate] = 1;
     this.step++;
     this.stepTime = 0;
     this.emphasis = false;
