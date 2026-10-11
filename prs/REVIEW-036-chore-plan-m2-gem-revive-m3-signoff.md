@@ -19,3 +19,14 @@
    - M3-1c names only `public/assets/models/*.glb`. It should cover all 26 GLBs produced by `export-assets.ts` and pin the gltfpack version.
 
 **Nit:** M2-21a still says "link resolves once merged". PR 037 is merged (53534c6), so update it to "PR 037 merged `53534c6`".
+
+## Re-review @ 8c4785d (2026-10-11)
+
+**Verdict: approved, merged (--no-ff).** Commits ddd321d and 8c4785d touch only `PLAN.md` and the PR doc. A whitespace-normalised diff shows exactly these row changes; the rest is prettier table reflow:
+
+- **M3-1a:** licence "TBD pending Mohit"; scope now `public/assets/` plus the 21 GLBs in `art/models/`.
+- **M3-1c:** both GLB folders, with gltfpack pinned to an exact version.
+- **M3-3:** licence TBD pending Mohit (authorship recorded via M3-1a).
+- **M2-21a / M2-21c:** now point to merged PR 037 (`53534c6`).
+
+Lint passes. No other changes.
