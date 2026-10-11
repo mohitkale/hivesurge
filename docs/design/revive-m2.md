@@ -75,10 +75,16 @@ Pricing, caps and guardrails come from MON (`monetization/revive-m2-21a.md`, `mo
 ## Anti-exploit rules
 
 1. The grant comes only from the platform result (`true`) or the session's single free-revive slot, never from UI state. `world.revive()` already refuses when `revives > 0`.
-2. The early-close counter and the free-revive flag live in the result session (`ResultSession`), which is reset per battle (early-close counter) and per app session (free revive). They are not stored in the save, so reloading cannot farm them. A reload during the offer ends the battle as a loss.
+2. State lives in the PR 030 classes in `src/platform/revive.ts`: the early-close counter is `ReviveOffer.closes` (one `ReviveOffer` per defeat, so it resets every offer), and the free-revive flags `freeReviveUsed` and `adsEverLoadedThisSession` are on `ReviveSession` (one per app session). `ResultSession` only tracks `markRewardedShown()` and `markReviveGranted()`. None of this is stored in the save, so reloading cannot farm it. A reload during the offer ends the battle as a loss.
 3. Any rewarded ad shown (completed or not) still blocks an interstitial on this transition (G4, existing `markRewardedShown`).
 4. `gameplayStop()` before the ad, `gameplayStart()` only after a granted revive (G18).
-5. Change for ENG: `markReviveAttempted()` should be called only on grant, and early close should increment `reviveCloses`. Ad button enabled = `reviveCloses < 2 && adAvailable`. Offer open = `!revived && !claimed && countdown > 0 && (adButtonEnabled || gemButtonEnabled)`, where `gemButtonEnabled` = balance at least price, within caps, not hidden.
+5. Change for ENG: `markReviveGranted()` is called only on grant. An early close increments `ReviveOffer.closes`. Button and offer state:
+   - `adEnabled = closes < 2 && adAvailable && button === 'ad'`
+   - `freeShown = button === 'free'` (ad failed, `adsEverLoadedThisSession && !freeReviveUsed`; gems hidden while shown, PR 031 rule)
+   - `gemsEnabled = !freeShown && balance >= price && gemCapsOk && !isEventFinalLevel`
+   - `adUnavailableNoticeActive` = true for at most 3 s (`UNAVAILABLE_MS`) after a failed ad when no free revive is available
+   - `offerOpen = !granted && !closed && countdown > 0 && (adEnabled || gemsEnabled || freeShown || adUnavailableNoticeActive)`
+   - During the 3 s notice the offer is open but nothing may be enabled (ad disabled "Ad not available", gems disabled or hidden). If `gemsEnabled` is true the offer stays open after the notice ends. Otherwise it closes when the notice ends. The countdown keeps running during the notice.
 
 ## Analytics
 
