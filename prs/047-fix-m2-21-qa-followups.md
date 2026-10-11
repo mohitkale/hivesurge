@@ -1,6 +1,6 @@
 # PR 047: fix/m2-21-qa-followups
 
-M2-21 QA follow-ups (QA screenshots in /tmp/qa-pr030/). Base: main `36f9a21`.
+M2-21 QA follow-ups (QA screenshots in /tmp/qa-pr030/). Base: main `9b969f9`.
 
 ## 1. Debug-only URL params (dev builds only)
 
