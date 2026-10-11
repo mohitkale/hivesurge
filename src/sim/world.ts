@@ -64,6 +64,8 @@ export class World {
   private readonly gateXs: number[];
   /** Accumulated motion angle per gate (integrated per tick). */
   private readonly gateAngles: number[];
+  /** Per-gate speed multiplier (FTUE step 3 timeout halves the moving gate, M2-27). */
+  readonly gateSpeedMul: number[];
   private readonly waspGrid: SpatialGrid;
   /** Timed waves sorted by `at`; trigger waves are spawned by fireTrigger(). */
   private readonly timedWaves: WaveDef[];
@@ -82,6 +84,7 @@ export class World {
     this.gateXs = level.gates.map((g) => g.x);
     this.gatePasses = level.gates.map(() => 0);
     this.gateAngles = level.gates.map(() => 0);
+    this.gateSpeedMul = level.gates.map(() => 1);
     this.waspGrid = new SpatialGrid(level.laneWidth, level.laneLength, 1, WASP_CAP);
     this.timedWaves = level.waves
       .filter((w) => w.at !== undefined)
@@ -102,7 +105,9 @@ export class World {
   /** Predicted x of gate i `seconds` from now at the current speed (aim-ahead / lead). */
   gateXAhead(i: number, seconds: number): number {
     const g = this.level.gates[i];
-    const ahead = g.motion ? seconds * g.motion.speed * this.gateSpeedScale : 0;
+    const ahead = g.motion
+      ? seconds * g.motion.speed * this.gateSpeedScale * this.gateSpeedMul[i]
+      : 0;
     return gateXAtAngle(g, this.gateAngles[i] + ahead, this.level.laneWidth);
   }
 
@@ -167,7 +172,7 @@ export class World {
     const speedScale = this.gateSpeedScale;
     for (let i = 0; i < L.gates.length; i++) {
       const m = L.gates[i].motion;
-      if (m) this.gateAngles[i] += dt * m.speed * speedScale;
+      if (m) this.gateAngles[i] += dt * m.speed * speedScale * this.gateSpeedMul[i];
       this.gateXs[i] = this.gateActive(i)
         ? gateXAtAngle(L.gates[i], this.gateAngles[i], L.laneWidth)
         : OFF_LANE;
