@@ -153,3 +153,21 @@ Re-check with `npx vitest run tests/art.test.ts`.
   Load them with `GLTFLoader().setMeshoptDecoder(MeshoptDecoder)` (verified in `art/tools/verify.html`).
 - `python3 art/tools/make-icons.py` writes the icons. `art/tools/make-audio.sh` (ffmpeg + libopus) writes the audio.
 - Screenshots: `art/tools/screenshots.mjs` (battle), `art/tools/sheet.html` + `sheet-shot.mjs` (model sheet).
+
+## 10. Biome environment kits (M3-3)
+
+Source: `src/art/biomes.ts` (procedural, original). Per-level mapping is in `LEVEL_BIOME`, and `?biome=<id>` overrides it.
+Each kit sets sky/fog, hemisphere light, lane grass (base and band, both included in the gate contrast test),
+soil, rail colour, rail posts, edge scatter, and backdrop set pieces outside the lane.
+
+| Kit                        | Levels                                   | Palette                                                  | Props (tris)                                                                                                                             |
+| -------------------------- | ---------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Clover Meadow (`clover`)   | ftue-meadow, dandelion-drift, clover-run | peach sky, green lane `#7cc46a`/`#86cd73`, cream rails   | 3 flowers (124), clover (72), mushroom (73), pebble (36), fence post (20), dandelion (40), bush (84), hill (36)                          |
+| Sunset Orchard (`orchard`) | thistle-gauntlet, wasp-queen-nest        | apricot sky, olive lane `#a7c45a`/`#97b54d`, brown rails | apple/pear tree (72), crate (12), orange flower (124), mushroom (73), pebble (36), fence post (20), hay bale (32), hedge (84), hill (36) |
+
+**Budgets (`BIOME_BUDGET`, `tests/biomes.test.ts`):** ≤ 300 tris per prop, ≤ 12 props per kit, ≤ 30k environment
+tris per scene, ≤ 12 environment draw calls (one InstancedMesh per prop), nothing inside the lane, and ≤ 100 KB of GLB per kit.
+Measured: Clover ≤ 7.0k tris / 10 draws, Orchard ≤ 6.9k tris / 10 draws (across all 5 levels). The kits' GLBs total
+63.5 KB in `art/models/` (not shipped; the game builds the props procedurally).
+Readability: backdrop pieces stay at least 4 units outside the lane, hills at least 10, and use desaturated greens/golds, so
+units and gates keep the highest contrast on screen.
