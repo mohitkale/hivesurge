@@ -9,6 +9,8 @@
 - State table for early close, free revive (gem hidden while free is shown), ad failure, caps, event final level (flag owned by M7-3, stubbed false), FTUE.
 - Analytics: `revive_granted` source ad, free or gems; `gems_spent`; `revive_gem_confirm`; extra props on `revive_declined`. Test cases 9 to 15.
 
+- Review fix: after 2 early ad closes the offer stays open (ad button disabled "Ad limit reached", gems active if valid, No thanks, countdown keeps running); it closes only when no valid option is left. The same rule applies to the second ad failure. The doc notes that a code change is required in M2-21c (PR 030 currently closes the offer). Test cases 2 and 4, the state table, the ENG formula and the analytics updated (`revive_declined` reason no_option).
+
 **Test results:** docs only; prettier --check pass.
 
 **Reviewer:** hivesurge-review; MON to confirm (M2-21b acceptance).
