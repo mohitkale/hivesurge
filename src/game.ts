@@ -26,6 +26,7 @@ import { QualityScaler } from './render/quality';
 import { applyTheme, palette } from './ui/theme';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
+import { biomeFor } from './art/biomes';
 import { nextLevelIndex } from './levels/progress';
 import { autoTriggers } from './sim/triggers';
 import { Ftue, FtueStep, shouldRunFtue } from './ftue/ftue';
@@ -127,6 +128,7 @@ export class Game {
       this.world.level,
       palette(this.save.settings.colorBlind),
       this.models,
+      biomeFor(this.world.level.id, location.search),
     );
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
