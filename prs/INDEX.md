@@ -39,7 +39,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 031 | design/revive-fix                                    | hivesurge-design       | `c48f208` | merged                                                            | 031-design-revive-fix.md                                          |
 | 032 | feat/m3-5-glb-loader                                 | hivesurge-eng          | `b315f66` | merged                                                            |
 | 033 | docs/m2-23-smoke-log                                 | hivesurge-eng          | `d160395` | merged                                                            |
+| 034 | chore/plan-m2-assignments                            | hivesurge-ba           | —         | open                                                              | 034-chore-plan-m2-assignments.md                                  |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **034**.
+Next free number: **035**.
