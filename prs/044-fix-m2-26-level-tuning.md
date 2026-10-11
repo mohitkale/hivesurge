@@ -1,6 +1,6 @@
-# PR (number pending): fix/m2-26-level-tuning
+# PR 044: fix/m2-26-level-tuning
 
-Task: M2-26 (validation-m2.md, PR 035 / 041). Base: main `58f7c72`.
+Task: M2-26 (validation-m2.md, PR 035 / 041). Base: main `73e3180`.
 
 ## Changes
 
