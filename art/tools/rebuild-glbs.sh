@@ -12,6 +12,24 @@ if [ -z "${GLTFPACK:-}" ]; then
   T=$(mktemp -d); npm --prefix "$T" install --no-save --silent "gltfpack@$PIN" >/dev/null
   GLTFPACK="$T/node_modules/.bin/gltfpack"
 fi
+# Refuse anything but the pinned version (exit 2), including a GLTFPACK= override. The binary only
+# prints major.minor, so the exact version is read from the npm package that ships it.
+exact_version() {
+  local d; d=$(dirname "$(readlink -f "$1")")
+  while [ "$d" != / ]; do
+    if [ -f "$d/package.json" ] && grep -q '"name": *"gltfpack"' "$d/package.json"; then
+      sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$d/package.json" | head -1; return
+    fi
+    d=$(dirname "$d")
+  done
+}
+GOT=$(exact_version "$GLTFPACK" || true)
+BANNER=$("$GLTFPACK" -h 2>&1 | head -1 || true)
+if [ "$GOT" != "$PIN" ] || [ "$BANNER" != "gltfpack ${PIN%.*}" ]; then
+  echo "rebuild-glbs: gltfpack $PIN required, got '${GOT:-unknown}' ($BANNER) from $GLTFPACK." >&2
+  echo "Use the npm package gltfpack@$PIN (default when GLTFPACK is unset)." >&2
+  exit 2
+fi
 TSX=${TSX:-"npx --yes tsx@4"}
 SCRATCH=$(mktemp -d)
 HS_EXPORT_ROOT="$SCRATCH" GLTFPACK="$GLTFPACK" $TSX art/tools/export-assets.ts >/dev/null
