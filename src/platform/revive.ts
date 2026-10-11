@@ -25,6 +25,11 @@ export class ReviveSession {
   noteAdLoaded(): void {
     this.adsEverLoadedThisSession = true;
   }
+
+  /** Interstitial result: only one that actually loaded and showed sets the flag (QA 047 bug). */
+  noteInterstitial(shown: boolean): void {
+    if (shown) this.noteAdLoaded();
+  }
 }
 
 export interface ReviveEligibility {

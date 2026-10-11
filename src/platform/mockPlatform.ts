@@ -49,9 +49,10 @@ export class MockPlatform implements Platform {
     );
   }
 
-  async showInterstitial(placement: string): Promise<void> {
-    if (this.mode !== 'normal') return; // nothing to show
+  async showInterstitial(placement: string): Promise<boolean> {
+    if (this.mode !== 'normal') return false; // no fill / error: nothing loaded or shown
     await this.fakeAd(`Interstitial · ${placement}`, 2, false);
+    return true;
   }
 
   purchase(sku: Sku): Promise<boolean> {
