@@ -7,7 +7,7 @@ import {
 } from './art/glbLoader';
 import * as THREE from 'three';
 import { haptic, Sfx } from './audio/sfx';
-import { canOfferRewarded, canShowInterstitial } from './platform/adPolicy';
+import { canOfferRewarded, canShowInterstitial, isLevelTransition } from './platform/adPolicy';
 import { AdPacer } from './platform/adPacer';
 import { applyPurchase } from './platform/entitlements';
 import { ResultSession } from './platform/resultSession';
@@ -29,6 +29,7 @@ import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
 import { biomeFor } from './art/biomes';
 import { nextLevelIndex } from './levels/progress';
+import { debugParamsFromUrl, NO_DEBUG, type DebugParams } from './debug/debugParams';
 import { autoTriggers } from './sim/triggers';
 import { Ftue, FtueStep, shouldRunFtue } from './ftue/ftue';
 import type { LevelDef } from './sim/types';
@@ -71,6 +72,14 @@ export class Game {
   private ftue: Ftue | null = null;
   /** revive-m2.md: per app session, never saved. */
   private readonly reviveSession = new ReviveSession();
+  /** Dev-only QA params (?level, ?revive=force); production ignores them. */
+  private readonly debug: DebugParams = import.meta.env.DEV
+    ? debugParamsFromUrl(
+        location.search,
+        true,
+        LEVELS.map((l) => l.id),
+      )
+    : NO_DEBUG; // production: the parser is tree-shaken out
   private reviveOffer: ReviveOffer | null = null;
   private reviveTimer = 0;
   private readonly perf = new PerfStats();
@@ -174,6 +183,8 @@ export class Game {
   }
 
   private currentLevel(): LevelDef {
+    const dbg = this.debug.level && LEVELS.find((l) => l.id === this.debug.level);
+    if (dbg) return dbg;
     return LEVELS[nextLevelIndex(LEVELS, this.save.bestStars)];
   }
 
@@ -361,14 +372,16 @@ export class Game {
     // revive-m2.md: offer only outside FTUE (G2), within caps (G5), on a close call, and
     // only while this battle has not been revived. One ReviveOffer per defeat.
     this.reviveOffer = null;
+    const force = this.debug.reviveForce && this.world.revives === 0; // dev-only ?revive=force
     if (
       this.result.canOfferRevive &&
-      shouldOfferRevive({
-        rewardedAllowed: canOfferRewarded(this.save),
-        capsOk: this.pacer.canRewarded('revive'),
-        revives: this.world.revives,
-        nestDamage: r.nestDamage,
-      })
+      (force ||
+        shouldOfferRevive({
+          rewardedAllowed: canOfferRewarded(this.save),
+          capsOk: this.pacer.canRewarded('revive'),
+          revives: this.world.revives,
+          nestDamage: r.nestDamage,
+        }))
     ) {
       this.reviveOffer = new ReviveOffer(this.reviveSession);
       this.analytics.track('ad_offered', {
@@ -466,8 +479,30 @@ export class Game {
       }, UNAVAILABLE_MS);
       return;
     }
-    if (step.kind === 'closed') this.stopReviveCountdown();
+    if (step.kind === 'closed') {
+      this.stopReviveCountdown();
+      this.closeReviveRow(r);
+      return;
+    }
     this.renderLoss(r);
+  }
+
+  /**
+   * The revive offer closed: drop its row in place instead of rebuilding the defeat screen,
+   * so a Retry/Home press in progress is not lost (QA: "Retry needs two clicks" when the
+   * countdown ran out under the pointer: the rebuild, or the layout shift, moved the target).
+   */
+  private closeReviveRow(r: Rewards): void {
+    const row = this.overlay.querySelector('.revive-row');
+    if (
+      row instanceof HTMLElement &&
+      this.overlay.querySelector('[data-a="retry"]:not([disabled])')
+    ) {
+      // Keep its space so Retry/Home do not jump under the finger.
+      row.querySelectorAll('button').forEach((b) => (b.disabled = true));
+      row.style.visibility = 'hidden';
+      row.setAttribute('aria-hidden', 'true');
+    } else this.renderLoss(r);
   }
 
   private startReviveCountdown(r: Rewards): void {
@@ -482,7 +517,7 @@ export class Game {
       if (o.tick(dt)) {
         this.analytics.track('revive_declined', { reason: 'timeout', closesBefore: o.closes });
         this.stopReviveCountdown();
-        if (!this.result.isClaimed) this.renderLoss(r);
+        if (!this.result.isClaimed) this.closeReviveRow(r);
         return;
       }
       const el = this.overlay.querySelector('.revive-count');
@@ -509,7 +544,12 @@ export class Game {
     // FTUE is done after its first win (replays of level 1 run without prompts).
     if (this.ftue && this.world.outcome === 'won') this.save.ftueDone = true;
     const now = Date.now();
-    if (canShowInterstitial(this.save, now, rewardedShown) && this.pacer.canInterstitial()) {
+    // G3: interstitials only at level transitions. Retry replays the same level, so it is not one.
+    if (
+      isLevelTransition(replay) &&
+      canShowInterstitial(this.save, now, rewardedShown) &&
+      this.pacer.canInterstitial()
+    ) {
       this.save.lastInterstitialAt = now;
       this.pacer.recordInterstitial();
       this.persist();

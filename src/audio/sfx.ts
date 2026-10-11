@@ -27,10 +27,20 @@ export class Sfx {
   private lastPop = 0;
   muted = false;
 
-  /** Must be called from a user gesture (autoplay policy). */
+  private gestureWait = false;
+
+  /**
+   * Create / resume the AudioContext. Safe to call any time: before the page's first user
+   * gesture (the FTUE battle auto-starts on first launch) it only arms a one-time gesture
+   * listener, so Chrome never logs "The AudioContext was not allowed to start".
+   */
   unlock(): void {
+    if (!hasUserActivation()) {
+      this.armGestureUnlock();
+      return;
+    }
     if (this.ctx) {
-      void this.ctx.resume();
+      if (this.ctx.state === 'suspended') void this.ctx.resume();
       return;
     }
     const Ctx =
@@ -53,6 +63,18 @@ export class Sfx {
     osc.start();
     this.hum = { osc, gain };
     if (this.cuesWanted) this.loadCues();
+  }
+
+  private armGestureUnlock(): void {
+    if (this.gestureWait) return;
+    this.gestureWait = true;
+    const events = ['pointerdown', 'keydown', 'touchend'] as const;
+    const on = () => {
+      for (const ev of events) window.removeEventListener(ev, on, true);
+      this.gestureWait = false;
+      this.unlock();
+    };
+    for (const ev of events) window.addEventListener(ev, on, true);
   }
 
   private cuesWanted = false;
@@ -205,4 +227,11 @@ export class Sfx {
 
 export function haptic(ms: number): void {
   if ('vibrate' in navigator) navigator.vibrate(ms);
+}
+
+/** True once the page has had a user gesture (or the browser cannot tell: assume yes). */
+export function hasUserActivation(nav: Navigator | undefined = globalThis.navigator): boolean {
+  const ua = (nav as (Navigator & { userActivation?: { hasBeenActive: boolean } }) | undefined)
+    ?.userActivation;
+  return ua ? ua.hasBeenActive : true;
 }

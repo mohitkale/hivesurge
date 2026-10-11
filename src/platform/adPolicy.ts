@@ -33,6 +33,14 @@ export function canShowInterstitial(
   return now - s.lastInterstitialAt >= INTERSTITIAL_MIN_GAP_MS;
 }
 
+/**
+ * G3: interstitials only at level transitions. Retry after a battle replays the same level
+ * and is not a transition (QA finding on PR 030); Home / next level are.
+ */
+export function isLevelTransition(replay: boolean): boolean {
+  return !replay;
+}
+
 /** G2: may a rewarded placement (2X, revive, ...) be offered at all right now? Caps are checked by AdPacer. */
 export function canOfferRewarded(s: Pick<AdPolicyState, 'battlesCompleted' | 'ftueDone'>): boolean {
   return s.ftueDone && s.battlesCompleted >= FTUE_BATTLES;
