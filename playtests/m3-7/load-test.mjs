@@ -14,6 +14,11 @@ const [url, prefix, runsArg] = process.argv.slice(2);
 const RUNS = Number(runsArg ?? 3);
 const LIMIT_MS = 3000;
 const MARK = 'hs:first-battle';
+/**
+ * M3 assets that must load after the first battle: 5 runtime GLBs + 9 Opus cues (PR 038).
+ * Fewer means deferred loading silently broke (a task never ran, or the files 404).
+ */
+const MIN_LATE_ASSETS = 14;
 const M3_ASSET = /\/assets\/(models|audio|icons|ftue)\//;
 
 const browser = await puppeteer.launch({
@@ -32,6 +37,14 @@ for (let run = 1; run <= RUNS; run++) {
   await page.emulateNetworkConditions(PredefinedNetworkConditions['Fast 4G']);
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
+  // Real asset responses: 2xx and not an HTML page (an SPA fallback answers a missing file with
+  // index.html and 200, which the resource timing alone cannot tell apart).
+  const okAssets = new Set();
+  page.on('response', (res) => {
+    const type = res.headers()['content-type'] ?? '';
+    if (M3_ASSET.test(res.url()) && res.ok() && !type.includes('text/html'))
+      okAssets.add(res.url());
+  });
   await page.goto(url, { waitUntil: 'load' });
   // Fresh profile: the FTUE battle starts on its own (no click needed).
   await page.waitForFunction(
@@ -60,11 +73,16 @@ for (let run = 1; run <= RUNS; run++) {
   const coreBytes = r.resources
     .filter((x) => x.start < r.firstBattle)
     .reduce((a, x) => a + x.bytes, 0);
-  const ok = r.firstBattle <= LIMIT_MS && early.length === 0 && errors.length === 0;
+  const lateLoaded = late.filter((x) => okAssets.has(x.name));
+  const ok =
+    r.firstBattle <= LIMIT_MS &&
+    early.length === 0 &&
+    lateLoaded.length >= MIN_LATE_ASSETS &&
+    errors.length === 0;
   if (!ok) failed = true;
   timing.push(
     `run ${run}: first battle ${r.firstBattle.toFixed(0)} ms (limit ${LIMIT_MS}) · DOMContentLoaded ${r.domContentLoaded.toFixed(0)} ms · load ${r.load.toFixed(0)} ms · ` +
-      `bytes before battle ${(coreBytes / 1024).toFixed(1)} KiB · M3 assets before battle ${early.length} · after ${late.length} · page errors ${errors.length} · ${ok ? 'PASS' : 'FAIL'}`,
+      `bytes before battle ${(coreBytes / 1024).toFixed(1)} KiB · M3 assets before battle ${early.length} · after ${late.length} (loaded ${lateLoaded.length}, min ${MIN_LATE_ASSETS}) · page errors ${errors.length} · ${ok ? 'PASS' : 'FAIL'}`,
   );
   network.push(`## run ${run} (first battle at ${r.firstBattle.toFixed(0)} ms)`);
   network.push('start_ms  end_ms  KiB     phase          M3?  url');
