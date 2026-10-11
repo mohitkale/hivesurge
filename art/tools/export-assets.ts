@@ -4,25 +4,13 @@
  * Run: npx tsx art/tools/export-assets.ts   (needs `gltfpack` on PATH or GLTFPACK env)
  * Vertex colours only, no textures: KTX2 is not needed (see ART_DIRECTION.md §Load budget).
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import type * as THREE from 'three';
-import { BIOMES } from '../../src/art/biomes';
-import {
-  beeGeometry,
-  cannonGeometry,
-  hornetGeometry,
-  nestGeometry,
-  queenGeometry,
-  waspGeometry,
-} from '../../src/art/models';
-import { SKINS, skinGeometry } from '../../src/art/skins';
+import { GLTFPACK_VERSION, glbPath, modelCatalog } from '../../src/art/catalog';
 
-// Models the runtime loads (src/art/glbLoader.ts RUNTIME_MODELS) ship from public/; the rest
-// stay in art/models until a runtime path uses them (M3-5).
-import { RUNTIME_MODELS } from '../../src/art/glbLoader';
-const OUT = 'art/models';
-const SHIPPED_OUT = 'public/assets/models';
+// HS_EXPORT_ROOT lets art/tools/rebuild-glbs.sh export into a scratch tree and diff it.
+const ROOT = process.env.HS_EXPORT_ROOT ?? '.';
 const RAW = '/tmp/hivesurge-raw-glb';
 
 function glb(geo: THREE.BufferGeometry, name: string): Buffer {
@@ -85,41 +73,28 @@ function glb(geo: THREE.BufferGeometry, name: string): Buffer {
   return Buffer.concat([header, jh, js, bh, bin]);
 }
 
-const models: Record<string, THREE.BufferGeometry> = {
-  'unit-bee': beeGeometry(),
-  'unit-queen': queenGeometry(),
-  'unit-wasp': waspGeometry(),
-  'unit-hornet': hornetGeometry(),
-  'prop-cannon': cannonGeometry(),
-  'prop-nest': nestGeometry(9),
-};
-for (const s of SKINS) models[`skin-bee-${s.id}`] = skinGeometry(s);
-for (const b of Object.values(BIOMES))
-  for (const [id, f] of Object.entries(b.props)) models[`biome-${b.id}-${id}`] = f();
+const models: Record<string, THREE.BufferGeometry> = {};
+for (const [name, make] of Object.entries(modelCatalog())) models[name] = make();
 
 rmSync(RAW, { recursive: true, force: true });
 mkdirSync(RAW, { recursive: true });
-mkdirSync(OUT, { recursive: true });
-mkdirSync(SHIPPED_OUT, { recursive: true });
+mkdirSync(`${ROOT}/art/models`, { recursive: true });
+mkdirSync(`${ROOT}/public/assets/models`, { recursive: true });
+// Pinned gltfpack (M3-1c): refuse to run with any other version.
 const gltfpack = process.env.GLTFPACK ?? 'gltfpack';
+const help = spawnSync(gltfpack, ['-h'], { encoding: 'utf8' });
+const banner = `${help.stdout ?? ''}${help.stderr ?? ''}`;
+const short = GLTFPACK_VERSION.split('.').slice(0, 2).join('.');
+if (!new RegExp(`gltfpack ${short.replace('.', '\\.')}\\b`).test(banner))
+  throw new Error(
+    `gltfpack ${GLTFPACK_VERSION} required (npx gltfpack@${GLTFPACK_VERSION}); got: ${banner.split('\n')[0]}`,
+  );
 for (const [name, geo] of Object.entries(models)) {
   const raw = `${RAW}/${name}.glb`;
   writeFileSync(raw, glb(geo, name));
-  // -cc: meshopt compression; -kv: keep the custom _WING attribute; -noq off => quantized.
-  execFileSync(
-    gltfpack,
-    [
-      '-i',
-      raw,
-      '-o',
-      `${(RUNTIME_MODELS as readonly string[]).includes(name) ? SHIPPED_OUT : OUT}/${name}.glb`,
-      '-cc',
-      '-kv',
-      '-km',
-    ],
-    {
-      stdio: 'pipe',
-    },
-  );
+  // -cc: meshopt compression; -kv: keep vertex attributes; -km: keep materials. Quantized.
+  execFileSync(gltfpack, ['-i', raw, '-o', `${ROOT}/${glbPath(name)}`, '-cc', '-kv', '-km'], {
+    stdio: 'pipe',
+  });
   console.log(name, (geo.getAttribute('position').count / 3) | 0, 'tris');
 }

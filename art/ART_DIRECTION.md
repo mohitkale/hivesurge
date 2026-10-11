@@ -153,3 +153,8 @@ Re-check with `npx vitest run tests/art.test.ts`.
   Load them with `GLTFLoader().setMeshoptDecoder(MeshoptDecoder)` (verified in `art/tools/verify.html`).
 - `python3 art/tools/make-icons.py` writes the icons. `art/tools/make-audio.sh` (ffmpeg + libopus) writes the audio.
 - Screenshots: `art/tools/screenshots.mjs` (battle), `art/tools/sheet.html` + `sheet-shot.mjs` (model sheet).
+
+- **Provenance (M3-1a/b/c):** `art/PROVENANCE.md` lists every asset (size, sha256, generator, date; licence TBD), and
+  `tests/provenance.test.ts` enforces it. FTUE SVGs: `python3 art/tools/make-ftue-svgs.py`. GLBs:
+  `art/tools/rebuild-glbs.sh` (pinned gltfpack 1.3.0, byte diff → `art/models/REBUILD-LOG.md`) and
+  `tests/glbReexport.test.ts` (no gltfpack needed).
