@@ -29,6 +29,19 @@ function aimFor(profile, t) {
   return 0.5 + 0.2 * Math.sin(t * 0.9);
 }
 
+export function fpsSummary(frames) {
+  const s = [...frames].filter((f) => f > 0).sort((a, b) => a - b);
+  if (!s.length) return { frames: 0, medianFps: null, low1Fps: null, over50msPct: null };
+  const med = s[Math.floor(s.length / 2)];
+  const p99 = s[Math.min(s.length - 1, Math.floor(s.length * 0.99))];
+  return {
+    frames: s.length,
+    medianFps: Math.round(10000 / med) / 10,
+    low1Fps: Math.round(10000 / p99) / 10,
+    over50msPct: Math.round((s.filter((f) => f > 50).length / s.length) * 1000) / 10,
+  };
+}
+
 async function runSession(profile, n) {
   const browser = await puppeteer.launch({
     executablePath: chrome,
@@ -43,6 +56,18 @@ async function runSession(profile, n) {
     deviceScaleFactor: 1,
     isMobile: true,
     hasTouch: false,
+  });
+  // fps sampler: records every rAF delta (ms) from page start; swiftshader = software GL, so
+  // these numbers are a floor for the box, not a phone measurement.
+  await page.evaluateOnNewDocument(() => {
+    window.__m212Frames = [];
+    let last = performance.now();
+    const tick = (now) => {
+      window.__m212Frames.push(now - last);
+      last = now;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -113,6 +138,8 @@ async function runSession(profile, n) {
   const events = await page.evaluate(() => localStorage.getItem('hivesurge.analytics.v1') ?? '[]');
   const file = join(out, `bot-${profile}-${n}.json`);
   writeFileSync(file, JSON.stringify(JSON.parse(events), null, 1));
+  const frames = await page.evaluate(() => window.__m212Frames.slice(60)); // skip boot frames
+  writeFileSync(join(out, `fps-bot-${profile}-${n}.json`), JSON.stringify(fpsSummary(frames)));
   await browser.close();
   return { file, battles, minutes: (Date.now() - t0) / 60000, errors };
 }

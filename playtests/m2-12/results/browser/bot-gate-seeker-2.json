@@ -1,0 +1,204 @@
+[
+  {
+    "name": "level_start",
+    "ts": 1791684935523,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "ftue-meadow"
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791684938494,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "step": 1,
+      "msSinceFirstInput": 2217,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791684939872,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "step": 2,
+      "msSinceFirstInput": 3617,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791684940135,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "step": 3,
+      "msSinceFirstInput": 3850,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791684941353,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "step": 4,
+      "msSinceFirstInput": 5067,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "ftue_step",
+    "ts": 1791684953279,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "step": 5,
+      "msSinceFirstInput": 16817,
+      "timedOut": false
+    }
+  },
+  {
+    "name": "level_win",
+    "ts": 1791684953279,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "ftue-meadow",
+      "time": 17,
+      "nestLeft": 0,
+      "hiveLeft": 60,
+      "peakBees": 172,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791684955218,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "dandelion-drift"
+    }
+  },
+  {
+    "name": "level_win",
+    "ts": 1791684994799,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "dandelion-drift",
+      "time": 39,
+      "nestLeft": 0,
+      "hiveLeft": 45,
+      "peakBees": 162,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791684996662,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "clover-run"
+    }
+  },
+  {
+    "name": "level_win",
+    "ts": 1791685081401,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "clover-run",
+      "time": 84,
+      "nestLeft": 0,
+      "hiveLeft": 50,
+      "peakBees": 168,
+      "revives": 0
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791685083288,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "thistle-gauntlet"
+    }
+  },
+  {
+    "name": "level_win",
+    "ts": 1791685145990,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "thistle-gauntlet",
+      "time": 59,
+      "nestLeft": 0,
+      "hiveLeft": 40,
+      "peakBees": 447,
+      "revives": 0
+    }
+  },
+  {
+    "name": "ad_offered",
+    "ts": 1791685146890,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "placement": "win_double",
+      "type": "rewarded"
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791685147775,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "wasp-queen-nest"
+    }
+  },
+  {
+    "name": "level_fail",
+    "ts": 1791685261329,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "wasp-queen-nest",
+      "time": 110,
+      "nestLeft": 29,
+      "hiveLeft": 45,
+      "peakBees": 338,
+      "revives": 0
+    }
+  },
+  {
+    "name": "ad_offered",
+    "ts": 1791685262261,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "placement": "revive",
+      "type": "rewarded",
+      "nestDamage": 0.7081666666666666,
+      "levelId": "wasp-queen-nest"
+    }
+  },
+  {
+    "name": "ad_offered",
+    "ts": 1791685262409,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "placement": "level_transition",
+      "type": "interstitial"
+    }
+  },
+  {
+    "name": "ad_watched",
+    "ts": 1791685264410,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "placement": "level_transition",
+      "type": "interstitial",
+      "completed": true
+    }
+  },
+  {
+    "name": "level_start",
+    "ts": 1791685264633,
+    "session": "mv36y7t67lvy",
+    "props": {
+      "level": "wasp-queen-nest"
+    }
+  }
+]

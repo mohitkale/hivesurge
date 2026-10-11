@@ -71,7 +71,12 @@ function fmt(v, digits = 2) {
   return String(v);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// CLI only when run directly as metrics.mjs (not when bundled into sim-sessions).
+if (
+  process.argv[1] &&
+  basename(process.argv[1]) === 'metrics.mjs' &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
   const args = process.argv.slice(2);
   const asJson = args.includes('--json');
   const files = args.filter((a) => a !== '--json');
