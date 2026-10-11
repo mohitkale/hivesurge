@@ -1,4 +1,4 @@
-# PR 037 (number pending claim; main busy) — feat/m3-7-progressive-load (M3-7; base: main 53534c6)
+# PR 038 — feat/m3-7-progressive-load (M3-7; base: main fb29824)
 
 **Summary:** Progressive loading (PLAN M3-7, research PERF-C). The first battle needs only the core JS. M3 art (the M3-5
 GLBs) and audio (the Opus cues) are requested only after the first `gameplayStart`. Until they arrive, the battle runs
