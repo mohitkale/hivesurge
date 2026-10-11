@@ -231,7 +231,7 @@ export class Game {
       handlers[`buy:${k}`] = async () => {
         if (await this.platform.purchase(k)) {
           this.analytics.track('purchase', { sku: k, price: CATALOG[k].price, sandbox: true });
-          applyPurchase(this.save, k); // G6: any purchase removes forced ads
+          applyPurchase(this.save, k, this.platform.name === 'sandbox'); // G6: any purchase removes forced ads
           this.persist();
         }
         this.showTitle();
@@ -319,7 +319,8 @@ export class Game {
       revives: w.revives,
     });
     this.phase = 'result';
-    this.result = new ResultSession();
+    // G4: keep "rewarded ad shown" across a revive (same transition), else start clean.
+    this.result = ResultSession.forBattleEnd(this.result, w.revives > 0);
     const rewards = computeRewards({
       outcome: w.outcome,
       nestHp: w.nestHp,
