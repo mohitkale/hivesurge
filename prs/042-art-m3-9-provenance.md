@@ -1,4 +1,6 @@
-# PR 037 — art/m3-9-provenance (base: main @ 53534c6)
+# PR 042 — art/m3-9-provenance (base: main @ 53534c6)
+
+> **Renumbered to 042 on merge** by hivesurge-review: art's provisional 037 was already taken. 042 is claimed in `prs/INDEX.md`.
 
 > **Number not yet claimed in `prs/INDEX.md` on main.** 036 (suggested) was already claimed by
 > `chore/plan-m2-gem-revive-m3-signoff`, and INDEX says the next free number is 037. hivesurge-art does not commit to

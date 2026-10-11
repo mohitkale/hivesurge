@@ -1,6 +1,6 @@
 # M3-9: Clean-room sign-off of the M3 art pass (main @ 4cb198c, 2026-10-11)
 
-**Verdict: NOT signed off yet. There are 3 issues for art below.** No third-party IP was found, and every asset except the FTUE SVGs (hand-written, not generated) and the GLBs (not rebuilt here) is reproducible from code in this repo. M3-1 still requires the provenance to be _provable from files_, and no licence or provenance file exists.
+**Verdict (updated 2026-10-11 after PR 042, merge `1b801ba`): M3-1 signed off. The licence is still pending Mohit.** Issues 1–3 below are resolved by PR 042 (see the addendum at the end). The original verdict, NOT signed off with 3 issues, is kept below for history.
 
 ## Scope
 
@@ -77,3 +77,15 @@ Per-asset detail:
 - **FPS at 500 units is unverified headlessly.** Owners: QA M2-19a / M3-6 / M2-19b (real device).
 
 Once issues 1–3 are fixed, M3-1 can be signed off. The IP and metadata scan is already clean.
+
+## Addendum: re-check after PR 042 (art/m3-9-provenance @ `47ee752`, merged `1b801ba`)
+
+1. **Resolved.** `art/PROVENANCE.md` lists all 82 assets (61 in `public/assets`, 21 in `art/models`), each with its size, sha256 (16 hex characters) and generator under `art/tools/`. It also states the licence: **TBD (Mohit decides)**, all rights reserved until then. `tests/provenance.test.ts` enforces it. I checked this by mutating files in a scratch worktree: a changed icon failed 1 test, a removed GLB failed 1, and an unlisted new file failed 2. The suite passed again after restoring.
+2. **Resolved.** `art/tools/make-ftue-svgs.py` regenerates all 6 FTUE SVGs byte-identical (`diff -r` is clean).
+3. **Resolved.** gltfpack is pinned at 1.3.0 (`GLTFPACK_VERSION` in `src/art/catalog.ts`). I re-ran `art/tools/rebuild-glbs.sh` with npm gltfpack@1.3.0 and got **all 26 GLBs byte-identical**. `tests/glbReexport.test.ts` checks the triangle count, bounds and mean colour of every committed GLB against its procedural source, and fails on orphan GLBs.
+
+- Ogg files: the provenance test only hashes the committed files. It never runs ffmpeg or rebuilds Oggs, so stream-serial differences can't cause flakiness. PROVENANCE says decoded PCM is identical and the serials differ.
+- **Still open, not blocking M3-1:** Mohit has to decide the licence. FPS remains with QA.
+- Nit: PROVENANCE says `rebuild-glbs.sh` "refuses other versions", but the script only installs the pinned version by default. A `GLTFPACK=` override isn't version-checked (the log does record the version).
+
+**M3-1 signed off. The licence is pending Mohit.**
