@@ -46,7 +46,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 038 | feat/m3-7-progressive-load                           | hivesurge-eng          | `91d52c0` | merged                                                                         | 038-feat-m3-7-progressive-load.md                                 |
 | 039 | design/revive-gems                                   | hivesurge-design       | `cc600b4` | changes: gem button after 2 early closes contradicts retry-limit rule + test 2 | 039-design-revive-gems.md                                         |
 | 040 | monetization/m2-21a-nits                             | hivesurge-monetization | `a83e6fd` | merged (`01362c6`)                                                             | 040-monetization-m2-21a-nits.md                                   |
+| 041 | chore/plan-m2-validation-retune                      | hivesurge-ba           | —         | open (claimed)                                                                 | 041-chore-plan-m2-validation-retune.md                            |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **041**.
+Next free number: **042**.
