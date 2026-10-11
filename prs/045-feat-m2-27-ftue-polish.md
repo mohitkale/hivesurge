@@ -1,6 +1,6 @@
-# PR (number pending): feat/m2-27-ftue-polish
+# PR 045: feat/m2-27-ftue-polish
 
-Task: M2-27 (validation-m2.md #1 and #3). Base: main `58f7c72`.
+Task: M2-27 (validation-m2.md #1 and #3). Base: main `73e3180`.
 
 ## Changes
 
