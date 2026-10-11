@@ -21,7 +21,7 @@ import {
   queenGeometry,
   waspGeometry,
 } from '../art/models';
-import { BIOMES, type BiomeKit } from '../art/biomes';
+import { BIOMES, layoutBiome, type BiomeKit } from '../art/biomes';
 import { scaledModel, type ModelLibrary } from '../art/glbLoader';
 
 import { COLORS, type Palette } from '../ui/theme';
@@ -57,7 +57,7 @@ export class GameScene {
   private readonly bees: Record<'worker' | 'queen', THREE.InstancedMesh>;
   private readonly wasps: Record<'wasp' | 'hornet', THREE.InstancedMesh>;
   private readonly unitTime = { value: 0 };
-  private readonly biome: BiomeKit = BIOMES.clover;
+  private readonly biome: BiomeKit;
   private readonly cannon = new THREE.Group();
   private readonly leadLine = new THREE.Line(
     new THREE.BufferGeometry().setAttribute(
@@ -90,8 +90,10 @@ export class GameScene {
     level: LevelDef,
     pal: Palette = COLORS,
     models: ModelLibrary | null = null,
+    biome: BiomeKit = BIOMES.clover,
   ) {
     this.models = models;
+    this.biome = biome;
     PALETTE = { ...pal, trap: pal.gateTrap, add: pal.gateAdd };
     GATE_COLOR = { mul: pal.gateMul, add: pal.gateAdd, sub: pal.gateTrap };
     this.level = level;
@@ -105,7 +107,7 @@ export class GameScene {
     this.scene.background = new THREE.Color(this.biome.sky);
     this.scene.fog = new THREE.Fog(this.biome.fog, 45, 75);
 
-    this.scene.add(new THREE.HemisphereLight('#fff6e0', '#7a5aa0', 1.6));
+    this.scene.add(new THREE.HemisphereLight(this.biome.light[0], this.biome.light[1], 1.6));
     const sun = new THREE.DirectionalLight('#ffffff', 1.6);
     sun.position.set(-6, 14, 6);
     this.scene.add(sun);
@@ -128,7 +130,8 @@ export class GameScene {
 
   private buildLane(): void {
     const L = this.level;
-    const tex = grassTexture();
+    const kit = this.biome;
+    const tex = grassTexture(kit.lane, kit.laneAlt);
     tex.repeat.set(2, L.laneLength / 4);
     const lane = new THREE.Mesh(
       new THREE.PlaneGeometry(L.laneWidth, L.laneLength + 6),
@@ -140,7 +143,7 @@ export class GameScene {
 
     const soil = new THREE.Mesh(
       new THREE.PlaneGeometry(80, 140),
-      new THREE.MeshLambertMaterial({ color: '#e9a86b' }),
+      new THREE.MeshLambertMaterial({ color: kit.soil }),
     );
     soil.rotation.x = -Math.PI / 2;
     soil.position.set(0, -0.02, -L.laneLength / 2);
@@ -148,27 +151,24 @@ export class GameScene {
 
     // Picket-style borders + flowers along the lane edges.
     const rail = new THREE.BoxGeometry(0.3, 0.5, L.laneLength + 6);
-    const railMat = new THREE.MeshLambertMaterial({ color: '#fff3d6' });
+    const railMat = new THREE.MeshLambertMaterial({ color: kit.rail });
     for (const side of [-1, 1]) {
       const r = new THREE.Mesh(rail, railMat);
       r.position.set(side * (L.laneWidth / 2 + 0.15), 0.25, -L.laneLength / 2 + 1);
       this.scene.add(r);
     }
-    // Biome props scattered along the lane edges (one InstancedMesh per prop type).
-    const kit = this.biome;
+    // Biome kit: edge scatter, rail posts and backdrop (one InstancedMesh per prop id).
     const propMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
     const slots: Record<string, THREE.Matrix4[]> = {};
-    for (let i = 0; i < 26; i++) {
-      for (const side of [-1, 1]) {
-        const id = kit.scatter[(i * 3 + (side + 1)) % kit.scatter.length];
-        const m = new THREE.Matrix4().compose(
-          new THREE.Vector3(side * (L.laneWidth / 2 + 1.1 + ((i * 7) % 3) * 0.6), 0, -i * 1.8 + 3),
-          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), i * 1.3),
-          new THREE.Vector3(1.4, 1.4, 1.4),
-        );
-        (slots[id] ??= []).push(m);
-      }
-    }
+    const up = new THREE.Vector3(0, 1, 0);
+    for (const p of layoutBiome(kit, L.laneWidth, L.laneLength))
+      (slots[p.id] ??= []).push(
+        new THREE.Matrix4().compose(
+          new THREE.Vector3(p.x, 0, p.z),
+          new THREE.Quaternion().setFromAxisAngle(up, p.rotY),
+          new THREE.Vector3(p.scale, p.scale, p.scale),
+        ),
+      );
     for (const [id, mats] of Object.entries(slots)) {
       const inst = new THREE.InstancedMesh(kit.props[id](), propMat, mats.length);
       mats.forEach((m, k) => inst.setMatrixAt(k, m));

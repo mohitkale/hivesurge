@@ -11,10 +11,26 @@ export interface BiomeKit {
   laneAlt: string;
   soil: string;
   rail: string;
+  /** Hemisphere light (sky, ground) tint. */
+  light: [string, string];
   props: Record<string, () => THREE.BufferGeometry>;
   /** Prop ids scattered along the lane edges, in order. */
   scatter: string[];
+  /** Prop id placed as posts along both lane rails. */
+  railPost: string;
+  /** Large set pieces outside the lane (hills, trees, bushes): prop id + count per side. */
+  backdrop: { id: string; perSide: number; scale: number }[];
 }
+
+/** Budgets for one kit (PLAN M3-3, within the M3 model budget). Enforced in tests/biomes.test.ts. */
+export const BIOME_BUDGET = {
+  maxPropTris: 300,
+  maxProps: 12,
+  /** All environment triangles in one battle scene (scatter + rail posts + backdrop). */
+  maxSceneTris: 30000,
+  /** Draw calls for environment props (one InstancedMesh per prop id). */
+  maxPropDrawCalls: 12,
+} as const;
 
 const at = (g: THREE.BufferGeometry, x: number, y: number, z: number) => g.translate(x, y, z);
 
@@ -90,6 +106,47 @@ const tree = (leaf: string, fruit: string) => (): THREE.BufferGeometry => {
   return bake(parts);
 };
 
+const bush = (leaf: string, berry: string) => (): THREE.BufferGeometry => {
+  const parts: Part[] = [];
+  const blobs: [number, number, number, number][] = [
+    [0, 0.45, 0, 0.55],
+    [0.45, 0.32, 0.1, 0.4],
+    [-0.42, 0.3, -0.05, 0.42],
+  ];
+  for (const [x, y, z, r] of blobs)
+    parts.push({ geo: at(new THREE.IcosahedronGeometry(r, 0), x, y, z), color: leaf });
+  for (let i = 0; i < 3; i++)
+    parts.push({
+      geo: at(new THREE.OctahedronGeometry(0.08), -0.3 + i * 0.3, 0.62 - (i % 2) * 0.2, 0.4),
+      color: berry,
+    });
+  return bake(parts);
+};
+
+/** Low rolling hill for the backdrop: one flattened dodecahedron with a lighter crown. */
+const hill = (base: string, crown: string) => (): THREE.BufferGeometry =>
+  bake([
+    {
+      geo: new THREE.DodecahedronGeometry(1, 0).scale(2.6, 0.9, 1.8),
+      color: (c) => (c.y > 0.45 ? crown : base),
+    },
+  ]);
+
+const dandelion = (): THREE.BufferGeometry =>
+  bake([
+    { geo: at(new THREE.CylinderGeometry(0.03, 0.04, 0.8, 3), 0, 0.4, 0), color: '#3f8f3a' },
+    { geo: at(new THREE.IcosahedronGeometry(0.2, 0), 0, 0.88, 0), color: '#fff8ec' },
+    { geo: at(new THREE.OctahedronGeometry(0.06), 0, 0.88, 0.18), color: '#ffd23f' },
+  ]);
+
+const hayBale = (): THREE.BufferGeometry =>
+  bake([
+    {
+      geo: at(new THREE.CylinderGeometry(0.35, 0.35, 0.5, 8).rotateZ(Math.PI / 2), 0, 0.35, 0),
+      color: (c) => (Math.abs(c.x) > 0.24 ? '#d9a441' : '#e8c060'),
+    },
+  ]);
+
 const crate = (): THREE.BufferGeometry =>
   bake([
     {
@@ -105,9 +162,10 @@ export const BIOMES: Record<string, BiomeKit> = {
     sky: '#ffd9a8',
     fog: '#ffd9a8',
     lane: '#7cc46a',
-    laneAlt: '#6db35c',
+    laneAlt: '#86cd73',
     soil: '#e9a86b',
     rail: '#fff3d6',
+    light: ['#fff6e0', '#7a5aa0'],
     props: {
       flowerPink: flower('#ff6fa8'),
       flowerWhite: flower('#ffffff'),
@@ -116,8 +174,25 @@ export const BIOMES: Record<string, BiomeKit> = {
       mushroom: mushroom('#e2557a'),
       pebble: pebble('#cdbfa8'),
       fencePost: fencePost('#fff3d6'),
+      dandelion: dandelion,
+      bush: bush('#4fae47', '#ff6fa8'),
+      hill: hill('#6fbf5e', '#9ad67f'),
     },
-    scatter: ['flowerPink', 'clover', 'flowerWhite', 'pebble', 'flowerLilac', 'mushroom', 'clover'],
+    scatter: [
+      'flowerPink',
+      'clover',
+      'flowerWhite',
+      'dandelion',
+      'flowerLilac',
+      'mushroom',
+      'clover',
+      'pebble',
+    ],
+    railPost: 'fencePost',
+    backdrop: [
+      { id: 'bush', perSide: 6, scale: 1.6 },
+      { id: 'hill', perSide: 4, scale: 2.2 },
+    ],
   },
   orchard: {
     id: 'orchard',
@@ -128,6 +203,7 @@ export const BIOMES: Record<string, BiomeKit> = {
     laneAlt: '#97b54d',
     soil: '#c98a5a',
     rail: '#8a5530',
+    light: ['#ffe2c0', '#8a4a6a'],
     props: {
       appleTree: tree('#5f9e3c', '#e04a3a'),
       pearTree: tree('#79aa3f', '#ffd23f'),
@@ -136,6 +212,9 @@ export const BIOMES: Record<string, BiomeKit> = {
       mushroom: mushroom('#ff8a3d'),
       pebble: pebble('#b89a7a'),
       fencePost: fencePost('#8a5530'),
+      hayBale: hayBale,
+      hedge: bush('#5f9e3c', '#e04a3a'),
+      hill: hill('#b3a04a', '#d6bf5a'),
     },
     scatter: [
       'flowerOrange',
@@ -145,6 +224,73 @@ export const BIOMES: Record<string, BiomeKit> = {
       'flowerOrange',
       'pearTree',
       'mushroom',
+      'hayBale',
+    ],
+    railPost: 'fencePost',
+    backdrop: [
+      { id: 'appleTree', perSide: 5, scale: 2.2 },
+      { id: 'pearTree', perSide: 4, scale: 2.0 },
+      { id: 'hedge', perSide: 3, scale: 1.5 },
+      { id: 'hill', perSide: 3, scale: 2.4 },
     ],
   },
 };
+
+/** Campaign biome per level (art/ART_DIRECTION.md §Biomes). Unknown levels use Clover Meadow. */
+export const LEVEL_BIOME: Record<string, string> = {
+  'ftue-meadow': 'clover',
+  'dandelion-drift': 'clover',
+  'clover-run': 'clover',
+  'thistle-gauntlet': 'orchard',
+  'wasp-queen-nest': 'orchard',
+};
+
+/** Biome for a level; `?biome=<id>` in the URL overrides it (art/QA screenshots). */
+export function biomeFor(levelId: string, search = ''): BiomeKit {
+  const forced = new URLSearchParams(search).get('biome');
+  if (forced && BIOMES[forced]) return BIOMES[forced];
+  return BIOMES[LEVEL_BIOME[levelId] ?? 'clover'];
+}
+
+export interface PropPlacement {
+  id: string;
+  x: number;
+  z: number;
+  rotY: number;
+  scale: number;
+}
+
+/**
+ * Deterministic environment layout for a lane (shared by the renderer and the budget
+ * tests): edge scatter, rail posts and backdrop set pieces outside the lane.
+ */
+export function layoutBiome(kit: BiomeKit, laneWidth: number, laneLength: number): PropPlacement[] {
+  const out: PropPlacement[] = [];
+  const half = laneWidth / 2;
+  const rows = Math.ceil((laneLength + 8) / 1.8);
+  for (let i = 0; i < rows; i++)
+    for (const side of [-1, 1])
+      out.push({
+        id: kit.scatter[(i * 3 + (side + 1)) % kit.scatter.length],
+        x: side * (half + 1.1 + ((i * 7) % 3) * 0.6),
+        z: -i * 1.8 + 3,
+        rotY: i * 1.3,
+        scale: 1.4,
+      });
+  for (let z = 4; z > -laneLength - 2; z -= 2.5)
+    for (const side of [-1, 1])
+      out.push({ id: kit.railPost, x: side * (half + 0.15), z, rotY: 0, scale: 0.8 });
+  for (const b of kit.backdrop)
+    for (let k = 0; k < b.perSide; k++)
+      for (const side of [-1, 1]) {
+        const t = (k + 0.5 + (b.id.length % 3) * 0.17) / b.perSide;
+        out.push({
+          id: b.id,
+          x: side * (half + 4 + ((k * 5 + b.id.length) % 4) * 1.3),
+          z: 2 - t * (laneLength + 6),
+          rotY: k * 2.1 + side,
+          scale: b.scale * (0.85 + ((k * 3) % 4) * 0.08),
+        });
+      }
+  return out;
+}

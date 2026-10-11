@@ -74,14 +74,14 @@ function roundRect(
 /** Lane grass colours (base, light band); gate contrast is tested against these. */
 export const GRASS = ['#7cc46a', '#86cd73'] as const;
 
-export function grassTexture(): THREE.Texture {
+export function grassTexture(base: string = GRASS[0], band: string = GRASS[1]): THREE.Texture {
   const c = document.createElement('canvas');
   c.width = 128;
   c.height = 128;
   const g = c.getContext('2d')!;
-  g.fillStyle = GRASS[0];
+  g.fillStyle = base;
   g.fillRect(0, 0, 128, 128);
-  g.fillStyle = GRASS[1];
+  g.fillStyle = band;
   g.fillRect(0, 0, 128, 64);
   for (let i = 0; i < 90; i++) {
     g.fillStyle = i % 2 ? 'rgba(255,255,255,0.08)' : 'rgba(30,90,40,0.12)';
