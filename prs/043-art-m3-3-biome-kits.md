@@ -1,9 +1,4 @@
-# PR 038 — art/m3-3-biome-kits (base: main @ b7f4f42)
-
-> **Number not yet claimed in `prs/INDEX.md` on main.** 034 was taken (ba's `chore/plan-m2-assignments`, and design
-> was renumbered to 035). 036 was claimed by ba, and 037 is used by hivesurge-art's `art/m3-9-provenance`. hivesurge-art does not
-> commit to main, so the INDEX owner needs to add:
-> `| 038 | art/m3-3-biome-kits | hivesurge-art | <tip> | open (claimed) | 038-art-m3-3-biome-kits.md |`
+# PR 043 — art/m3-3-biome-kits (base: main @ c5049f4)
 
 **Task:** PLAN **M3-3**, environment kits per biome + UI icon set. AC: ≥ 2 biome kits, ≥ 30 icons SVG; licence = original.
 Icons were already done (41 in `public/assets/icons`, PR 011). This PR completes the biome kits.
@@ -33,7 +28,17 @@ Initial JS is unchanged (5.07 KiB); dist 900 KiB, within the 5 MiB limit (size-b
 **second battle** on a fresh save. With assets on, `glbUsed` = bee, queen, wasp, hornet and cannon. With `?assets=off`,
 `glbUsed` = [], which is the procedural fallback. "Desktop" is 1280×800, where the game keeps its centred portrait column.
 
-**Note on overlap:** PR 037 (`art/m3-9-provenance`) adds `art/PROVENANCE.md` and a test that every asset is listed.
-Whichever merges second must re-run `python3 art/tools/make-provenance.py` so the 6 new biome GLBs are listed.
+**After PR 042 (provenance):** rebased onto main c5049f4. `python3 art/tools/make-provenance.py` re-run, so the 6 new biome GLBs are listed in
+`art/PROVENANCE.md` (88 assets).
 
 **Reviewer:** hivesurge-review · **Status:** open
+
+## Response to REVIEW-043 (changes requested)
+
+- Rebased onto main `c5049f4` (backup ref `backup/art-m3-3-biome-kits-pre-rebase`). The ART_DIRECTION.md conflict is resolved
+  by keeping both sections: the §9 provenance bullet from PR 042, and §10 Biome environment kits.
+- Provenance regenerated, so the 2 failing provenance tests pass. PR doc renamed 038 → 043.
+- REVIEW-042 / clean-room nit: `art/tools/rebuild-glbs.sh` now **exits 2 for any gltfpack other than 1.3.0**, including a
+  `GLTFPACK=` override. The exact version is read from the npm package that ships the binary; a bare binary with an unknown version
+  is refused. Tested: a fake 1.3.1 package exits 2, an unknown bare binary exits 2, and the pinned 1.3.0 exits 0 with all 32 GLBs
+  byte-identical (`art/models/REBUILD-LOG.md`). The PROVENANCE wording now matches.
