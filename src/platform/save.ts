@@ -122,8 +122,10 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     updatedAt: Math.max(a.updatedAt, b.updatedAt),
     coins: Math.max(a.coins, b.coins),
     // Gems are spendable (gem revive): taking the max would undo a spend made on one side
-    // (spend 10 on device A, merge with stale B -> refund). Keep the lower balance; purchases
-    // are re-granted by the store's restore flow, not by the merge.
+    // (spend 10 on device A, merge with stale B -> refund). Keep the lower balance for now.
+    // KNOWN GAP: this can lose gems bought or earned on the other device, and stores do NOT
+    // restore consumables like gems. Harmless until cloud save exists; must be replaced by a
+    // gem spend/grant ledger merge (PLAN M4-5) before cloud save ships.
     gems: Math.min(a.gems, b.gems),
     reviveGemDay: mergeGemDay(a.reviveGemDay, b.reviveGemDay),
     bestStars: stars,
