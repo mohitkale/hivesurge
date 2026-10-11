@@ -1,0 +1,153 @@
+[
+ {
+  "name": "level_start",
+  "ts": 1791681757697,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "level": "ftue-meadow"
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681761017,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "step": 1,
+   "msSinceFirstInput": 2233,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681762214,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "step": 2,
+   "msSinceFirstInput": 3400,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681762640,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "step": 3,
+   "msSinceFirstInput": 3717,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681763480,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "step": 4,
+   "msSinceFirstInput": 4450,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681777343,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "step": 5,
+   "msSinceFirstInput": 17450,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "level_win",
+  "ts": 1791681777344,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "level": "ftue-meadow",
+   "time": 18,
+   "nestLeft": 0,
+   "hiveLeft": 60,
+   "peakBees": 167,
+   "revives": 0
+  }
+ },
+ {
+  "name": "level_start",
+  "ts": 1791681779497,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "level": "dandelion-drift"
+  }
+ },
+ {
+  "name": "level_win",
+  "ts": 1791681826006,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "level": "dandelion-drift",
+   "time": 45,
+   "nestLeft": 0,
+   "hiveLeft": 44,
+   "peakBees": 161,
+   "revives": 0
+  }
+ },
+ {
+  "name": "level_start",
+  "ts": 1791681828005,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "level": "clover-run"
+  }
+ },
+ {
+  "name": "level_win",
+  "ts": 1791681903870,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "level": "clover-run",
+   "time": 54,
+   "nestLeft": 0,
+   "hiveLeft": 50,
+   "peakBees": 307,
+   "revives": 0
+  }
+ },
+ {
+  "name": "level_start",
+  "ts": 1791681905985,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "level": "thistle-gauntlet"
+  }
+ },
+ {
+  "name": "level_win",
+  "ts": 1791681972169,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "level": "thistle-gauntlet",
+   "time": 51,
+   "nestLeft": 0,
+   "hiveLeft": 40,
+   "peakBees": 446,
+   "revives": 0
+  }
+ },
+ {
+  "name": "ad_offered",
+  "ts": 1791681973070,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "placement": "win_double",
+   "type": "rewarded"
+  }
+ },
+ {
+  "name": "level_start",
+  "ts": 1791681974346,
+  "session": "mv3523rqxqp8",
+  "props": {
+   "level": "wasp-queen-nest"
+  }
+ }
+]

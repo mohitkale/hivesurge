@@ -1,0 +1,123 @@
+[
+ {
+  "name": "level_start",
+  "ts": 1791681275310,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "level": "ftue-meadow"
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681278769,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "step": 1,
+   "msSinceFirstInput": 2067,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681283484,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "step": 2,
+   "msSinceFirstInput": 6367,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681284856,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "step": 3,
+   "msSinceFirstInput": 7483,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681284921,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "step": 4,
+   "msSinceFirstInput": 7500,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "ftue_step",
+  "ts": 1791681303594,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "step": 5,
+   "msSinceFirstInput": 25100,
+   "timedOut": false
+  }
+ },
+ {
+  "name": "level_win",
+  "ts": 1791681303594,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "level": "ftue-meadow",
+   "time": 26,
+   "nestLeft": 0,
+   "hiveLeft": 60,
+   "peakBees": 113,
+   "revives": 0
+  }
+ },
+ {
+  "name": "level_start",
+  "ts": 1791681306012,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "level": "dandelion-drift"
+  }
+ },
+ {
+  "name": "level_win",
+  "ts": 1791681365780,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "level": "dandelion-drift",
+   "time": 55,
+   "nestLeft": 0,
+   "hiveLeft": 50,
+   "peakBees": 110,
+   "revives": 0
+  }
+ },
+ {
+  "name": "level_start",
+  "ts": 1791681367687,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "level": "clover-run"
+  }
+ },
+ {
+  "name": "level_win",
+  "ts": 1791681453936,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "level": "clover-run",
+   "time": 76,
+   "nestLeft": 0,
+   "hiveLeft": 50,
+   "peakBees": 193,
+   "revives": 0
+  }
+ },
+ {
+  "name": "level_start",
+  "ts": 1791681455764,
+  "session": "mv34rrgzn7fq",
+  "props": {
+   "level": "thistle-gauntlet"
+  }
+ }
+]

@@ -1,0 +1,52 @@
+[
+ {
+  "name": "level_start",
+  "ts": 1791680670154,
+  "session": "mv34esgkqx3n",
+  "props": {
+   "level": "ftue-meadow"
+  }
+ },
+ {
+  "name": "level_fail",
+  "ts": 1791680765016,
+  "session": "mv34esgkqx3n",
+  "props": {
+   "level": "ftue-meadow",
+   "time": 75,
+   "nestLeft": 100,
+   "hiveLeft": 60,
+   "peakBees": 0,
+   "revives": 0
+  }
+ },
+ {
+  "name": "level_start",
+  "ts": 1791680766369,
+  "session": "mv34esgkqx3n",
+  "props": {
+   "level": "ftue-meadow"
+  }
+ },
+ {
+  "name": "level_fail",
+  "ts": 1791680846136,
+  "session": "mv34esgkqx3n",
+  "props": {
+   "level": "ftue-meadow",
+   "time": 75,
+   "nestLeft": 100,
+   "hiveLeft": 60,
+   "peakBees": 0,
+   "revives": 0
+  }
+ },
+ {
+  "name": "level_start",
+  "ts": 1791680847478,
+  "session": "mv34esgkqx3n",
+  "props": {
+   "level": "ftue-meadow"
+  }
+ }
+]
