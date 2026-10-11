@@ -1,4 +1,4 @@
-# PR 036 — monetization/m2-21a-revive (base: main @ 4cb198c)
+# PR 037 — monetization/m2-21a-revive (base: main @ 4cb198c)
 
 **Summary:** M2-21a evaluates a gem-priced revive on top of the merged M2-21 revive rules (PR 030). **Verdict: GO with conditions.** Price is **10 gems flat** (no escalation, about $0.42 at the gems_small rate). There is **1 revive per battle total** across ad, free and gem, with gem revives capped at **2 per session and 3 per day**. There is no offer in FTUE and no buy-gems upsell from the revive offer. New guardrail G19.
 
