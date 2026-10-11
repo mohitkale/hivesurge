@@ -113,7 +113,11 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     revision: Math.max(a.revision, b.revision) + 1,
     updatedAt: Math.max(a.updatedAt, b.updatedAt),
     coins: Math.max(a.coins, b.coins),
-    gems: Math.max(a.gems, b.gems),
+    // Gems are spendable (gem revive): taking the max would undo a spend made on one side
+    // (spend 10 on device A, merge with stale B -> refund). Keep the lower balance; purchases
+    // are re-granted by the store's restore flow, not by the merge.
+    gems: Math.min(a.gems, b.gems),
+    reviveGemDay: mergeGemDay(a.reviveGemDay, b.reviveGemDay),
     bestStars: stars,
     noAds: a.noAds || b.noAds,
     skins: [...new Set([...a.skins, ...b.skins])], // purchases are sticky
@@ -178,4 +182,13 @@ export class SaveStore {
       /* private mode / quota: keep playing with in-memory state */
     }
   }
+}
+
+/**
+ * Daily gem-revive counter merge (C2): the same day keeps the higher count (never resets the cap
+ * by merging); different days keep the later day's counter.
+ */
+export function mergeGemDay(a: GemReviveDay, b: GemReviveDay): GemReviveDay {
+  if (a.day === b.day) return { day: a.day, count: Math.max(a.count, b.count) };
+  return a.day > b.day ? { ...a } : { ...b };
 }

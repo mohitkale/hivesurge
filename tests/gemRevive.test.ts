@@ -15,7 +15,7 @@ import {
   REVIVE_GEM_DEFAULTS,
   reviveGemConfig,
 } from '../src/platform/reviveGems';
-import { defaultSave, parseSave } from '../src/platform/save';
+import { defaultSave, mergeGemDay, mergeSaves, parseSave } from '../src/platform/save';
 import { gemConfirmHtml, reviveRowHtml } from '../src/ui/reviveOffer';
 
 const NOW = Date.parse('2026-10-11T10:00:00');
@@ -289,5 +289,39 @@ describe('G19 tests T-G19a–g', () => {
     expect(new Set(buttons.map((b) => b[1]))).toEqual(new Set(['btn']));
     expect(html).not.toMatch(/autofocus|primary|pulse|glow|recommended|tabindex/i);
     expect(gemConfirmHtml(10, 10)).not.toMatch(/autofocus|primary|pulse/i);
+  });
+});
+
+describe('M2-21c save merge (048 follow-up)', () => {
+  const save = (gems: number, revision: number, day: string, count: number) => ({
+    ...defaultSave(),
+    gems,
+    revision,
+    reviveGemDay: { day, count },
+  });
+
+  it('a gem spend on one device is not undone by merging a stale save', () => {
+    const spent = save(10, 5, '2026-10-11', 1); // spent 10 of 20
+    const stale = save(20, 9, '2026-10-11', 0); // newer revision, but before the spend
+    expect(mergeSaves(spent, stale).gems).toBe(10);
+    expect(mergeSaves(stale, spent).gems).toBe(10);
+  });
+
+  it('daily counter: same day takes the max, regardless of which save is newer', () => {
+    const a = save(0, 1, '2026-10-11', 3);
+    const b = save(0, 7, '2026-10-11', 1);
+    expect(mergeSaves(a, b).reviveGemDay).toEqual({ day: '2026-10-11', count: 3 });
+    expect(mergeSaves(b, a).reviveGemDay).toEqual({ day: '2026-10-11', count: 3 });
+  });
+
+  it('daily counter: different days keep the later day', () => {
+    expect(mergeGemDay({ day: '2026-10-10', count: 3 }, { day: '2026-10-11', count: 1 })).toEqual({
+      day: '2026-10-11',
+      count: 1,
+    });
+    expect(mergeGemDay({ day: '2026-10-11', count: 0 }, { day: '', count: 2 })).toEqual({
+      day: '2026-10-11',
+      count: 0,
+    });
   });
 });
