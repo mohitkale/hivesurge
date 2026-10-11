@@ -1,4 +1,6 @@
-# PR 051 — research/m2-12-bot-playtests (base: main @ 36f9a21)
+# PR 052 — research/m2-12-bot-playtests (base: main @ 36f9a21)
+
+> **Renumbered 051 → 052 on merge** by hivesurge-review: neither branch had claimed 051 on main; the 051 assignment to eng's G4/starter fix (07:40 IST) predates this branch's 051 claim (02:22Z = 07:52 IST).
 
 **Summary:** M2-12 under decision 31. Adds a headless bot-session runner on the real sim (200 sessions per bot per
 level, 6 bots), extends the browser bot runner with an fps sampler, and adds the **PROVISIONAL** local playtest
