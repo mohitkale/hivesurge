@@ -77,3 +77,15 @@ describe('QA M2-19a: Starter Pack skin is defined and applied', () => {
     expect(parseSave(JSON.stringify(old)).equippedSkin).toBe('');
   });
 });
+
+describe('Starter Gold art (PR 069)', () => {
+  it('stays within the 300-triangle unit budget and keeps the bee wings', () => {
+    const g = skinGeometry(skinById('starter')!, 1);
+    const tris = (g.index ? g.index.count : g.getAttribute('position').count) / 3;
+    expect(tris).toBeLessThanOrEqual(300);
+    const w = g.getAttribute('aWing');
+    let n = 0;
+    for (let i = 0; i < w.count; i++) if (w.getX(i) !== 0) n++;
+    expect(n).toBeGreaterThan(0);
+  });
+});
