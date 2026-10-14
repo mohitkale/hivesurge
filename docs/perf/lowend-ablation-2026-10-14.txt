@@ -1,0 +1,20 @@
+context=MSAA on (antialias:true, as main) samples=4 canvas=496x800css units=62+0+23+0+345 unitShareOfFrame=39%
+  high@pr1 (reference)              759.0 ms  (ref 673.0 ms, 113%)  ~1 fps cap  calls=68 tris=32153
+  high@pr0.75 (old scaler floor)    353.2 ms  (ref 1052.1 ms, 34%)  ~3 fps cap  calls=68 tris=32153
+  high@pr1 fog off                  889.3 ms  (ref 448.1 ms, 198%)  ~1 fps cap  calls=68 tris=32153
+  high@pr1 backdrop props off       239.2 ms  (ref 149.2 ms, 160%)  ~4 fps cap  calls=66 tris=30857
+  high@pr1 all biome props off      157.0 ms  (ref 197.8 ms, 79%)  ~6 fps cap  calls=58 tris=25550
+  high@pr1 unlit materials          221.8 ms  (ref 157.5 ms, 141%)  ~5 fps cap  calls=68 tris=32153
+  med@pr1                           139.9 ms  (ref 229.4 ms, 61%)  ~7 fps cap  calls=66 tris=30857
+  low@pr0.6                         105.4 ms  (ref 220.4 ms, 48%)  ~9 fps cap  calls=58 tris=25550
+  low@pr0.5 (floor)                 539.4 ms  (ref 714.6 ms, 75%)  ~2 fps cap  calls=58 tris=25550
+context=MSAA off (fix default on software) samples=0 canvas=496x800css units=57+0+22+0+120 unitShareOfFrame=-20%
+  high@pr1 (reference)               92.7 ms  (ref 100.3 ms, 92%)  ~11 fps cap  calls=68 tris=26423
+  high@pr0.75 (old scaler floor)     51.4 ms  (ref 89.6 ms, 57%)  ~19 fps cap  calls=68 tris=26423
+  high@pr1 fog off                   54.3 ms  (ref 66.8 ms, 81%)  ~18 fps cap  calls=68 tris=26423
+  high@pr1 backdrop props off        62.1 ms  (ref 107.4 ms, 58%)  ~16 fps cap  calls=66 tris=25127
+  high@pr1 all biome props off      103.1 ms  (ref 105.6 ms, 98%)  ~10 fps cap  calls=58 tris=19820
+  high@pr1 unlit materials           45.6 ms  (ref 55.9 ms, 82%)  ~22 fps cap  calls=68 tris=26423
+  med@pr1                            49.6 ms  (ref 65.2 ms, 76%)  ~20 fps cap  calls=66 tris=25127
+  low@pr0.6                          21.3 ms  (ref 54.4 ms, 39%)  ~47 fps cap  calls=58 tris=19820
+  low@pr0.5 (floor)                  32.4 ms  (ref 76.5 ms, 42%)  ~31 fps cap  calls=58 tris=19820
