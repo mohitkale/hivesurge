@@ -1,4 +1,4 @@
-# PR (number pending from review): qa/m2-12-box-sessions
+# PR 084: qa/m2-12-box-sessions
 
 **Summary:** M2-12 QA box-browser sessions (2026-10-15). Three automated agent Incognito plays on software-render build `21acf39`. Docs + 12 screenshots only; no game code.
 
@@ -7,6 +7,7 @@
 **Expected number:** next free on main INDEX (currently **083** if nothing else claimed first)
 
 **Changes:**
+
 - `playtests/m2-12/qa/2026-10-15-box-sessions.md` — full session log
 - `playtests/m2-12/qa/img/*.webp` — 12 key screenshots
 - `playtests/m2-12/qa/README.md` — points at the log
