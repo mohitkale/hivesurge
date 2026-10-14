@@ -1,6 +1,6 @@
 {
   "placement": "revive",
-  "price_gems": 5,
+  "price_gems": 10,
   "escalation": false,
   "max_revives_per_battle_total": 1,
   "max_gem_revives_per_session": 2,
