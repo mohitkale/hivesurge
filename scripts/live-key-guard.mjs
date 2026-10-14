@@ -42,6 +42,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const hits = findLiveKeys([
     join(root, 'src'),
     join(root, 'dist'),
+    join(root, 'dist-review'), // npm run build:review
     join(root, 'index.html'),
     ...envFiles,
   ]);
