@@ -371,6 +371,39 @@ export class GameScene {
   }
 
   /** FTUE aim-ahead hint: dotted line from the cannon to (x, y); null hides it. */
+  /** M2-30b: translucent ghost cannon demoing the slide to the x2 gate (null hides it). */
+  setDemoGhost(x: number | null): void {
+    if (x === null) {
+      if (this.demoGhost) this.demoGhost.visible = false;
+      return;
+    }
+    if (!this.demoGhost) {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshBasicMaterial({
+        color: '#fff6c2',
+        transparent: true,
+        opacity: 0.6,
+        depthWrite: false,
+        depthTest: false,
+      });
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.5, 12), mat);
+      base.position.y = 0.25;
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.9, 10), mat);
+      barrel.position.set(0, 0.6, -0.35);
+      barrel.rotation.x = -Math.PI / 2.4;
+      g.add(base, barrel);
+      g.position.z = this.cannon.position.z - 0.8; // just ahead of the real cannon
+      g.scale.setScalar(1.15);
+      g.renderOrder = 9;
+      this.scene.add(g);
+      this.demoGhost = g;
+    }
+    this.demoGhost.visible = true;
+    this.demoGhost.position.x = x;
+  }
+
+  private demoGhost: THREE.Group | null = null;
+
   setLeadLine(target: { x: number; y: number } | null): void {
     if (!target) {
       this.leadLine.visible = false;
