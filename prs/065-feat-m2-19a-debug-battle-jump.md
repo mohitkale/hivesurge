@@ -1,4 +1,4 @@
-# PR (number pending): feat/m2-19a-debug-battle-jump
+# PR 065: feat/m2-19a-debug-battle-jump
 
 Number not claimed yet: `main` is checked out at `/tmp/rev-merge` (with uncommitted INDEX/review edits), so the temporary-worktree claim wasn't forced. Rename to `prs/NNN-feat-m2-19a-debug-battle-jump.md` once a number is claimed (next free on main `57a32a0`: 064, or 065 after the starter-skin PR).
 

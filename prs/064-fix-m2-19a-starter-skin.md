@@ -1,4 +1,4 @@
-# PR (number pending): fix/m2-19a-starter-skin
+# PR 064: fix/m2-19a-starter-skin
 
 Number not claimed yet: `main` is checked out at `/tmp/rev-merge` (with uncommitted INDEX/review edits), so the temporary-worktree claim wasn't forced. Rename to `prs/NNN-fix-m2-19a-starter-skin.md` once a number is claimed (next free on main `57a32a0`: 064).
 
