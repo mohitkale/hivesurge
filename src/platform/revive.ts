@@ -18,8 +18,20 @@ import { debitGems, type GemReviveCaps, type GemWallet } from './reviveGems';
 export const MAX_EARLY_CLOSES = 2;
 export const OFFER_COUNTDOWN_S = 10;
 export const UNAVAILABLE_MS = 3000;
-/** Revive is offered only when the nest has at most this much health left. */
-export const REVIVE_NEST_DAMAGE = 0.5;
+/**
+ * Default `revive.minNestDamage` (revive-m2.md, PR 049): the offer needs at least this much
+ * nest damage, for every loss type (hive break and time-out). Was 0.5.
+ */
+export const REVIVE_NEST_DAMAGE = 0.25;
+
+/**
+ * Remote config `revive.minNestDamage`. A missing or invalid value (not a finite number in
+ * [0, 1]) falls back to the default.
+ */
+export function reviveMinNestDamage(remote?: { minNestDamage?: unknown }): number {
+  const v = remote?.minNestDamage;
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1 ? v : REVIVE_NEST_DAMAGE;
+}
 
 /** Per app session; never persisted. */
 export class ReviveSession {
@@ -44,10 +56,17 @@ export interface ReviveEligibility {
   capsOk: boolean;
   revives: number;
   nestDamage: number;
+  /** `revive.minNestDamage` (default REVIVE_NEST_DAMAGE). */
+  minNestDamage?: number;
 }
 
 export function shouldOfferRevive(e: ReviveEligibility): boolean {
-  return e.rewardedAllowed && e.capsOk && e.revives === 0 && e.nestDamage >= REVIVE_NEST_DAMAGE;
+  return (
+    e.rewardedAllowed &&
+    e.capsOk &&
+    e.revives === 0 &&
+    e.nestDamage >= (e.minNestDamage ?? REVIVE_NEST_DAMAGE)
+  );
 }
 
 /** Ad slot state. `limit` = "Ad limit reached" (2 early closes); `unavailable` = "Ad not available". */

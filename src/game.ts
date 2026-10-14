@@ -17,6 +17,7 @@ import type { RewardedPlacement, RewardedResult } from './platform/platform';
 import {
   ReviveOffer,
   ReviveSession,
+  reviveMinNestDamage,
   shouldOfferRevive,
   UNAVAILABLE_MS,
   type ReviveStep,
@@ -94,6 +95,8 @@ export class Game {
   private readonly gemConfig = reviveGemConfig();
   /** C2: session cap in memory, daily cap persisted in the save. */
   private readonly gemCaps: GemReviveCaps;
+  /** Remote config `revive.minNestDamage` (PR 049); no remote config client yet, so the default. */
+  private readonly reviveMinNestDamage = reviveMinNestDamage();
   private reviveTimer = 0;
   private readonly perf = new PerfStats();
   private readonly perfOverlay = new PerfOverlay(document.getElementById('app')!);
@@ -429,6 +432,7 @@ export class Game {
           capsOk: this.pacer.canRewarded('revive'),
           revives: this.world.revives,
           nestDamage: r.nestDamage,
+          minNestDamage: this.reviveMinNestDamage,
         }))
     ) {
       this.reviveOffer = new ReviveOffer(this.reviveSession, {
