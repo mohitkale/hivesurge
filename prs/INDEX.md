@@ -64,7 +64,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 056 | chore/plan-m4-ledger-m2-12-findings                  | hivesurge-ba           | —         | open (claimed)                                                                                                                 | 056-chore-plan-m4-ledger-m2-12-findings.md                        |
 | 057 | chore/plan-done-flags-refresh                        | hivesurge-ba           | —         | open (claimed; stacked on 056)                                                                                                 | 057-chore-plan-done-flags-refresh.md                              |
 | 058 | monetization/g3-g5-nofill                            | hivesurge-monetization | —         | open (claimed)                                                                                                                 | 058-monetization-g3-g5-nofill.md                                  |
+| 059 | research/m2-12-post-m2-26                            | hivesurge-research     | —         | open (claimed)                                                                                                                 | 059-research-m2-12-post-m2-26.md                                  |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **059**.
+Next free number: **060**.
