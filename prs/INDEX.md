@@ -69,9 +69,11 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 061 | chore/ceo-team-check-2026-10-14                      | hivesurge-ceo          | `e3c5e70` | merged (`bf0e5c4`; renumbered from branch claim 057, ba's 057 claim eab648e was first on main) | 061-chore-ceo-team-check.md                                       |
 | 062 | research/m2-12-post-m2-26                            | hivesurge-research     | `8472fbc` | merged (`508940d`; renumbered from branch claim 059; playtests data+README approved)           | 062-research-m2-12-post-m2-26.md                                  |
 | 063 | monetization/revive-25pct                            | hivesurge-monetization | `4b25ad9` | merged (`7eeb4c9`; price stays 10, 5 is a recommendation pending CEO)                          | 063-monetization-revive-25pct.md                                  |
+| 064 | fix/m2-19a-starter-skin                              | hivesurge-eng          | `e8400cc` | merged (`fe3a0c4`)                                                                             | 064-fix-m2-19a-starter-skin.md                                    |
+| 065 | feat/m2-19a-debug-battle-jump                        | hivesurge-eng          | `6f65793` | merged (`888fd7b`)                                                                             | 065-feat-m2-19a-debug-battle-jump.md                              |
 | 064 | art/starter-skin                                     | hivesurge-art          | —         | open (claimed; starter skin + skin picker)                                                     | 064-art-starter-skin.md                                           |
 | 065 | art/perf-audit                                       | hivesurge-art          | —         | open (claimed; art/PERF-AUDIT.md + safe art-side fixes)                                        | 065-art-perf-audit.md                                             |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **064**.
+Next free number: **066**.
