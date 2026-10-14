@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { getLevel } from '../src/levels';
 import { SIM_DT, World } from '../src/sim/world';
 import { MISS_CUE, MissCue } from '../src/ui/missCue';
+import { shouldShowTrapTip, TRAP_TIP, trapFill, trapLabelText } from '../src/ui/trapTelegraph';
+import { defaultSave, mergeSaves, parseSave } from '../src/platform/save';
 
 const L1 = getLevel('ftue-meadow');
 const L2 = getLevel('dandelion-drift');
@@ -109,15 +111,50 @@ describe('M2-31 missed-gate feedback (QA S1-S3: volleys go straight up past the 
   });
 });
 
-describe('M2-32 L2 trap values change mid-level (intended, documented for design)', () => {
-  it('a trap label counts down the bees it absorbed, then breaks', () => {
+describe('M2-32 trap telegraph (design ruling)', () => {
+  const trapIdx = L2.gates.findIndex((g) => g.kind === 'sub' && g.x < 0);
+  const trap = L2.gates[trapIdx];
+
+  it('sim is unchanged: a trap absorbs one bee per crossing, 600 in total', () => {
     const w = new World(L2);
-    const trap = L2.gates.findIndex((g) => g.kind === 'sub' && g.x < 0);
-    expect(w.trapRemaining(trap)).toBe(600);
+    expect(w.trapRemaining(trapIdx)).toBe(600);
     fireAt(w, -3.8, 4);
-    const left = w.trapRemaining(trap);
+    const left = w.trapRemaining(trapIdx);
     expect(left).toBeLessThan(600);
-    expect(left).toBeGreaterThan(540); // QA saw −550..−580
-    expect(600 - left).toBe(w.gatePasses[trap]); // each absorbed bee is one count
+    expect(600 - left).toBe(w.gatePasses[trapIdx]);
+  });
+
+  it('label stays fixed at the starting value while the trap holds', () => {
+    const w = new World(L2);
+    const labels = new Set<string>();
+    fireAt(w, -3.8, 4, () => labels.add(trapLabelText(trap, w.trapRemaining(trapIdx))));
+    expect([...labels]).toEqual(['−600']);
+    expect(trapLabelText(trap, 0)).toBe('✓');
+    expect(readFileSync('src/render/scene.ts', 'utf8')).not.toMatch(/`−\$\{left\}`/);
+  });
+
+  it('fill bar drains with absorbed bees', () => {
+    expect(trapFill(trap, 600)).toBe(1);
+    expect(trapFill(trap, 300)).toBe(0.5);
+    expect(trapFill(trap, 0)).toBe(0);
+    const w = new World(L2);
+    const fills: number[] = [];
+    fireAt(w, -3.8, 4, () => fills.push(trapFill(trap, w.trapRemaining(trapIdx))));
+    for (let i = 1; i < fills.length; i++) expect(fills[i]).toBeLessThanOrEqual(fills[i - 1]);
+    expect(fills.at(-1)).toBeLessThan(1);
+  });
+
+  it('one-time tip: L2 first trap hit only, then saved as shown', () => {
+    expect(TRAP_TIP.text).toBe('Traps eat bees until drained. Aim for gates!');
+    expect(shouldShowTrapTip('dandelion-drift', false)).toBe(true);
+    expect(shouldShowTrapTip('dandelion-drift', true)).toBe(false);
+    expect(shouldShowTrapTip('clover-run', false)).toBe(false);
+    expect(defaultSave().trapTipShown).toBe(false);
+    const s = parseSave(JSON.stringify({ ...defaultSave(), trapTipShown: true }));
+    expect(s.trapTipShown).toBe(true);
+    expect(mergeSaves(defaultSave(), s).trapTipShown).toBe(true);
+    const g = readFileSync('src/game.ts', 'utf8');
+    expect(g).toMatch(/shouldShowTrapTip\(w\.level\.id, this\.save\.trapTipShown\)/);
+    expect(g).toMatch(/this\.save\.trapTipShown = true;\s*this\.persist\(\)/);
   });
 });

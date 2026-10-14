@@ -43,6 +43,7 @@ import {
 } from './debug/debugParams';
 import { aimTraceEnabledFromUrl } from './debug/aimTraceFlag';
 import { MISS_CUE, MissCue } from './ui/missCue';
+import { shouldShowTrapTip, TRAP_TIP } from './ui/trapTelegraph';
 import { autoTriggers } from './sim/triggers';
 import { Ftue, FtueStep, shouldRunFtue } from './ftue/ftue';
 import type { LevelDef } from './sim/types';
@@ -115,6 +116,8 @@ export class Game {
   private readonly stress = stressCountFromUrl(location.search);
   private ftueReported = 0;
   private missCue: MissCue | null = null;
+  /** M2-32: sim time when the trap tip hides (0 = not showing). */
+  private trapTipUntil = 0;
   /** M2-28d `?trace=aim` (production too, see aimTraceFlag.ts); recorder lazy-loaded. */
   private readonly aimTraceOn = aimTraceEnabledFromUrl(location.search);
   private aimTraceMod: Promise<typeof import('./debug/aimTrace')> | null = null;
@@ -390,6 +393,7 @@ export class Game {
     this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id) ? new Ftue() : null;
     this.ftueReported = 0;
     this.missCue = new MissCue(this.world.gateRowY.length);
+    this.trapTipUntil = 0;
     if (this.aimTraceOn) this.startAimTrace();
     this.scene = this.makeScene();
     this.resize();
@@ -904,6 +908,10 @@ export class Game {
       }
     }
     this.sfx.swarm(w.bees.count);
+    if (this.trapTipUntil > 0 && w.time >= this.trapTipUntil) {
+      this.trapTipUntil = 0;
+      this.hud?.setPrompt('', false);
+    }
     // M2-31: brief "Missed!" on a gate row a run of bees flew past (MISS_CUE, design-confirmed).
     // Suppressed while an FTUE prompt is on screen.
     const missRow =
@@ -924,6 +932,13 @@ export class Game {
           break;
         case 'trap':
           this.scene.onTrap(e.gate, e.x, e.y);
+          if (shouldShowTrapTip(w.level.id, this.save.trapTipShown)) {
+            // M2-32: one-time tip on L2's first trap hit (saved, never repeats on this device).
+            this.save.trapTipShown = true;
+            this.persist();
+            this.trapTipUntil = w.time + TRAP_TIP.durationS;
+            this.hud?.setPrompt(TRAP_TIP.text, false);
+          }
           break;
         case 'clash':
           this.scene.onClash(e.x, e.y);

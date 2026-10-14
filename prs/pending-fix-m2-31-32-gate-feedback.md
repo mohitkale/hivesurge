@@ -52,3 +52,40 @@ QA M2-12 box sessions (`playtests/m2-12/qa/2026-10-15-box-sessions.md`, `qa/m2-1
 - Holding the cannon in the centre shows "Missed!" at 4.4 s after load, beside the x2 row.
 - Aiming at x2 shows no further x2-row cue. The moving +3 row still cues when its gate is missed.
 - No page errors.
+
+## Design ruling (2026-10-15) – follow-up commits
+
+Review numbered this PR 087. Review will rename this doc at merge, so the pending name stays.
+
+### M2-31 miss cue (`MISS_CUE`, `src/ui/missCue.ts`)
+
+- The cue is "Missed!". It fires after 6 bees pass a row without a gate hit, with a **4 s**
+  cooldown and **at most 3 per level**.
+- It is suppressed while any FTUE prompt is on screen. Misses during suppression or cooldown are
+  absorbed, so they never trigger a delayed cue.
+- **On for all levels.** Design confirmed this, which overrides review's suggestion to keep it off
+  by default.
+- Note: L1 prompts are on screen for most of the first FTUE attempt, so the cue mostly shows on
+  later levels, and on retries once PR 086 hides learned steps.
+
+### M2-32 trap telegraph (`src/ui/trapTelegraph.ts`, `scene.ts`)
+
+- The trap label stays fixed at its starting value (`−600`) and becomes `✓` once broken, as
+  before.
+- A red fill bar under the label plate drains as the trap absorbs bees.
+- On the first trap hit on L2 (`dandelion-drift`), a tip shows for 4 s: "Traps eat bees until
+  drained. Aim for gates!"
+- **Persistence:** the tip is saved per device (`save.trapTipShown`, merged with OR), so it shows
+  once ever on a device, not once per session.
+- Trap yield and damage are unchanged: still one bee absorbed per crossing, 600 in total.
+
+### Tests and checks
+
+- Tests cover the ruling constants, the 4 s cooldown, the 3-per-level cap, FTUE suppression and
+  its wiring, the fixed label, the bar drain, the one-time tip (including save parse and merge),
+  and the unchanged sim.
+- **Headless (L2, `?level=dandelion-drift`, FTUE done):**
+  - First trap hit: the label still reads −600 after 19 bees absorbed (581 left), the bar is at
+    96.8%, and the tip shows, then clears after 4 s.
+  - After a reload, the next battle shows no tip.
+  - No page errors.

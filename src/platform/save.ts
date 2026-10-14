@@ -26,6 +26,8 @@ export interface SaveData {
   skins: string[];
   /** Equipped bee skin id ('' = classic). Must be in `skins`; see skinSelect.ts. */
   equippedSkin: string;
+  /** M2-32: the L2 trap tip was shown once on this device. */
+  trapTipShown: boolean;
   battlesCompleted: number;
   lastInterstitialAt: number;
   /** FTUE finished (first win, or a later launch). Gates ads/offers (G1, G2). */
@@ -62,6 +64,7 @@ export const defaultSave = (): SaveData => ({
   noAds: false,
   skins: [],
   equippedSkin: '',
+  trapTipShown: false,
   battlesCompleted: 0,
   lastInterstitialAt: 0,
   ftueDone: false,
@@ -92,6 +95,7 @@ export function parseSave(raw: string | null): SaveData {
         ? [...new Set(d.skins.filter((x): x is string => typeof x === 'string'))]
         : [],
       equippedSkin: typeof d.equippedSkin === 'string' ? d.equippedSkin : '',
+      trapTipShown: d.trapTipShown === true,
       battlesCompleted: num(d.battlesCompleted),
       lastInterstitialAt: num(d.lastInterstitialAt),
       ftueDone: d.ftueDone === true,
@@ -135,6 +139,7 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     bestStars: stars,
     noAds: a.noAds || b.noAds,
     skins: [...new Set([...a.skins, ...b.skins])], // purchases are sticky
+    trapTipShown: a.trapTipShown || b.trapTipShown,
     battlesCompleted: Math.max(a.battlesCompleted, b.battlesCompleted),
     ftueDone: a.ftueDone || b.ftueDone,
   };
