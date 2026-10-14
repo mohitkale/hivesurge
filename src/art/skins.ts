@@ -84,6 +84,23 @@ export const SKINS: BeeSkin[] = [
     ],
   },
   {
+    // Starter Pack reward (CATALOG.starter_pack.grants.skin === 'starter'). Classic colours plus
+    // a small teal honey-pot backpack: reads as "our bee, kitted out", same silhouette.
+    id: 'starter',
+    name: 'Starter Scout',
+    season: 'core',
+    body: '#ffd23f',
+    stripe: '#3a2412',
+    accessory: () => [
+      { geo: at(new THREE.BoxGeometry(0.3, 0.22, 0.26), 0, 0.42, -0.12), color: ART.beeTeam },
+      {
+        geo: at(new THREE.CylinderGeometry(0.1, 0.12, 0.1, 6), 0, 0.58, -0.12),
+        color: ART.honeyDeep,
+      },
+      { geo: at(new THREE.OctahedronGeometry(0.06), 0, 0.42, 0.02), color: ART.beeFuzz },
+    ],
+  },
+  {
     id: 'lantern',
     name: 'Lantern Festival',
     season: 'event',
