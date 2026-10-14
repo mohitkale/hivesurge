@@ -192,6 +192,34 @@ Resolved by M2-26 versus the PR 052 list: "boss can't be beaten without a learne
 "0/200 casual campaigns finish" (now 136/200). Also noted: fps under software GL (pre-retune, median 30, 1% low
 7.5–10) still needs a real-GPU check by QA.
 
+## Addendum: after PR 076 (M2-28 aiming pillar + M2-29 FTUE aim step): PROVISIONAL
+
+> Still **PROVISIONAL, bot data only.** Still waiting on QA's ≥ 3 box-browser sessions in `playtests/m2-12/qa/`
+> (none there yet). QA is blocked: the box has no GPU and runs at 3–12 fps. Outside testers (PT-A) stay parked
+> for Mohit.
+
+- Build: main @ `21acf39` (PR 076 merged `c64412b`). Headless run, 200 sessions per level per bot, same 6 bots
+  (sweeper ±35% at 1.3 rad/s, gate-seeker ±20% at 0.9 rad/s, unchanged). Data:
+  `playtests/m2-12/results/post-pr076/sim-sessions.json` (+ `.partial.jsonl`), runtime 1,167 s.
+
+| Level               | Sweeper 1st-try % (post-M2-26 → post-076) | Aim  | Casual | Gate-seeker | Centre | Aim − sweeper |
+| ------------------- | ----------------------------------------- | ---- | ------ | ----------- | ------ | ------------- |
+| L1 ftue-meadow      | 100 → 100                                 | 100  | 100    | 100         | 100    | 0 (exempt)    |
+| L2 dandelion-drift  | 100 → **0**                               | 100  | 98     | 100         | 80     | **100**       |
+| L3 clover-run       | 100 → **0**                               | 100  | 71.5   | 100         | 0.5    | **100**       |
+| L4 thistle-gauntlet | 100 → **0**                               | 84.5 | 68.5   | 100         | 0      | **84.5**      |
+| L5 wasp-queen-nest  | 100 → 55                                  | 100  | 55     | 100         | 31     | **45**        |
+
+- **Finding addressed for the sweeper bot:** the sweeper no longer beats L2–L4 (0% first try, 0% completion; was
+  100%), and aim − sweeper is ≥ 15 points on L2–L5, matching PR 076's own table. Campaign: 200/200 sweeper sessions
+  now end at L2; casual 144/200 finish (drop-off L5 24, L4 23, L3 8, L2 1); aim 195/200 finish (5 end at L4).
+- **Not fully addressed:** the narrower, slower gate-seeker sweep still wins 100% first try on L1–L5, so a lazy
+  ±20% wiggle beats every level without choosing gates. This is the "narrow wiggle" risk PR 076 left to M2-28b;
+  these numbers are evidence for it. Aim on L4 dropped to 84.5% (was 100%).
+- Casual stays near targets: L3 71.5% (target 80%, M2-17 65–75%), L4 68.5% (70%), L5 55% (55 ± 5).
+- FTUE (M2-29): median time to first L1 win went up (casual 18.3 → 25.7 s, aim 12.6 → 17.3 s, sweeper
+  20.3 → 21.3 s), still under 30 s. Headless only; the in-game FTUE step is not driven by these bots.
+
 ## QA box-browser sessions (≥ 3): PENDING
 
 hivesurge-qa is running these. **No QA logs are in the repo or any worktree yet** (checked 2026-10-14: every `playtests/m2-12/qa/` holds only `README.md`). Save them to `playtests/m2-12/qa/`
