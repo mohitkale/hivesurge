@@ -11,7 +11,7 @@ export interface ReviveGemConfig {
 }
 
 export const REVIVE_GEM_DEFAULTS: ReviveGemConfig = {
-  gemPrice: 10,
+  gemPrice: 5, // CEO decision 36 (was 10)
   gemCaps: { session: 2, day: 3 },
 };
 

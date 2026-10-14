@@ -175,7 +175,7 @@ function capsAt(sessionCount: number, dayCount = sessionCount): GemReviveCaps {
 }
 
 describe('G19 tests T-G19a–g', () => {
-  it('T-G19a: flat price 10 gems, no escalation; config matches revive-gem.json (C8)', () => {
+  it('T-G19a: flat price 5 gems (decision 36), no escalation; config matches revive-gem.json (C8)', () => {
     const cfg = JSON.parse(
       readFileSync(
         new URL('../monetization/revive-gem.json', import.meta.url) as unknown as string,
@@ -183,24 +183,25 @@ describe('G19 tests T-G19a–g', () => {
       ) as unknown as string,
     );
     expect(REVIVE_GEM_DEFAULTS.gemPrice).toBe(cfg.price_gems);
+    expect(REVIVE_GEM_DEFAULTS.gemPrice).toBe(5);
     expect(cfg.escalation).toBe(false);
     expect(REVIVE_GEM_DEFAULTS.gemCaps).toEqual({
       session: cfg.max_gem_revives_per_session,
       day: cfg.max_gem_revives_per_day,
     });
-    const g = gems(100);
+    const g = gems(100, { price: REVIVE_GEM_DEFAULTS.gemPrice });
     for (let i = 0; i < 2; i++) {
       const o = new ReviveOffer(loaded(), g);
       o.openGemConfirm();
-      expect(o.takeGems(0)).toMatchObject({ price: 10 });
+      expect(o.takeGems(0)).toMatchObject({ price: 5 });
     }
-    expect(g.wallet.gems).toBe(80);
+    expect(g.wallet.gems).toBe(90);
     // Remote config can change the price but never past the G19 caps.
     expect(reviveGemConfig({ gemPrice: 12, gemCaps: { session: 9, day: 9 } })).toEqual({
       gemPrice: 12,
       gemCaps: { session: 2, day: 3 },
     });
-    expect(reviveGemConfig({ gemPrice: -1 }).gemPrice).toBe(10);
+    expect(reviveGemConfig({ gemPrice: -1 }).gemPrice).toBe(5);
   });
 
   it('T-G19b: one revive per battle total across ad, free and gems', () => {

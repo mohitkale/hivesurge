@@ -6,6 +6,7 @@
 import puppeteer from 'puppeteer-core';
 
 const base = process.argv[2];
+const PRICE = 5; // revive.gemPrice default (decision 36)
 const browser = await puppeteer.launch({
   executablePath: '/usr/bin/google-chrome',
   headless: 'new',
@@ -54,7 +55,7 @@ async function scenario(gems) {
   const g0 = await q('[data-a="reviveGems"]');
   check(
     `${tag} offer has gem button (${g0 ? (g0.disabled ? 'disabled' : 'enabled') : 'none'})`,
-    !!g0 && g0.disabled === gems < 10,
+    !!g0 && g0.disabled === gems < PRICE,
   );
   for (let i = 1; i <= 2; i++) {
     await page.click('[data-a="revive"]');
@@ -69,7 +70,7 @@ async function scenario(gems) {
   const limit = await q('[data-a="adLimit"]');
   const gem = await q('[data-a="reviveGems"]');
   const no = await q('[data-a="noThanks"]');
-  if (gems >= 10) {
+  if (gems >= PRICE) {
     check(
       `${tag} after close 2: "Ad limit reached" disabled`,
       !!limit && limit.disabled && limit.text === 'Ad limit reached',
@@ -86,7 +87,7 @@ async function scenario(gems) {
     const left = await page.evaluate(
       () => JSON.parse(localStorage.getItem('hivesurge.save.v1')).gems,
     );
-    check(`${tag} gem revive: battle resumed, balance ${left}`, inBattle && left === gems - 10);
+    check(`${tag} gem revive: battle resumed, balance ${left}`, inBattle && left === gems - PRICE);
   } else {
     const open = !!no && no.visible && !no.disabled;
     check(
@@ -97,7 +98,7 @@ async function scenario(gems) {
   await page.close();
 }
 
-await scenario(14);
+await scenario(7);
 await scenario(4);
 await browser.close();
 console.log(out.join('\n'));
