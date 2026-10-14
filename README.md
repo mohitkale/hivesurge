@@ -39,15 +39,14 @@ local only.
 
 URL params that work in this production build:
 
-| Param                     | Effect                                                                                      |
-| ------------------------- | ------------------------------------------------------------------------------------------- |
-| `?trace=aim`              | Aim-trace logger; Download/Copy JSON at battle end (`docs/design/aim-trace-format.md`)      |
-| `?quality=low\|med\|high` | Pin a render quality tier (no auto scaling)                                                 |
-| `?assets=off`             | Force the procedural models (skip GLB loading)                                              |
-| `?stress=N`               | Keep about N extra units alive (perf check). Its comment says dev-only, but it is not gated |
+| Param                     | Effect                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| `?trace=aim`              | Aim-trace logger; Download/Copy JSON at battle end (`docs/design/aim-trace-format.md`) |
+| `?quality=low\|med\|high` | Pin a render quality tier (no auto scaling)                                            |
+| `?assets=off`             | Force the procedural models (skip GLB loading)                                         |
 
 Dev-only, so **ignored in this build** (use `npm run dev` for them): the `?debug` perf overlay and
-F3, `?level=<id>`, `?battle=N` and `?revive=force`.
+F3, `?level=<id>`, `?battle=N`, `?revive=force` and `?stress=N`.
 
 Fresh player: clear site data, or use a private window. The save is in `localStorage`
 (`hivesurge.save.v1`).
