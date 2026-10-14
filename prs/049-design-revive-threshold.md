@@ -1,4 +1,4 @@
-# PR 049 - design/revive-threshold (base: main @ 9b969f9)
+# PR 049 - design/revive-threshold (base: main @ 83942ae; rebased from 02b0b9d)
 
 **Summary:** Two revive decisions in `docs/design/revive-m2.md`.
 
