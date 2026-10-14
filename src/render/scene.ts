@@ -141,6 +141,10 @@ export class GameScene {
       wasp: this.unitMesh(this.model('unit-wasp', 0.5, waspGeometry), 400, 0.5, 30),
       hornet: this.unitMesh(this.model('unit-hornet', 0.85, hornetGeometry), 100, 0.85, 24),
     };
+    this.lod = {
+      worker: this.lodMesh(this.bees.worker, 0.42),
+      wasp: this.lodMesh(this.wasps.wasp, 0.5),
+    };
     this.scene.add(this.particles.mesh);
     this.buildCannon();
     this.buildNest();
@@ -149,6 +153,8 @@ export class GameScene {
     this.applyQuality(quality.settings);
   }
 
+  /** Crowd LOD proxies (far workers / wasps). */
+  private readonly lod: { worker: THREE.InstancedMesh; wasp: THREE.InstancedMesh };
   private readonly fog: THREE.Fog;
   private readonly lights: THREE.Light[] = [];
   private readonly scatterProps: THREE.InstancedMesh[] = [];
@@ -284,6 +290,39 @@ export class GameScene {
     const mesh = new THREE.InstancedMesh(geo, mat, count);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     mesh.frustumCulled = false;
+    this.scene.add(mesh);
+    return mesh;
+  }
+
+  /**
+   * Crowd LOD proxy for a unit mesh: a 20-triangle icosahedron in the unit's average vertex
+   * colour, same material (so tier swaps and the wing shader still apply; no aWing = no flap).
+   */
+  private lodMesh(src: THREE.InstancedMesh, scale: number): THREE.InstancedMesh {
+    const geo = new THREE.IcosahedronGeometry(0.42 * scale, 0);
+    geo.scale(1, 0.8, 1.25);
+    const c = new THREE.Color();
+    const col = src.geometry.getAttribute('color');
+    if (col) {
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      for (let i = 0; i < col.count; i++) {
+        r += col.getX(i);
+        g += col.getY(i);
+        b += col.getZ(i);
+      }
+      c.setRGB(r / col.count, g / col.count, b / col.count);
+    } else c.set('#f2a516');
+    const n = geo.getAttribute('position').count;
+    const colors = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) c.toArray(colors, i * 3);
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('aWing', new THREE.BufferAttribute(new Float32Array(n), 1));
+    const mesh = new THREE.InstancedMesh(geo, src.material, src.instanceMatrix.count);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh.frustumCulled = false;
+    mesh.count = 0;
     this.scene.add(mesh);
     return mesh;
   }
@@ -520,8 +559,22 @@ export class GameScene {
   render(world: World, dt: number): void {
     this.t += dt;
     const L = this.level;
-    this.syncUnits(world.bees, this.bees.worker, this.bees.queen, UnitKind.Worker, true);
-    this.syncUnits(world.wasps, this.wasps.wasp, this.wasps.hornet, UnitKind.Wasp, false);
+    this.syncUnits(
+      world.bees,
+      this.bees.worker,
+      this.bees.queen,
+      UnitKind.Worker,
+      true,
+      this.lod.worker,
+    );
+    this.syncUnits(
+      world.wasps,
+      this.wasps.wasp,
+      this.wasps.hornet,
+      UnitKind.Wasp,
+      false,
+      this.lod.wasp,
+    );
     this.unitTime.value = this.t;
 
     // Cannon
@@ -582,14 +635,20 @@ export class GameScene {
     big: THREE.InstancedMesh,
     smallKind: UnitKind,
     up: boolean,
+    lod: THREE.InstancedMesh,
   ): void {
     let ns = 0;
     let nb = 0;
+    let nl = 0;
+    // Crowd LOD: far small units use the proxy once the side is above the tier threshold.
+    const useLod = pool.count > this.quality.crowdLodAt;
+    const farY = this.level.laneLength * 0.4;
     const yaw = up ? Math.PI : 0;
     for (let i = 0; i < pool.count; i++) {
       const isSmall = pool.kind[i] === smallKind;
-      const mesh = isSmall ? small : big;
-      const idx = isSmall ? ns : nb;
+      const far = isSmall && useLod && pool.y[i] > farY;
+      const mesh = far ? lod : isSmall ? small : big;
+      const idx = far ? nl : isSmall ? ns : nb;
       if (idx >= mesh.instanceMatrix.count) continue;
       const bob = Math.sin(this.t * 18 + i * 1.7) * 0.06;
       // Big units with folded overflow HP grow slightly so the extra power reads.
@@ -603,11 +662,14 @@ export class GameScene {
         this.s.set(sc, sc, sc),
       );
       mesh.setMatrixAt(idx, this.m);
-      if (isSmall) ns++;
+      if (far) nl++;
+      else if (isSmall) ns++;
       else nb++;
     }
     small.count = ns;
     big.count = nb;
+    lod.count = nl;
+    lod.instanceMatrix.needsUpdate = true;
     small.instanceMatrix.needsUpdate = true;
     big.instanceMatrix.needsUpdate = true;
   }

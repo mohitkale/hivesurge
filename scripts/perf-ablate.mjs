@@ -58,6 +58,7 @@ async function measure(quality) {
         fog: true,
         props: 1,
         particles: 800,
+        crowdLodAt: 300,
       },
       med: {
         shadows: false,
@@ -66,6 +67,7 @@ async function measure(quality) {
         fog: false,
         props: 0.5,
         particles: 300,
+        crowdLodAt: 120,
       },
       low: {
         shadows: false,
@@ -74,6 +76,7 @@ async function measure(quality) {
         fog: false,
         props: 0,
         particles: 120,
+        crowdLodAt: 0,
       },
     };
     const set = (q, pr) => {

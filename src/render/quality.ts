@@ -25,10 +25,23 @@ export interface TierSettings {
   props: 1 | 0.5 | 0;
   /** Live particle budget. */
   particles: number;
+  /**
+   * Crowd LOD: with more than this many units of a side on screen, workers and wasps in the
+   * far half of the lane use a ~20-triangle proxy instead of the full model.
+   */
+  crowdLodAt: number;
 }
 
 export const TIER_SETTINGS: Record<QualityTier, TierSettings> = {
-  high: { shadows: false, maxPixelRatio: 2, lighting: 'lit', fog: true, props: 1, particles: 800 },
+  high: {
+    shadows: false,
+    maxPixelRatio: 2,
+    lighting: 'lit',
+    fog: true,
+    props: 1,
+    particles: 800,
+    crowdLodAt: 300,
+  },
   med: {
     shadows: false,
     maxPixelRatio: 1,
@@ -36,6 +49,7 @@ export const TIER_SETTINGS: Record<QualityTier, TierSettings> = {
     fog: false,
     props: 0.5,
     particles: 300,
+    crowdLodAt: 120,
   },
   low: {
     shadows: false,
@@ -44,6 +58,7 @@ export const TIER_SETTINGS: Record<QualityTier, TierSettings> = {
     fog: false,
     props: 0,
     particles: 120,
+    crowdLodAt: 0,
   },
 };
 

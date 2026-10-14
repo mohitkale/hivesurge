@@ -37,6 +37,8 @@ describe('quality tiers (fix/perf-lowend)', () => {
     expect(m.particles).toBeGreaterThan(l.particles);
     expect(h.props).toBeGreaterThan(m.props);
     expect(m.props).toBeGreaterThan(l.props);
+    expect(h.crowdLodAt).toBeGreaterThan(m.crowdLodAt);
+    expect(m.crowdLodAt).toBeGreaterThan(l.crowdLodAt);
     expect(l.lighting).toBe('unlit');
     expect([h, m, l].some((t) => t.shadows)).toBe(false);
   });
