@@ -1,6 +1,6 @@
 # PR 064: feat/m2-revive-threshold
 
-Implements design PR 049 (merged, `26851de`; spec docs/design/revive-m2.md). Base: main `57a32a0` (includes 048 gem revive).
+Implements design PR 049 (merged, `26851de`; spec docs/design/revive-m2.md). Base: main `81d22ae` (includes 048 gem revive).
 
 ## Changes
 
@@ -46,4 +46,4 @@ The threshold only gates whether an offer opens (`shouldOfferRevive`, plus 047's
 
 ## Checks
 
-npx eslint (v10.12.0) ok · tests 266/266 · build ok · size budget: initial JS 2.34 KiB gzip, dist ~907 KiB. `prettier --check .` flags 3 files that came from main (`playtests/m2-12/results/post-m2-26/sim-sessions.json`, `playtests/m2-19a-2026-10-14.md`, `prs/059-qa-m2-19a-emulation-perf.md`). This PR doesn't touch them.
+npx eslint (v10.12.0) + prettier ok · tests 266/266 · build ok · size budget: initial JS 2.34 KiB gzip, dist ~907 KiB. Base: main `81d22ae`.
