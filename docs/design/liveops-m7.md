@@ -4,15 +4,15 @@ Owner: DES. Implements in M7-3, all driven by remote config (M6-5), tested with 
 
 ## Daily targets (3 per day, reroll 1 free per day)
 
-| Pool target                                                                                        | Count | Reward    |
-| -------------------------------------------------------------------------------------------------- | ----- | --------- |
-| Win battles                                                                                        | 3     | 100 coins |
-| Launch queens                                                                                      | 5     | 80 coins  |
-| Pass x3 gates                                                                                      | 10    | 80 coins  |
-| Defeat hornets                                                                                     | 30    | 100 coins |
-| Earn 3 stars on any level                                                                          | 2     | 5 gems    |
-| Open chests                                                                                        | 2     | 60 coins  |
-| Completing all 3 grants a Daily bonus: Wood chest + 50 pass XP. Each target also gives 20 pass XP. |
+| Pool target                                                                                                                                                                                      | Count | Reward    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----- | --------- |
+| Win battles                                                                                                                                                                                      | 3     | 100 coins |
+| Launch queens                                                                                                                                                                                    | 15    | 80 coins  |
+| Pass an x3 gate in battles (stage 3+)                                                                                                                                                            | 3     | 80 coins  |
+| Defeat hornets (stage 3+)                                                                                                                                                                        | 30    | 100 coins |
+| Earn 2+ stars on any level                                                                                                                                                                       | 2     | 5 gems    |
+| Open chests                                                                                                                                                                                      | 2     | 60 coins  |
+| Targets marked stage 3+ are only drawn once the player has cleared stage 3 (M5-1 validation). Completing all 3 grants a Daily bonus: Wood chest + 50 pass XP. Each target also gives 20 pass XP. |
 
 ## Weekly targets (5 per week, Monday reset)
 

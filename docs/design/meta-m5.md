@@ -51,7 +51,7 @@ Each bee is a loadout card that modifies the cannon or spawns. Rarity sets drop 
 - One copy of each bee. Total power `P = sum(bee level x rarityWeight)` with weights C1 R2 E3 L4 is shown on screen and used by matchmaking for events.
 - Balance rule: a full max loadout must not lift aim-bot win rate on a level more than 25 points.
 - **Enemy scaling is easier-only (catch-up help).** Stage difficulty comes only from the stage curve (levels-m2 bands and generator formulas). Loadout power never makes enemies harder, so upgrading or spending always pays off. Below expectedP, the generator scales enemy hp total E by `clamp(1 + 0.01 x (P - expectedP(n)), 0.95, 1.00)`. At or above expectedP the scale is exactly 1.00; the most it eases is 5%. The cap is 5%, not 10%: in the M5-2a sim (win-sens 2.0), 10% easing let no-ads players clear about 25 more stages by day 30 than ad-watchers (159 vs 132), so catch-up overshot and became a reward for not progressing. Catch-up must only narrow the gap, never reverse it.
-- **Loss-streak assist (optional, stacks with the above):** after 2 consecutive losses on the same stage, E x 0.95. After 3 or more, E x 0.90. The combined floor is 0.85 (at most 15% easier, only while stuck). It resets on a win or a stage change, is shown as a small "Wind at your back" leaf icon, and is never sold or affected by purchases. Remote config `difficulty.lossAssist = [[2, 0.95], [3, 0.90]]`, `difficulty.scaleFloor = 0.85`.
+- **Loss-streak assist (optional, stacks with the above):** after 2 consecutive losses on the same stage, E x 0.95. After 3 or more, E x 0.90. The combined floor is 0.85 (at most 15% easier, only while stuck). It applies to every stage, including handmade L2 to L5 (wave counts, trickle rate, boss burst and repeat counts; the Matriarch is not scaled), while catch-up easing stays generator-only (n >= 6). It resets on a win or a stage change, is shown as a small "Wind at your back" leaf icon, and is never sold or affected by purchases. Remote config `difficulty.lossAssist = [[2, 0.95], [3, 0.90]]`, `difficulty.scaleFloor = 0.85`.
 
 ### expectedP(n): expected player power at stage n
 
@@ -88,7 +88,7 @@ Config: ship as remote config `difficulty.expectedP` (array of [n, P] points).
 
 ## Chests
 
-4 chest slots. Every win grants 1 chest if a slot is free (losses with >= 60% nest damage grant a Wood chest at 25% chance). Unlock one at a time.
+4 chest slots. Every win grants 1 chest if a slot is free (losses with >= 60% nest damage grant a Wood chest at 25% chance). Unlock one at a time. **The first win chest after the FTUE unlocks instantly** (M5-1 validation: otherwise a new player reaches the stage-3 "Equip!" prompt before any win chest has opened).
 
 | Chest                                                                                                                                   | Source                    | Unlock time | Gem skip | Cards | Coins      | Odds per card (C/R/E/L)        |
 | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ----------- | -------- | ----- | ---------- | ------------------------------ |
@@ -98,7 +98,7 @@ Config: ship as remote config `difficulty.expectedP` (array of [n, P] points).
 | Royal                                                                                                                                   | season pass, 7-day streak | 8 h         | 35       | 20    | 500        | 50/30/15/5 + 1 guaranteed Epic |
 | Gem skip rate: 1 gem per 5 min remaining, rounded up (table shows full price). Rewarded ad halves remaining time, max 3 per day (M5-5). |
 
-- Pity: Legendary guaranteed by 40th chest opened without one; counter visible in chest info.
+- Pity: Legendary guaranteed by 40th **chest** opened without one (counted per chest, not per card); counter visible in chest info. Note (M5-1 validation, `validation-m5.md`): the M5-2a sim counts pity per card and has no boss Gold chest, so the expectedP table below is provisional until MON re-runs with per-chest pity and the boss Gold chest (expect about 10% lower).
 - New bee drop protection: first Epic and Legendary are always a bee the player does not own.
 - Odds displayed on every chest tap (icon "i"), in-store, and on purchase screens. Free daily chest at the hive: Wood, every 24 h.
 
@@ -106,13 +106,13 @@ Config: ship as remote config `difficulty.expectedP` (array of [n, P] points).
 
 Simple screen with 4 rooms, each upgrades with coins and a build timer (one build at a time; second builder via gems).
 
-| Room                               | Effect per level                   | Max | L1 cost / time | L5 cost / time |
-| ---------------------------------- | ---------------------------------- | --- | -------------- | -------------- |
-| Honey Store                        | idle coins 20/h per level, cap 8 h | 10  | 200 / 5 min    | 4000 / 6 h     |
-| Brood Cell                         | queen charge -0.2 s per level      | 5   | 500 / 30 min   | 8000 / 12 h    |
-| Wax Walls                          | hive hp +3 per level               | 10  | 300 / 10 min   | 5000 / 8 h     |
-| Pollen Lab                         | +1 card per chest every 2 levels   | 6   | 800 / 1 h      | 12000 / 24 h   |
-| Room level cap = player level / 2. |
+| Room                                                                                                            | Effect per level                   | Max | L1 cost / time | L5 cost / time |
+| --------------------------------------------------------------------------------------------------------------- | ---------------------------------- | --- | -------------- | -------------- |
+| Honey Store                                                                                                     | idle coins 20/h per level, cap 8 h | 10  | 200 / 5 min    | 4000 / 6 h     |
+| Brood Cell                                                                                                      | queen charge -0.2 s per level      | 5   | 500 / 30 min   | 8000 / 12 h    |
+| Wax Walls                                                                                                       | hive hp +3 per level               | 10  | 300 / 10 min   | 5000 / 8 h     |
+| Pollen Lab                                                                                                      | +1 card per chest every 2 levels   | 6   | 800 / 1 h      | 12000 / 24 h   |
+| Room level cap = player level / 2. TODO (M5-1b): account XP curve (`playerLevel` from `xp`) is not specced yet. |
 
 ## Wireframes (ASCII)
 
