@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { PerfStats, perfEnabledFromUrl, stressCountFromUrl } from '../src/ui/perfStats';
 
@@ -21,10 +22,27 @@ describe('perf overlay stats (M2-15)', () => {
   });
 
   it('is opt-in via ?debug; ?stress is clamped', () => {
-    expect(perfEnabledFromUrl('')).toBe(false);
-    expect(perfEnabledFromUrl('?debug')).toBe(true);
+    expect(perfEnabledFromUrl('', true)).toBe(false);
+    expect(perfEnabledFromUrl('?debug', true)).toBe(true);
     expect(stressCountFromUrl('?stress=500')).toBe(500);
     expect(stressCountFromUrl('?stress=99999')).toBe(1000);
     expect(stressCountFromUrl('?stress=abc')).toBe(0);
+  });
+});
+
+describe('perf overlay is dev-only (PR 071 review nit)', () => {
+  it('production ignores ?debug', () => {
+    expect(perfEnabledFromUrl('?debug', false)).toBe(false);
+    expect(perfEnabledFromUrl('?debug&quality=low&stress=320', false)).toBe(false);
+  });
+  it('game.ts only builds the overlay and the F3 toggle behind import.meta.env.DEV', () => {
+    const src = readFileSync(new URL('../src/game.ts', import.meta.url), 'utf8');
+    expect(src).toMatch(
+      /perfOverlay: PerfOverlay \| null = import\.meta\.env\.DEV\s*\?\s*new PerfOverlay/,
+    );
+    expect(src).toMatch(/if \(import\.meta\.env\.DEV && this\.perfOverlay\) \{[\s\S]*?'F3'/);
+    // Exactly one construction, and no unguarded F3 handler elsewhere.
+    expect(src.match(/new PerfOverlay\(/g)).toHaveLength(1);
+    expect(src.match(/'F3'/g)).toHaveLength(1);
   });
 });
