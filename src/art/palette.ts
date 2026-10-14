@@ -18,7 +18,7 @@ export const ART = {
   crownGem: '#2ec4b6',
   // Wasp team (rival)
   waspBody: '#2b1636',
-  waspBand: '#ff7a1a',
+  waspBand: '#ff7f3a',
   waspHead: '#4a1d63',
   waspWing: '#b9a3d9',
   waspEye: '#ff3d3d',

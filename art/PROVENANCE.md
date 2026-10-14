@@ -51,7 +51,7 @@ Date = first commit of the file. sha256 = first 16 hex chars.
 | `art/models/biome-orchard-mushroom.glb`     | 3280  | `14605c631175de1d` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-orchard-pearTree.glb`     | 3332  | `51faa193ef3fe30b` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/biome-orchard-pebble.glb`       | 2524  | `96311ac6d8f15625` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
-| `art/models/prop-nest.glb`                  | 6260  | `06a8c63f25b22758` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
+| `art/models/prop-nest.glb`                  | 6260  | `2966158c8fbb9454` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/skin-bee-blossom.glb`           | 6816  | `2d09a051099ac421` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/skin-bee-classic.glb`           | 6048  | `75ddb383481507b2` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/skin-bee-frost.glb`             | 6616  | `8228196e75818103` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
@@ -117,6 +117,6 @@ Date = first commit of the file. sha256 = first 16 hex chars.
 | `public/assets/icons/wasp.svg`              | 588   | `bc71713242ab9ff2` | `art/tools/make-icons.py`                            | 2026-10-10 |
 | `public/assets/models/prop-cannon.glb`      | 5468  | `a3ce8aa54f57a2be` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `public/assets/models/unit-bee.glb`         | 6048  | `75ddb383481507b2` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
-| `public/assets/models/unit-hornet.glb`      | 4436  | `9da99e0ad4e7aab0` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
+| `public/assets/models/unit-hornet.glb`      | 4780  | `dfbb5600a1d58a15` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `public/assets/models/unit-queen.glb`       | 6776  | `e6e84a6198429876` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
-| `public/assets/models/unit-wasp.glb`        | 4240  | `ff97f7d2f41bff9a` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
+| `public/assets/models/unit-wasp.glb`        | 4600  | `9cf861ea6e1a3840` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
