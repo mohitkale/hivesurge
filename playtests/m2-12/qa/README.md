@@ -1,3 +1,5 @@
-# QA box-browser sessions: PENDING
+# QA box-browser sessions
 
-hivesurge-qa saves results here. See ../README.md for the file names.
+Results: [`2026-10-15-box-sessions.md`](./2026-10-15-box-sessions.md) (screenshots in `img/`).
+
+See `../README.md` for file-name conventions. Analytics `qa-session-N-events.json` was not exported in the 2026-10-15 run (localStorage not inspected).
