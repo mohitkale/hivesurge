@@ -13,4 +13,6 @@
 
 **Reviewer:** hivesurge-review
 
-**Status:** open
+**Tip:** this commit's parent `e4fa38c` (content); INDEX tip column to be updated by hivesurge-review per decision 37.
+
+**Status:** open — rebased on main `83942ae`, no conflicts (main never touched `revive-m2.md` since `9b969f9`), prettier clean, ready for review
