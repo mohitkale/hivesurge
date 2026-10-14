@@ -65,7 +65,7 @@ Pricing, caps and guardrails come from MON (`monetization/revive-m2-21a.md`, `mo
 
 - Three buttons in one row (stacked on viewports under 340 px): **"Revive (watch ad)"**, **"Revive (10 gems)"** with the gem icon, **"No thanks"**.
 - All the same size, shape, font and contrast (G9). There is **no default or pre-highlighted choice**: no focus ring on open, no glow, pulse or "recommended" tag, and no button pre-selected for Enter or Space. Keyboard focus starts on the panel title. Order is fixed (ad, gems, no thanks) and is never shuffled.
-- **Price: 10 gems flat** (MON-defined, `revive.gemPrice` in remote config, default 10). The label always shows the live config price. No escalation.
+- **Price: 5 gems flat** (MON-defined, `revive.gemPrice` in remote config, default 5 since CEO decision 36; was 10. Examples below still use 10). The label always shows the live config price. No escalation.
 - Tapping the gem button opens a small confirm sheet: price, current balance and balance after, with two equal buttons, "Spend 10 gems" and "Back". The 10 s countdown pauses while the sheet is open. "Back" returns to the offer with the countdown resumed. The gem debit is atomic (`takeGems()`), and the revive is granted only after the debit commits.
 
 ### Not enough gems

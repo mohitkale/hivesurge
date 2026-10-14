@@ -13,14 +13,14 @@ Test mode only.
 
 ## Recommendation
 
-| Item          | Value                                                                                                                                                                                                                       |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Price         | **10 gems, flat** (current). **Recommended: lower to 5 gems** (about $0.21) after the 25% threshold, pending CEO approval; ships together with ENG's `reviveGems.ts` change. No escalation within a battle, session or day. |
-| Per battle    | **1 revive total**, shared across ad, free fallback and gem (`revives === 0` already enforced by `world.revive()`)                                                                                                          |
-| Per session   | ≤ 2 gem revives                                                                                                                                                                                                             |
-| Per day       | ≤ 3 gem revives (the ad revive keeps its own 10/day cap in `ad-placements.md`)                                                                                                                                              |
-| Eligibility   | Same as `shouldOfferRevive`: not in FTUE, `revives === 0`, nest damage ≥ `revive.minNestDamage` (0.25 since PR 049; was 50%). The gem button only appears inside that same offer.                                           |
-| Remote config | `revive.gemPrice`, `revive.gemCaps` (session/day); values in `monetization/revive-gem.json`                                                                                                                                 |
+| Item          | Value                                                                                                                                                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Price         | **5 gems, flat** (about $0.21 at the gems_small rate). Set by **CEO decision 36** (2026-10-14) as the remote config default `revive.gemPrice` (was 10); caps unchanged; **revisit after M2-12 data**. Ships together with ENG's `reviveGems.ts` change. No escalation within a battle, session or day. |
+| Per battle    | **1 revive total**, shared across ad, free fallback and gem (`revives === 0` already enforced by `world.revive()`)                                                                                                                                                                                     |
+| Per session   | ≤ 2 gem revives                                                                                                                                                                                                                                                                                        |
+| Per day       | ≤ 3 gem revives (the ad revive keeps its own 10/day cap in `ad-placements.md`)                                                                                                                                                                                                                         |
+| Eligibility   | Same as `shouldOfferRevive`: not in FTUE, `revives === 0`, nest damage ≥ `revive.minNestDamage` (0.25 since PR 049; was 50%). The gem button only appears inside that same offer.                                                                                                                      |
+| Remote config | `revive.gemPrice`, `revive.gemCaps` (session/day); values in `monetization/revive-gem.json`                                                                                                                                                                                                            |
 
 ## Interaction with the existing ad and free revive (PR 030)
 
@@ -79,7 +79,7 @@ At the old 50% threshold these were 0.8 eligible defeats/day and 96–100% cover
   - The ad revive stays free and is the primary path (G8).
   - The 3/day gem cap bounds spend at 30 gems/day.
   - "Revive all with gems" overstates real demand.
-- **Recommendation:** lower `revive.gemPrice` to **5 gems** via remote config (C8). That restores 98–100% coverage, or 38–43% without weekly gems. Alternatively, keep 10 and accept the pressure only if playtests show most players use the ad revive. This needs a MON/DES decision. `revive-gem.json` is unchanged at 10 until then (G19 passes either way).
+- **Recommendation:** lower `revive.gemPrice` to **5 gems** via remote config (C8). That restores 98–100% coverage, or 38–43% without weekly gems. Alternatively, keep 10 and accept the pressure only if playtests show most players use the ad revive. **Decided: CEO decision 36 sets 5 gems** (`revive-gem.json` `price_gems: 5`); revisit after M2-12 data.
 - No revenue is projected.
 
 ## Conditions for ENG (GO with conditions)
@@ -98,4 +98,4 @@ At the old 50% threshold these were 0.8 eligible defeats/day and 96–100% cover
 - Confirm the three-button offer layout in `revive-m2.md` (a design doc update) and the copy for the disabled-gem state.
 - Event final-level flag (M7-3/liveops) for C6.
 
-**Recommendation (PR 063, pending CEO approval):** lower `revive.gemPrice` default to 5 gems. At the 25% threshold, 5 gems restores 98–100% coverage with weekly gems (38–43% without), matching the original bar; 10 gems would cover only 49–55%.
+**Decision 36 (CEO, 2026-10-14): `revive.gemPrice` default is 5 gems** (was the PR 063 recommendation); caps unchanged; revisit after M2-12 data. At the 25% threshold, 5 gems restores 98–100% coverage with weekly gems (38–43% without), matching the original bar; 10 gems would cover only 49–55%.
