@@ -1,4 +1,4 @@
-# PR pending: design/m5-1b-expectedp-refit (base: main @ d51934a, includes 126a7bc)
+# PR 088: design/m5-1b-expectedp-refit
 
 **Summary:** M5-1b specs plus the expectedP refit from the M5-2a rerun (`monetization/m5-2a-rerun` @ `4db39df`).
 
