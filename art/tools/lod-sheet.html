@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <body style="margin: 0; background: #fff1dc">
+    <canvas id="c" width="500" height="300"></canvas>
+    <script type="module">
+      // Crowd LOD proposal sheet: full worker (left) vs crowd LOD (right), large 3/4 view (crowd-scale check: art/screenshots/perf/readability-*-lod-crop.png).
+      import * as THREE from 'three';
+      import { beeGeometry, beeCrowdGeometry } from '/src/art/models.ts';
+      const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+      r.outputColorSpace = THREE.SRGBColorSpace;
+      r.setScissorTest(true);
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+      const draw = (geo, x, y, size, cam) => {
+        const s = new THREE.Scene();
+        s.background = new THREE.Color('#7cc46a');
+        s.add(new THREE.HemisphereLight('#fff6e0', '#6b8f4e', 1.6));
+        const d = new THREE.DirectionalLight('#fff', 1.6);
+        d.position.set(-6, 14, 6);
+        s.add(d);
+        const m = new THREE.Mesh(geo, mat);
+        m.rotation.y = Math.PI;
+        s.add(m);
+        const c = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+        c.position.set(...cam);
+        c.lookAt(0, 0.1, 0);
+        r.setViewport(x, 300 - y - size, size, size);
+        r.setScissor(x, 300 - y - size, size, size);
+        r.render(s, c);
+      };
+      [beeGeometry(1), beeCrowdGeometry(1)].forEach((g, i) => {
+        draw(g, 10 + i * 250, 10, 230, [2.2, 2.4, 3.2]);
+      });
+      document.title = 'ready';
+    </script>
+  </body>
+</html>

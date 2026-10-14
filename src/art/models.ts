@@ -152,6 +152,40 @@ export function beeGeometry(
   return bake(parts, scale);
 }
 
+/**
+ * PROPOSED (needs DES sign-off): crowd LOD for the worker bee, <=150 tris. Same silhouette and
+ * palette as `beeGeometry` (striped amber abdomen, dark head, pale wings, team-teal antenna tips)
+ * with fewer segments, single-segment antenna stalks and no cheek dabs, so it still reads as a bee at 16-24 px. Eng
+ * owns the switch (when to use it); nothing references it yet.
+ */
+export function beeCrowdGeometry(scale = 1): THREE.BufferGeometry {
+  const abdomen = sphere(0.5, 6, 5);
+  abdomen.scale(1, 0.92, 1.2);
+  at(abdomen, 0, 0, -0.12);
+  const parts: Part[] = [
+    { geo: abdomen, color: stripes(ART.beeBody, ART.beeStripe, 0.3, 0.1, -0.62, 0.3, 0.34) },
+    { geo: at(sphere(0.3, 5, 3), 0, 0.06, 0.55), color: ART.beeHead },
+    ...wingPair(0.8, 0.32, 0.42, -0.35, ART.beeWing, false),
+  ];
+  for (const side of [-1, 1]) {
+    // One stalk per side (same placement as the full bee) so the teal tips sit on the head.
+    const ant = new THREE.CylinderGeometry(0.03, 0.03, 0.34, 3);
+    ant.rotateX(-0.5);
+    ant.rotateZ(side * -0.4); // splay outwards so the tips sit wide, like the full bee
+    parts.push({ geo: at(ant, side * 0.1, 0.36, 0.7), color: ART.beeStripe });
+    // Tip exactly on the stalk's upper end (same rotations as the stalk).
+    const top = new THREE.Vector3(0, 0.17, 0)
+      .applyAxisAngle(new THREE.Vector3(1, 0, 0), -0.5)
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), side * -0.4)
+      .add(new THREE.Vector3(side * 0.1, 0.36, 0.7));
+    parts.push({
+      geo: at(new THREE.TetrahedronGeometry(0.08), top.x, top.y, top.z),
+      color: ART.beeTeam,
+    });
+  }
+  return bake(parts, scale);
+}
+
 /** Queen: bigger bee, gold crown with teal gems, cape of warm amber. */
 export function queenGeometry(scale = 1): THREE.BufferGeometry {
   const base = beeGeometry(1, ART.queenBody, ART.queenStripe);
@@ -182,7 +216,8 @@ export function waspGeometry(
   head: string = ART.waspHead,
   horns = false,
 ): THREE.BufferGeometry {
-  const abdomen = new THREE.ConeGeometry(0.3, 0.85, 6, 2);
+  // 4 height segments (was 2): the bands are per-face colours, so 2 rows aliased them away.
+  const abdomen = new THREE.ConeGeometry(0.3, 0.85, 6, 4);
   abdomen.rotateX(-Math.PI / 2); // tip points backwards (-Z)
   at(abdomen, 0, 0, -0.42);
   const thorax = new THREE.OctahedronGeometry(0.24);
@@ -199,7 +234,10 @@ export function waspGeometry(
   at(headG, 0, 0.06, 0.45);
   const sting = at(new THREE.ConeGeometry(0.05, 0.22, 3).rotateX(-Math.PI / 2), 0, 0, -0.95);
   const parts: Part[] = [
-    { geo: abdomen, color: stripes(body, band, 0.2, 0.0, -0.8, -0.15) },
+    // Colours are per face, so the band period must match the cone rows: 4 rows of 0.2125,
+    // period 0.425 with half dark = rows 1 and 3 (tail tip + mid band) in the band colour. The old
+    // 0.2 period aliased against 0.2125-high rows, which left almost no band on screen.
+    { geo: abdomen, color: stripes(body, band, 0.425, 0.845, -0.86, -0.15, 0.5) },
     { geo: thorax, color: body },
     { geo: waist, color: body },
     { geo: headG, color: head },
