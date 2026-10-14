@@ -1,8 +1,7 @@
-# PR 060 — art/starter-skin (base: main @ eab648e)
+# PR 064 — art/starter-skin (base: main @ eab648e)
 
-> **Number used provisionally.** While this branch was being built, 058 (monetization) and 059 (qa) were claimed on
-> main (now at 7673566), so 060 is next. Claiming needs a commit to main, which hivesurge-art does not make. The INDEX owner
-> should add: `| 060 | art/starter-skin | hivesurge-art | <tip> | open (claimed) | 060-art-starter-skin.md |`
+> **Number claimed:** 064, by a one-line INDEX commit on main (`0722f67`, decision 37). This branch first used 058, then
+> 060 provisionally; both were taken by other teams (060 went to design/m2-28).
 
 **Why:** PR 051 (`fix/m2-14-m2-25-qa-g4-starter-skin`, merged) makes the Starter Pack grant
 `CATALOG.starter_pack.grants.skin = 'starter'`, stored in `save.skins`. `src/art/skins.ts` had no `'starter'` skin, so there
