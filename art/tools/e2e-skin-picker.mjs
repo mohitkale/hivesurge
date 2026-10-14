@@ -1,4 +1,3 @@
-/* eslint-env node */
 /* global process */
 // Headless e2e: grant starter (shop) -> open picker -> select -> battle. Screenshots to art/screenshots/skins/.
 const puppeteer = (await import(process.env.PUPPETEER_MODULE)).default;
