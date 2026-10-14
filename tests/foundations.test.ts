@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Analytics, ANALYTICS_MAX, MemoryStore } from '../src/analytics/analytics';
 import { LocalSaveBackend, mergeSaves, defaultSave, SaveStore } from '../src/platform/save';
-import { QualityScaler } from '../src/render/quality';
+import { AutoQuality } from '../src/render/quality';
 import { CB_COLORS, COLORS, palette } from '../src/ui/theme';
 
 describe('analytics', () => {
@@ -62,18 +62,19 @@ describe('save store', () => {
 });
 
 describe('quality scaler', () => {
-  it('drops pixel ratio under sustained slow frames and recovers', () => {
-    const q = new QualityScaler(2);
+  it('drops a tier (and pixel ratio) under sustained slow frames and recovers', () => {
+    const q = new AutoQuality('high', false, 2);
     expect(q.pixelRatio).toBe(2);
     let changed = false;
-    for (let i = 0; i < 200 && !changed; i++) changed = q.sample(33);
+    for (let i = 0; i < 400 && !changed; i++) changed = q.sample(50);
     expect(changed).toBe(true);
-    expect(q.pixelRatio).toBe(1.5);
+    expect(q.tier).toBe('med');
+    expect(q.pixelRatio).toBe(1);
     for (let i = 0; i < 2000; i++) q.sample(8);
-    expect(q.pixelRatio).toBe(2);
+    expect(q.tier).toBe('high');
   });
   it('never exceeds the device ratio', () => {
-    const q = new QualityScaler(1);
+    const q = new AutoQuality('high', false, 1);
     for (let i = 0; i < 2000; i++) q.sample(5);
     expect(q.pixelRatio).toBe(1);
   });

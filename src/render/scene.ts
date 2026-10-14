@@ -24,6 +24,7 @@ import {
 import { BIOMES, layoutBiome, type BiomeKit } from '../art/biomes';
 import { scaledModel, type ModelLibrary } from '../art/glbLoader';
 import { DEFAULT_SKIN, skinGeometry, type BeeSkin } from '../art/skins';
+import { TIER_SETTINGS, type TierSettings } from './quality';
 
 import { COLORS, type Palette } from '../ui/theme';
 
@@ -95,6 +96,10 @@ export class GameScene {
     models: ModelLibrary | null = null,
     biome: BiomeKit = BIOMES.clover,
     skin: BeeSkin | null = null,
+    quality: { antialias: boolean; settings: TierSettings } = {
+      antialias: true,
+      settings: TIER_SETTINGS.high,
+    },
   ) {
     this.models = models;
     // QA M2-19a: a non-classic skin uses the procedural skinned bee (no GLB variants yet).
@@ -105,18 +110,22 @@ export class GameScene {
     this.level = level;
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: true,
+      // MSAA is fixed for the life of the GL context; it is off on software renderers.
+      antialias: quality.antialias,
       powerPreference: 'high-performance',
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.scene.background = new THREE.Color(this.biome.sky);
-    this.scene.fog = new THREE.Fog(this.biome.fog, 45, 75);
+    this.fog = new THREE.Fog(this.biome.fog, 45, 75);
+    this.scene.fog = this.fog;
 
-    this.scene.add(new THREE.HemisphereLight(this.biome.light[0], this.biome.light[1], 1.6));
-    const sun = new THREE.DirectionalLight('#ffffff', 1.6);
-    sun.position.set(-6, 14, 6);
-    this.scene.add(sun);
+    this.lights.push(
+      new THREE.HemisphereLight(this.biome.light[0], this.biome.light[1], 1.6),
+      new THREE.DirectionalLight('#ffffff', 1.6),
+    );
+    this.lights[1].position.set(-6, 14, 6);
+    this.scene.add(...this.lights);
 
     this.buildLane();
     this.bees = {
@@ -137,6 +146,58 @@ export class GameScene {
     this.buildNest();
     this.buildHive();
     level.gates.forEach((g) => this.buildGate(g));
+    this.applyQuality(quality.settings);
+  }
+
+  private readonly fog: THREE.Fog;
+  private readonly lights: THREE.Light[] = [];
+  private readonly scatterProps: THREE.InstancedMesh[] = [];
+  private readonly backdropProps: THREE.InstancedMesh[] = [];
+  private readonly unlitTwins = new Map<THREE.Material, THREE.MeshBasicMaterial>();
+  private readonly litOf = new Map<THREE.Material, THREE.Material>();
+  /** Tier settings currently applied (debug overlay, tests). */
+  quality: TierSettings = TIER_SETTINGS.high;
+
+  /**
+   * Apply a quality tier (fix/perf-lowend): fog, biome props, lit/unlit materials and the
+   * particle budget. Pixel ratio is applied separately (setPixelRatio).
+   */
+  applyQuality(q: TierSettings): void {
+    this.quality = q;
+    this.scene.fog = q.fog ? this.fog : null;
+    for (const m of this.scatterProps) m.visible = q.props > 0;
+    for (const m of this.backdropProps) m.visible = q.props >= 1;
+    const unlit = q.lighting === 'unlit';
+    for (const l of this.lights) l.visible = !unlit;
+    this.scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || Array.isArray(mesh.material)) return;
+      mesh.material = unlit
+        ? this.unlitOf(mesh.material)
+        : (this.litOf.get(mesh.material) ?? mesh.material);
+    });
+    this.particles.setBudget(q.particles);
+  }
+
+  /** MeshBasic twin of a lit material: same colour/map/vertex colours/shader patch, no lighting. */
+  private unlitOf(m: THREE.Material): THREE.Material {
+    if (!(m instanceof THREE.MeshLambertMaterial)) return m;
+    let b = this.unlitTwins.get(m);
+    if (!b) {
+      b = new THREE.MeshBasicMaterial({
+        color: m.color,
+        map: m.map,
+        vertexColors: m.vertexColors,
+        transparent: m.transparent,
+        opacity: m.opacity,
+        side: m.side,
+      });
+      b.onBeforeCompile = m.onBeforeCompile;
+      b.customProgramCacheKey = m.customProgramCacheKey;
+      this.unlitTwins.set(m, b);
+      this.litOf.set(b, m);
+    }
+    return b;
   }
 
   private buildLane(): void {
@@ -172,18 +233,21 @@ export class GameScene {
     const propMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
     const slots: Record<string, THREE.Matrix4[]> = {};
     const up = new THREE.Vector3(0, 1, 0);
+    // Backdrop pieces (well outside the lane) get their own meshes so 'med' can drop them.
+    const backdropX = L.laneWidth / 2 + 3;
     for (const p of layoutBiome(kit, L.laneWidth, L.laneLength))
-      (slots[p.id] ??= []).push(
+      (slots[`${Math.abs(p.x) > backdropX ? 'b' : 's'}:${p.id}`] ??= []).push(
         new THREE.Matrix4().compose(
           new THREE.Vector3(p.x, 0, p.z),
           new THREE.Quaternion().setFromAxisAngle(up, p.rotY),
           new THREE.Vector3(p.scale, p.scale, p.scale),
         ),
       );
-    for (const [id, mats] of Object.entries(slots)) {
-      const inst = new THREE.InstancedMesh(kit.props[id](), propMat, mats.length);
+    for (const [key, mats] of Object.entries(slots)) {
+      const inst = new THREE.InstancedMesh(kit.props[key.slice(2)](), propMat, mats.length);
       mats.forEach((m, k) => inst.setMatrixAt(k, m));
       this.scene.add(inst);
+      (key[0] === 'b' ? this.backdropProps : this.scatterProps).push(inst);
     }
   }
 
@@ -361,6 +425,20 @@ export class GameScene {
       pulse: 0,
       label,
     });
+  }
+
+  /** Unmasked WebGL renderer string ('' if unavailable), probed once on a throwaway canvas. */
+  static probeRendererName(): string {
+    try {
+      const gl = document.createElement('canvas').getContext('webgl2');
+      if (!gl) return '';
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      const name = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      return name;
+    } catch {
+      return '';
+    }
   }
 
   setPixelRatio(r: number): void {

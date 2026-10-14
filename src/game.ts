@@ -25,7 +25,8 @@ import {
 import { CATALOG, type Sku } from './platform/platform';
 import { Analytics } from './analytics/analytics';
 import type { SaveData, SaveStore } from './platform/save';
-import { QualityScaler } from './render/quality';
+import { AutoQuality, initialTier, qualityOverrideFromUrl } from './render/quality';
+import { FixedStepper } from './sim/fixedStep';
 import { applyTheme, palette } from './ui/theme';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
@@ -65,7 +66,13 @@ export class Game {
   private readonly store: SaveStore;
   private readonly save: SaveData;
   private readonly analytics = new Analytics(localStorage);
-  private readonly quality = new QualityScaler(window.devicePixelRatio || 1);
+  /** fix/perf-lowend: auto quality tiers (?quality=low|med|high pins one). */
+  private readonly quality: AutoQuality;
+  private readonly qualityPinned = qualityOverrideFromUrl(location.search);
+  private readonly rendererName = GameScene.probeRendererName();
+  /** Fixed-step sim on real time, pumped by rAF and by a timer (not tied to render fps). */
+  private readonly stepper = new FixedStepper(SIM_DT);
+  private simLast = performance.now();
   private world: World;
   private scene: GameScene;
   /** M3-5 GLB models once loaded (null until then, or if loading failed). */
@@ -74,7 +81,6 @@ export class Game {
   private readonly pacer: AdPacer;
   private hud: Hud | null = null;
   private phase: Phase = 'title';
-  private acc = 0;
   private last = performance.now();
   private fireSoundTimer = 0;
   private hitHapticAt = 0;
@@ -120,7 +126,14 @@ export class Game {
     this.gemCaps = new GemReviveCaps(this.save.reviveGemDay, this.gemConfig.gemCaps);
     applyTheme(document.documentElement, this.save.settings.colorBlind);
     this.sfx.setMuted(this.save.settings.muted);
+    this.quality = new AutoQuality(
+      initialTier(this.qualityPinned, this.rendererName),
+      this.qualityPinned !== null,
+      window.devicePixelRatio || 1,
+    );
     this.scene = this.makeScene();
+    this.input.setPicker((x, y) => this.scene.pickLaneX(x, y), this.world.maxCannonX);
+    if (import.meta.env.DEV) (window as unknown as { __hsGame: Game }).__hsGame = this;
     this.platform = new MockPlatform(
       this.overlay,
       {
@@ -142,6 +155,13 @@ export class Game {
     if (shouldRunFtue(this.save.ftueDone, this.currentLevel().id)) this.startBattle();
     else this.showTitle();
     requestAnimationFrame(this.frame);
+    // Keeps the sim (and input) moving even when frames take longer than a sim step.
+    setInterval(this.pumpSim, 1000 * SIM_DT);
+  }
+
+  /** Current quality tier (debug overlay, perf bench). */
+  get qualityTier(): string {
+    return this.quality.tier + (this.quality.floor ? '@floor' : '');
   }
 
   private resize(): void {
@@ -157,6 +177,11 @@ export class Game {
       this.models,
       biomeFor(this.world.level.id, location.search),
       skinById(this.equippedSkin()) ?? null,
+      {
+        // MSAA only for the high tier on a hardware renderer; fixed per GL context.
+        antialias: this.quality.tier === 'high',
+        settings: this.quality.settings,
+      },
     );
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
@@ -325,10 +350,11 @@ export class Game {
       this.persist();
     });
     this.hud.muteBtn.textContent = this.save.settings.muted ? '🔇' : '🔊';
-    this.input.aimX = 0;
-    this.input.firing = false;
+    this.input.reset();
+    this.input.setPicker((x, y) => this.scene.pickLaneX(x, y), this.world.maxCannonX);
     this.input.enabled = true;
-    this.acc = 0;
+    this.stepper.reset();
+    this.simLast = performance.now();
     this.phase = 'battle';
     this.platform.gameplayStart();
     if (!this.deferred.isStarted) performance.mark(FIRST_BATTLE_MARK);
@@ -722,10 +748,12 @@ export class Game {
     requestAnimationFrame(this.frame);
     const frameMs = now - this.last;
     const dt = Math.min(0.1, frameMs / 1000);
-    if (this.phase === 'battle' && this.quality.sample(frameMs))
+    if (this.phase === 'battle' && this.quality.sample(frameMs)) {
+      this.scene.applyQuality(this.quality.settings);
       this.scene.setPixelRatio(this.quality.pixelRatio);
+    }
     this.last = now;
-    if (this.phase === 'battle') this.tick(dt);
+    this.pumpSim();
     this.scene.render(this.world, this.phase === 'ad' ? 0 : dt);
     if (this.perfOverlay.visible) {
       const info = this.scene.renderer.info.render;
@@ -735,26 +763,32 @@ export class Game {
     }
   };
 
+  /** Advance the battle sim to real time (fixed SIM_DT steps). Safe to call any time. */
+  private pumpSim = () => {
+    const now = performance.now();
+    const elapsed = (now - this.simLast) / 1000;
+    this.simLast = now;
+    if (this.phase !== 'battle' || document.hidden) return;
+    this.tick(elapsed);
+  };
+
   private tick(dt: number): void {
     const w = this.world;
-    this.input.update(dt, w.maxCannonX, (x, y) => this.scene.pickLaneX(x, y));
-    if (this.input.firing) this.hud?.hideHint();
-    this.acc += dt;
-    let steps = 0;
     const queen = this.input.takeQueen();
-    while (this.acc >= SIM_DT && steps < 5) {
+    const steps = this.stepper.advance(dt, (i) => {
+      this.input.update(SIM_DT, w.maxCannonX);
       const input = {
         aimX: this.input.aimX,
-        firing: this.input.firing,
-        queen: queen && steps === 0,
+        firing: this.input.takeFire(),
+        queen: queen && i === 0,
       };
       if (this.ftue) this.ftue.update(w, input, SIM_DT);
       else autoTriggers(w);
       w.step(input);
-      this.acc -= SIM_DT;
-      steps++;
-    }
-    if (steps === 5) this.acc = 0;
+      return w.outcome === 'playing';
+    });
+    if (steps === 0 && queen) this.input.queueQueen(); // keep the press for the next step
+    if (this.input.firing) this.hud?.hideHint();
     if (this.stress > 0) this.spawnStress(this.stress);
     if (this.ftue) this.updateFtueUi(w);
 
