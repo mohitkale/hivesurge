@@ -42,6 +42,7 @@ import {
   type DebugParams,
 } from './debug/debugParams';
 import { aimTraceEnabledFromUrl } from './debug/aimTraceFlag';
+import { MISS_CUE, MissCue } from './ui/missCue';
 import { autoTriggers } from './sim/triggers';
 import { Ftue, FtueStep, shouldRunFtue } from './ftue/ftue';
 import type { LevelDef } from './sim/types';
@@ -113,6 +114,7 @@ export class Game {
     : null;
   private readonly stress = stressCountFromUrl(location.search);
   private ftueReported = 0;
+  private missCue: MissCue | null = null;
   /** M2-28d `?trace=aim` (production too, see aimTraceFlag.ts); recorder lazy-loaded. */
   private readonly aimTraceOn = aimTraceEnabledFromUrl(location.search);
   private aimTraceMod: Promise<typeof import('./debug/aimTrace')> | null = null;
@@ -387,6 +389,7 @@ export class Game {
     this.world = new World(this.currentLevel());
     this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id) ? new Ftue() : null;
     this.ftueReported = 0;
+    this.missCue = new MissCue(this.world.gateRowY.length);
     if (this.aimTraceOn) this.startAimTrace();
     this.scene = this.makeScene();
     this.resize();
@@ -901,6 +904,9 @@ export class Game {
       }
     }
     this.sfx.swarm(w.bees.count);
+    // M2-31: brief "Missed!" on a gate row a run of bees flew past (MISS_CUE, design to confirm).
+    const missRow = this.missCue?.update(w.rowMisses, dt) ?? -1;
+    if (missRow >= 0) this.float(MISS_CUE.text, w.cannonX, w.gateRowY[missRow]);
     let nestDmg = 0;
     for (const e of w.drainEvents()) {
       switch (e.type) {
