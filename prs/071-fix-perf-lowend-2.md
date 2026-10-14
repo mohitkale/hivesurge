@@ -47,7 +47,7 @@ Med and high wall fps fell because box load rose during the after-runs. CPU per 
 
 ## Tests
 
-`tests/perfLowend.test.ts` (21 → 24 in total, new cases):
+`tests/perfLowend.test.ts` (21 tests; new cases):
 
 - climb back from the floor after a spike
 - hysteresis (no climb at 45 fps, no climb before 6 s)
