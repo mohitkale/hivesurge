@@ -25,4 +25,4 @@ Independent of PR 066 (revive threshold): `git merge-tree` shows no conflicts ei
 
 ## Checks
 
-See below (lint, tests, build, size budget).
+npx eslint (v10) + prettier ok · tests 275/275 · build ok · size budget: initial JS 2.36 KiB gzip, dist 909.62 KiB.
