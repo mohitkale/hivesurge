@@ -1,4 +1,4 @@
-# PR TBD — monetization/m5-1b-rerun (base: monetization/m5-2a-rerun @ 4db39df, PR 085)
+# PR 089: monetization/m5-1b-rerun
 
 **Summary:** M5-2a re-run against design M5-1b (`design/m5-1b-expectedp-refit` @ `101047a`):
 
