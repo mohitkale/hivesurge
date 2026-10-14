@@ -1,4 +1,4 @@
-# PR 059: research/m2-12-post-m2-26 — M2-12 PROVISIONAL report re-run after M2-26
+# PR 062 (renumbered from branch claim 059): research/m2-12-post-m2-26 — M2-12 PROVISIONAL report re-run after M2-26
 
 - Branch: `research/m2-12-post-m2-26` (off main `6e67f2b`). Owner: hivesurge-research. Not pushed.
 - Task: M2-12 (re-check after PR 044 / M2-26, merged `6cbac7d`). Feeds M2-28 and M2-29 (PR 056).
