@@ -1,7 +1,7 @@
-# PR (number pending; ask review for 071) — art/crowd-lod-wasp-band (base: art/perf-audit @ 4eff666)
+# PR 073 — art/crowd-lod-wasp-band (base: art/perf-audit @ 4eff666)
 
 Base note: branched from `art/perf-audit` at `4eff666`, which is what review merges for PR 070. Rebase onto
-main once 070 is merged. Both items are DES-approved. No INDEX claim made from this branch.
+main once 070 is merged. Both items are DES-approved. Number 073 was assigned by review; no INDEX change from this branch.
 
 1. **Worker bee crowd LOD:** `beeCrowdGeometry()` (cherry-picked from 7521cc0) plus a fix. Each antenna
    is now one stalk segment with the teal tip placed on the stalk end. Before, the stalks were dropped
