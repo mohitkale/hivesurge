@@ -29,7 +29,7 @@ export const SKINS: BeeSkin[] = [
   },
   {
     // Starter Pack skin (QA M2-19a). PROCEDURAL PLACEHOLDER until art ships a final
-    // look: a deeper amber body with a honey-drop badge on the head (prs/060 doc).
+    // look: a deeper amber body with a honey-drop badge on the head (see the PR doc).
     id: 'starter',
     name: 'Starter Gold',
     season: 'core',
