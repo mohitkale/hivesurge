@@ -15,11 +15,11 @@ Target win rate is first-attempt for a new player; tune via M2-5 bots and later 
 
 | #   | id               | Type                | Lane L | Time | Nest HP         | Hive HP | Queen charge | Gates (best path M)                            | Enemy hp total | Hornets   | Target 1st-try win |
 | --- | ---------------- | ------------------- | ------ | ---- | --------------- | ------- | ------------ | ---------------------------------------------- | -------------- | --------- | ------------------ |
-| 1   | ftue-meadow      | FTUE                | 32     | 75   | 600             | 60      | 4            | x2, +3 moving (M about 2.5)                    | 20             | 0         | 98%                |
-| 2   | dandelion-drift  | handmade            | 36     | 80   | 1200            | 50      | 6            | x2 / +2, x2 moving (M 4)                       | 140            | 0         | 92%                |
-| 3   | clover-run       | handmade (existing) | 40     | 90   | 2600            | 40      | 7            | x2, x3 moving, x2 vs -25 (M 12)                | 401            | 14        | 80%                |
-| 4   | thistle-gauntlet | handmade            | 42     | 90   | 3400            | 40      | 7            | +5 wide vs x3 narrow, -40 trap, x2 (M 6 to 12) | 520            | 18        | 70%                |
-| 5   | wasp-queen-nest  | boss                | 44     | 110  | 6000 (3 phases) | 45      | 6            | see boss table (M 12 to 18)                    | 760            | 30 + boss | 55%                |
+| 1   | ftue-meadow      | FTUE                | 32     | 75   | 600             | 60      | 4            | x2, +3 moving (M about 2.5)                    | 20             | 0         | casual ≥ 95%       |
+| 2   | dandelion-drift  | handmade            | 36     | 80   | 1200            | 50      | 6            | x2 / +2, x2 moving (M 4)                       | 140            | 0         | casual ≥ 90%       |
+| 3   | clover-run       | handmade (existing) | 40     | 90   | 2600            | 40      | 7            | x2, x3 moving, x2 vs -25 (M 12)                | 401            | 14        | casual 65 to 75%   |
+| 4   | thistle-gauntlet | handmade            | 42     | 90   | 3400            | 40      | 7            | +5 wide vs x3 narrow, -40 trap, x2 (M 6 to 12) | 520            | 18        | casual 65 to 75%   |
+| 5   | wasp-queen-nest  | boss                | 44     | 110  | 6000 (3 phases) | 45      | 6            | see boss table (M 12 to 18)                    | 760            | 30 + boss | casual 55 ± 5%     |
 | 6   | gen band A       | generated           | 40     | 90   | 3000            | 45      | 7            | 4 gates                                        | 450            | 10        | 85% (breather)     |
 | 7   | gen band B       | generated           | 42     | 90   | 3800            | 40      | 7            | 5 gates                                        | 600            | 18        | 72%                |
 | 8   | gen band B       | generated           | 42     | 95   | 4200            | 40      | 7            | 5 gates                                        | 680            | 22        | 68%                |
@@ -175,13 +175,13 @@ Layouts, gates and target win rate per level: given for 4 handmade (L1 FTUE, L2,
 
 **Which level is which.** The QA playtest called Clover Run "level 1" because it was the only level in the slice. In the campaign (M2-5, branch `feat/m2-5-levels`) the order is:
 
-| Stage | Level           | Role                              | Target                                     |
-| ----- | --------------- | --------------------------------- | ------------------------------------------ |
-| 1     | ftue-meadow     | tutorial, played once             | 98% for any bot that fires; idle loses     |
-| 2     | dandelion-drift | first real choice                 | 92%                                        |
-| 3     | clover-run      | first "real" level, used by M2-17 | **casual 65 to 75% (aim 70%)**; idle loses |
+| Stage | Level           | Role                              | Target                                                |
+| ----- | --------------- | --------------------------------- | ----------------------------------------------------- |
+| 1     | ftue-meadow     | tutorial, played once             | casual ≥ 95% (98% for any bot that fires); idle loses |
+| 2     | dandelion-drift | first real choice                 | casual ≥ 90% (validation-m2.md)                       |
+| 3     | clover-run      | first "real" level, used by M2-17 | **casual 65 to 75% (aim 70%)**; idle loses            |
 
-The 98% target is for ftue-meadow only. The M2-17 70% target is for Clover Run. Until the campaign merges, Clover Run is the slice's level 1, and the same numbers apply.
+The ≥ 95% target is for ftue-meadow only. The M2-17 70% target is for Clover Run. Until the campaign merges, Clover Run is the slice's level 1, and the same numbers apply.
 
 **Knob changes (only these two):**
 
@@ -261,10 +261,6 @@ New test `tests/aimPillarM2-28.test.ts`, alongside the casual-band tests:
 - For each of `dandelion-drift`, `clover-run`, `thistle-gauntlet`, `wasp-queen-nest`: `winRate(L, aimBot(L), 200) - winRate(L, sweepBot(0.35, 1.3), 200) >= 0.15`. Timeout 600 s per level (bot runs are CPU-heavy).
 - `ftue-meadow` is exempt (above).
 - Keep the casual-band tests, updating pinned values: `cloverRunEase` (nest 3050, casual 65 to 75), `levelTuningM2-26` (thistle 3900, casual 60 to 75; boss 2500, gates per below, casual 50 to 60), `levels.test` (clover 7 gates, gate 2 per below), `balance.test` (scripted Clover player aims at x 1.3).
-
-### Casual targets: discrepancy (flagged)
-
-The difficulty-curve table at the top of this doc still says L3 80% and L4 70% (research PR 059 quotes those). They are stale: M2-17 set Clover Run to casual 65 to 75%, `validation-m2.md` (M2-4, PR 035) and M2-26 retuned L4 to about 65% (test band 60 to 75%), and stage 2 to ≥ 90%. PLAN.md's M2-28 row says "casual in each level's target range" and points at those tasks. I used the current bands: L1 ≥ 95, L2 ≥ 90, L3 65 to 75, L4 65 to 75, L5 55 ± 5. The table above should be read with those; BA to fix the old column.
 
 ### Exact values for ENG (replace `nestHp` and `gates`; everything else unchanged)
 
