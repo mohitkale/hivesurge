@@ -1,4 +1,4 @@
-# PR (number pending from review): fix/m2-31-32-gate-feedback
+# PR 087: fix/m2-31-32-gate-feedback
 
 QA M2-12 box sessions (`playtests/m2-12/qa/2026-10-15-box-sessions.md`, `qa/m2-12-box-sessions`
 @ 03e76fe): M2-31 (major) and M2-32 (major).
