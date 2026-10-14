@@ -1,4 +1,4 @@
-# PR ??? — chore/plan-m2-g4-recheck-gem-price (base: main `ff371fc`)
+# PR 077 — chore/plan-m2-g4-recheck-gem-price (base: main `ff371fc`)
 
 _PR number pending: claimed via hivesurge-review (decision 37); rename this doc once assigned._
 
