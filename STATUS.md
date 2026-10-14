@@ -1,12 +1,12 @@
 # Hive Surge — status
 
-_Last updated: 2026-10-14 22:14 IST._ Source plan: `/workspace/mob-control-plan/mob-control-web-plan.md`.
+_Last updated: 2026-10-15 00:42 IST._ Source plan: `/workspace/mob-control-plan/mob-control-web-plan.md`.
 
 ## Current state
 
-- **Milestone M2 (slice completion) — in progress; team idle since 2026-10-11 ~09:14 IST (~3 days).** M1 tagged `v0.1.0-slice`. Main tip `e7abf40` (PR 056 claimed). Merged through PR 055 (M2-26 wasp-queen band, M2-21 no-fill interstitial fix, QA 050, research 052, art M3 kits, etc.).
-- **Open PRs (critical path):** 048 gem revive (changes: fix restore-flow comment; M4-5a in PR 056 is the tracked ledger task), 049 design revive-threshold (open), 056 PLAN M4-5a + M2-12/28/29 (open).
-- Playable on main: multi-level campaign, FTUE, revive rules, sandbox shop/ads, code-split, progressive-load work in flight on branches. Sandbox only — no public deploy, no real money, no outside contact.
+- **Milestone M2 (slice completion) — in progress; team active after 22:14 IST restart.** M1 tagged `v0.1.0-slice`. Main tip `21acf39` (merged through PR 078). Big wave since the stall nudge: gem revive + 5-gem price (048/067), revive threshold 25% (049/066), aiming pillar + FTUE aim step (060/076), low-end perf (068/071/075), art starter skin + crowd LOD + wasp band + antenna (069/073/078), QA M2-19a log (059), research post-M2-26 (062), PLAN refreshes (056/057/072/077).
+- **Open / in flight:** eng `feat/m2-28d-aim-trace` (pending claim **079**) for M2-28b traces; QA still owes M2-25 starter re-check, M2-28b (≥5 sessions), M2-12 box-browser sessions, M2-10/M2-11. M2-19b / licence TBD / outside testers stay parked for Mohit.
+- Playable on main: multi-level campaign, FTUE with aim step, revive (ad + 5-gem), sandbox shop/ads, code-split, progressive load, M3 art. Sandbox only — no public deploy, no real money, no outside contact.
 
 ## Decision log
 
@@ -48,18 +48,19 @@ _Last updated: 2026-10-14 22:14 IST._ Source plan: `/workspace/mob-control-plan/
 
 | 34 | 2026-10-14 22:14 IST (CEO team check): no git activity since 2026-10-11 09:14 IST. All eight bots treated as stalled. Priority order: (1) eng fix PR 048 comment + confirm M4-5a covers the gem-ledger gate; (2) review merge 056 then 049 then 048; (3) design land 049 + spec M2-28/M2-29; (4) ba land 056 and refresh PLAN done-flags; (5) qa M2-19a + ≥3 box sessions for M2-12; (6) research re-check M2-12 after M2-26; (7) art M3-1a/b/c + M3-3 biomes; (8) monetization G19 + G3/G5 no-fill note. No Mohit ping: M2 incomplete; M2-19b / licence TBD / outside testers stay parked. | Restart after 3-day stall; keep M2 critical path moving without waking Mohit. |
 | 36 | 2026-10-14 (CEO): gem revive default price **5 gems** (remote config `revive.gemPrice`, was 10); caps unchanged (1 revive/battle, ≤2 gem revives/session, ≤3/day); revisit after M2-12 data. Monetization docs on `monetization/revive-5gems`; eng ships `reviveGems.ts` gemPrice + T-G19a in one combined PR. | PR 049 lowered the revive threshold to 25%, roughly doubling offers; at 10 gems, free gems cover only 49–55% of revive demand (19–21% without weekly gems), at 5 gems 98–100% (38–43%). See `monetization/revive-m2-21a.md`. |
+| 38 | 2026-10-15 00:42 IST (CEO team check): team **not** idle — main advanced `e7abf40`→`21acf39` (PRs 048–078) after the 22:14 IST restart. Priority now: (1) review claim+merge eng `feat/m2-28d-aim-trace` as 079; (2) qa M2-25 starter re-check (post art 069) then M2-28b prep/run with `?trace=aim`, plus ≥3 M2-12 box sessions; (3) ba mark M2-28/29/28c done in PLAN; (4) research refresh M2-12 report for PR 076 aiming fix (still PROVISIONAL); (5) design support M2-28b / start M5-1 validation; (6) art idle-ok, stand by for QA art bugs; (7) monetization abandon stale `monetization/revive-5gems` (5-gem docs already on main) — next M5-2a/economy when DES unblocks; (8) eng after 079: M4-5a ledger when M2 critical path clears. No Mohit ping: M2 incomplete; M2-19b / licence TBD / PT-A stay parked. | Keep M2 exit moving; do not re-fire the 3-day-stall restart narrative. |
 
 ## Next steps toward MVP (see PLAN.md for owners)
 
-1. Land open M2 gate: PR 056 → PR 049 → PR 048 (eng comment fix), then continue M2-28/M2-29 (aiming pillar + FTUE aim step).
-2. QA: M2-19a phone/tablet emulation with `?debug`; finish ≥3 box-browser sessions for M2-12; M2-10/M2-11 when unblocked. M2-19b stays parked for Mohit.
-3. M3: ART finish M3-1a/b/c (licence field TBD pending Mohit) + M3-3 biome kits; ENG M3-7 progressive load.
-4. M4 sandbox backend after M2 critical path clears (M4-5a ledger before cloud save). No Stripe/external accounts without Mohit.
+1. Land eng `feat/m2-28d-aim-trace` (claim 079), then QA M2-28b (≥5 box sessions with aim traces) + M2-25 starter re-check + ≥3 M2-12 box-browser sessions.
+2. BA: mark M2-28 / M2-29 / M2-28c **done** in PLAN (PRs 076 / 074). Research: refresh M2-12 report for post-aiming-pillar numbers (still PROVISIONAL).
+3. Close remaining M2 QA: M2-10, M2-11, M2-14 finish notes; M2-19a stays software-only until M2-19b (Mohit device). M2-24 follows 19a/b.
+4. After M2 critical path: M4-5a gem ledger, then M4 sandbox backend. M3 licence TBD + M2-19b + outside testers need Mohit. No Stripe/external accounts without Mohit.
 
 ## Known gaps / risks
 
-- Team idle ~3 days; restart via nudges this check.
-- Aiming pillar weak: sweep bot wins L1–L4 (M2-28/M2-29).
-- PR 048 lower-gem merge is safe only until cloud save; M4-5a must land before M4-5.
-- M3 style guide not signed off (licence TBD pending Mohit).
+- M2 not closed: QA backlog (M2-10/11/14/25/28b, M2-12 box sessions); M2-19a FPS/lag inconclusive on software WebGL.
+- Aiming pillar fixed on bots (PR 076); M2-28b must confirm real/box aim wiggle still forces aiming.
+- Gem merge loss still tracked as M4-5a; must land before cloud save (M4-5).
+- M3 licence field TBD pending Mohit; M2-19b + outside testers (PT-A) parked for Mohit.
 - Name "Hive Surge" is a placeholder; trademark search required before any launch (plan §8.3 #7).
