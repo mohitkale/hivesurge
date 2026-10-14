@@ -27,25 +27,25 @@ f2p_ads: day-30 median Epic level (mean of 3 Epics, unowned=0) 4.67, best Epic 5
 payer_pass: day-30 median Epic level (mean of 3 Epics, unowned=0) 5.00, best Epic 5, season tier 33
 Epic-level gap payer - no-ads (day 30): +0.67 -> tier-18-to-gems trigger (>1): no
 
-Gem revive (M2-21a, price 10 gems, 1 revive/battle): free gem income vs revive-eligible defeats over 30 days
-f2p_no_ads: free gems earned 230 (7.7/day); revive-eligible defeats 47 (1.57/day); gems to gem-revive all 470; free income covers 49%
-f2p_ads: free gems earned 230 (7.7/day); revive-eligible defeats 45 (1.50/day); gems to gem-revive all 450; free income covers 51%
-payer_pass: free gems earned 230 (7.7/day); revive-eligible defeats 42 (1.40/day); gems to gem-revive all 420; free income covers 55%
+Gem revive (M2-21a, price 5 gems, 1 revive/battle): free gem income vs revive-eligible defeats over 30 days
+f2p_no_ads: free gems earned 230 (7.7/day); revive-eligible defeats 47 (1.57/day); gems to gem-revive all 235; free income covers 98%
+f2p_ads: free gems earned 230 (7.7/day); revive-eligible defeats 45 (1.50/day); gems to gem-revive all 225; free income covers 100%
+payer_pass: free gems earned 230 (7.7/day); revive-eligible defeats 42 (1.40/day); gems to gem-revive all 210; free income covers 100%
 Day-30 level n: no-ads 131, ads 133, payer 136
 
 ## Revive coverage variants (seed 42, 200 runs)
 
 ```
 [--weekly-gems 0]
-f2p_no_ads: free gems earned 90 (3.0/day); revive-eligible defeats 47 (1.57/day); gems to gem-revive all 470; free income covers 19%
-f2p_ads: free gems earned 90 (3.0/day); revive-eligible defeats 45 (1.50/day); gems to gem-revive all 450; free income covers 20%
-payer_pass: free gems earned 90 (3.0/day); revive-eligible defeats 42 (1.40/day); gems to gem-revive all 420; free income covers 21%
-[--revive-gems 5]
-f2p_no_ads: free gems earned 230 (7.7/day); revive-eligible defeats 47 (1.57/day); gems to gem-revive all 235; free income covers 98%
-f2p_ads: free gems earned 230 (7.7/day); revive-eligible defeats 45 (1.50/day); gems to gem-revive all 225; free income covers 100%
-payer_pass: free gems earned 230 (7.7/day); revive-eligible defeats 42 (1.40/day); gems to gem-revive all 210; free income covers 100%
-[--revive-gems 5 --weekly-gems 0]
 f2p_no_ads: free gems earned 90 (3.0/day); revive-eligible defeats 47 (1.57/day); gems to gem-revive all 235; free income covers 38%
 f2p_ads: free gems earned 90 (3.0/day); revive-eligible defeats 45 (1.50/day); gems to gem-revive all 225; free income covers 40%
 payer_pass: free gems earned 90 (3.0/day); revive-eligible defeats 42 (1.40/day); gems to gem-revive all 210; free income covers 43%
+[--revive-gems 10]
+f2p_no_ads: free gems earned 230 (7.7/day); revive-eligible defeats 47 (1.57/day); gems to gem-revive all 470; free income covers 49%
+f2p_ads: free gems earned 230 (7.7/day); revive-eligible defeats 45 (1.50/day); gems to gem-revive all 450; free income covers 51%
+payer_pass: free gems earned 230 (7.7/day); revive-eligible defeats 42 (1.40/day); gems to gem-revive all 420; free income covers 55%
+[--revive-gems 10 --weekly-gems 0]
+f2p_no_ads: free gems earned 90 (3.0/day); revive-eligible defeats 47 (1.57/day); gems to gem-revive all 470; free income covers 19%
+f2p_ads: free gems earned 90 (3.0/day); revive-eligible defeats 45 (1.50/day); gems to gem-revive all 450; free income covers 20%
+payer_pass: free gems earned 90 (3.0/day); revive-eligible defeats 42 (1.40/day); gems to gem-revive all 420; free income covers 21%
 ```
