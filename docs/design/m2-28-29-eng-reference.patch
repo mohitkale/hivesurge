@@ -1,0 +1,780 @@
+diff --git a/src/ftue/ftue.ts b/src/ftue/ftue.ts
+index e282289..00b3ee7 100644
+--- a/src/ftue/ftue.ts
++++ b/src/ftue/ftue.ts
+@@ -20,7 +20,7 @@ export enum FtueStep {
+ export const FTUE_PROMPTS: Record<FtueStep, string> = {
+   [FtueStep.Boot]: '',
+   [FtueStep.Aim]: 'Hold and drag to aim',
+-  [FtueStep.Gate]: 'Shoot through the x2 gate',
++  [FtueStep.Gate]: 'Drag to the x2 gate',
+   [FtueStep.Lead]: 'Aim ahead of moving gates',
+   [FtueStep.Queen]: 'Tap the queen!',
+   [FtueStep.Finish]: 'Smash the nest!',
+@@ -36,6 +36,11 @@ export const MIN_PROMPT_DWELL_S = 1.5;
+ /** validation-m2.md #3 (M2-27): step 3 timeout halves the moving gate's speed. */
+ export const LEAD_TIMEOUT_SPEED_MUL = 0.5;
+ 
++/** M2-29: aimed hits on the off-centre x2 gate to finish step 2. */
++export const AIMED_HITS = 6;
++/** M2-29: the cannon must be at least this far from centre (lane units) for a hit to count. */
++export const AIM_MIN_OFFSET = 1.5;
++
+ /** Seconds before a step's timeout fallback (spec column "Timeout fallback"). */
+ const TIMEOUTS: Partial<Record<FtueStep, number>> = {
+   [FtueStep.Aim]: 4,
+@@ -70,6 +75,11 @@ export class Ftue {
+   private firstInputAt = -1;
+   private gateMark = 0;
+   private stepTimedOut = false;
++  /** M2-29: seconds the cannon has been continuously inside gate x2's span while firing. */
++  aimHoldS = 0;
++  /** M2-29: aimed, off-centre hits on gate x2 this step. */
++  aimedHits = 0;
++  private passesSeen = 0;
+ 
+   /** Indices into the FTUE level's gates (spec layout: x2 at y 8, moving +3 at y 15). */
+   constructor(
+@@ -120,9 +130,22 @@ export class Ftue {
+         if (input.firing) this.fireHeld += dt;
+         if (this.fireHeld >= 1.0 && dwellOk) this.advance(w);
+         break;
+-      case FtueStep.Gate:
+-        if (w.gatePasses[this.gateX2] - this.gateMark >= 10 && dwellOk) this.advance(w);
++      case FtueStep.Gate: {
++        const g = w.level.gates[this.gateX2];
++        const inSpan =
++          input.firing &&
++          Math.abs(w.cannonX - w.currentGateX(this.gateX2)) <= g.width / 2 &&
++          Math.abs(w.cannonX) >= AIM_MIN_OFFSET;
++        this.aimHoldS = inSpan ? this.aimHoldS + dt : 0;
++        const passes = w.gatePasses[this.gateX2];
++        // Crossing bees count only if they were fired from inside the span: the hold must be
++        // at least one bee travel time to the gate row.
++        if (this.aimHoldS >= (g.y - CANNON_Y) / WORKER_SPEED)
++          this.aimedHits += passes - this.passesSeen;
++        this.passesSeen = passes;
++        if (this.aimedHits >= AIMED_HITS && dwellOk) this.advance(w);
+         break;
++      }
+       case FtueStep.Lead:
+         if (w.gatePasses[this.movingGate] - this.gateMark >= 5 && dwellOk) this.advance(w);
+         break;
+@@ -152,7 +175,11 @@ export class Ftue {
+     this.stepTime = 0;
+     this.emphasis = false;
+     this.stepTimedOut = false;
+-    if (this.step === FtueStep.Gate) this.gateMark = w.gatePasses[this.gateX2];
++    if (this.step === FtueStep.Gate) {
++      this.passesSeen = w.gatePasses[this.gateX2];
++      this.aimHoldS = 0;
++      this.aimedHits = 0;
++    }
+     if (this.step === FtueStep.Lead) {
+       this.gateMark = w.gatePasses[this.movingGate];
+       w.fireTrigger('step3');
+diff --git a/src/levels/clover-run.json b/src/levels/clover-run.json
+index fe80abb..3881efb 100644
+--- a/src/levels/clover-run.json
++++ b/src/levels/clover-run.json
+@@ -5,34 +5,129 @@
+   "laneWidth": 10,
+   "laneLength": 40,
+   "timeLimit": 90,
+-  "nestHp": 2350,
++  "nestHp": 3050,
+   "hiveHp": 50,
+   "fireInterval": 0.11,
+   "queenCharge": 7,
+   "trickleInterval": 0.9,
+   "gates": [
+-    { "kind": "mul", "value": 2, "x": -2.4, "y": 9, "width": 3.4 },
+-    { "kind": "add", "value": 2, "x": 2.6, "y": 9, "width": 3.2 },
++    {
++      "kind": "mul",
++      "value": 2,
++      "x": 1.3,
++      "y": 9,
++      "width": 2.2
++    },
++    {
++      "kind": "add",
++      "value": 2,
++      "x": -1.3,
++      "y": 9,
++      "width": 2.2
++    },
+     {
+       "kind": "mul",
+       "value": 3,
+-      "x": 0,
++      "x": 1.3,
+       "y": 17,
+-      "width": 2.6,
+-      "motion": { "amplitude": 3, "speed": 0.9 }
++      "width": 2.2,
++      "motion": {
++        "amplitude": 0.6,
++        "speed": 0.9
++      }
++    },
++    {
++      "kind": "sub",
++      "value": 25,
++      "x": -3,
++      "y": 24.5,
++      "width": 3.2
++    },
++    {
++      "kind": "mul",
++      "value": 2,
++      "x": 1.3,
++      "y": 25,
++      "width": 2.6
+     },
+-    { "kind": "sub", "value": 25, "x": -3, "y": 24.5, "width": 3.2 },
+-    { "kind": "mul", "value": 2, "x": 2.7, "y": 25, "width": 3 }
++    {
++      "kind": "sub",
++      "value": 600,
++      "x": -3.8,
++      "y": 5,
++      "width": 2.4
++    },
++    {
++      "kind": "sub",
++      "value": 600,
++      "x": 3.8,
++      "y": 5,
++      "width": 2.4
++    }
+   ],
+   "waves": [
+-    { "at": 4, "kind": "wasp", "count": 14, "x": 0, "spread": 3 },
+-    { "at": 12, "kind": "wasp", "count": 22, "x": -2, "spread": 2.5 },
+-    { "at": 20, "kind": "hornet", "count": 3, "x": 2, "spread": 1.5 },
+-    { "at": 26, "kind": "wasp", "count": 34, "x": 2, "spread": 3 },
+-    { "at": 36, "kind": "hornet", "count": 5, "x": -1, "spread": 3 },
+-    { "at": 44, "kind": "wasp", "count": 50, "x": 0, "spread": 4 },
+-    { "at": 56, "kind": "hornet", "count": 6, "x": 0, "spread": 3.5 },
+-    { "at": 62, "kind": "wasp", "count": 70, "x": 0, "spread": 4.5 },
+-    { "at": 75, "kind": "wasp", "count": 80, "x": 0, "spread": 4.5 }
++    {
++      "at": 4,
++      "kind": "wasp",
++      "count": 14,
++      "x": 0,
++      "spread": 3
++    },
++    {
++      "at": 12,
++      "kind": "wasp",
++      "count": 22,
++      "x": -2,
++      "spread": 2.5
++    },
++    {
++      "at": 20,
++      "kind": "hornet",
++      "count": 3,
++      "x": 2,
++      "spread": 1.5
++    },
++    {
++      "at": 26,
++      "kind": "wasp",
++      "count": 34,
++      "x": 2,
++      "spread": 3
++    },
++    {
++      "at": 36,
++      "kind": "hornet",
++      "count": 5,
++      "x": -1,
++      "spread": 3
++    },
++    {
++      "at": 44,
++      "kind": "wasp",
++      "count": 50,
++      "x": 0,
++      "spread": 4
++    },
++    {
++      "at": 56,
++      "kind": "hornet",
++      "count": 6,
++      "x": 0,
++      "spread": 3.5
++    },
++    {
++      "at": 62,
++      "kind": "wasp",
++      "count": 70,
++      "x": 0,
++      "spread": 4.5
++    },
++    {
++      "at": 75,
++      "kind": "wasp",
++      "count": 80,
++      "x": 0,
++      "spread": 4.5
++    }
+   ]
+ }
+diff --git a/src/levels/dandelion-drift.json b/src/levels/dandelion-drift.json
+index 24909e5..0b43450 100644
+--- a/src/levels/dandelion-drift.json
++++ b/src/levels/dandelion-drift.json
+@@ -5,27 +5,80 @@
+   "laneWidth": 10,
+   "laneLength": 36,
+   "timeLimit": 80,
+-  "nestHp": 1200,
++  "nestHp": 1500,
+   "hiveHp": 50,
+   "fireInterval": 0.11,
+   "queenCharge": 6,
+   "trickleInterval": 0,
+   "gates": [
+-    { "kind": "mul", "value": 2, "x": -2.5, "y": 9, "width": 3.2 },
+-    { "kind": "add", "value": 2, "x": 2.5, "y": 9, "width": 3.4 },
+     {
+       "kind": "mul",
+       "value": 2,
+-      "x": 0,
++      "x": 1.3,
++      "y": 9,
++      "width": 2.4
++    },
++    {
++      "kind": "add",
++      "value": 2,
++      "x": -1.3,
++      "y": 9,
++      "width": 2.4
++    },
++    {
++      "kind": "mul",
++      "value": 2,
++      "x": 1.3,
+       "y": 18,
+-      "width": 3.0,
+-      "motion": { "amplitude": 2.5, "speed": 0.8 }
++      "width": 2.4,
++      "motion": {
++        "amplitude": 0.8,
++        "speed": 0.8
++      }
++    },
++    {
++      "kind": "sub",
++      "value": 600,
++      "x": -3.8,
++      "y": 5,
++      "width": 2.4
++    },
++    {
++      "kind": "sub",
++      "value": 600,
++      "x": 3.8,
++      "y": 5,
++      "width": 2.4
+     }
+   ],
+   "waves": [
+-    { "at": 5, "kind": "wasp", "count": 15, "x": 0, "spread": 3 },
+-    { "at": 15, "kind": "wasp", "count": 25, "x": -2, "spread": 3 },
+-    { "at": 28, "kind": "wasp", "count": 40, "x": 2, "spread": 3.5 },
+-    { "at": 45, "kind": "wasp", "count": 60, "x": 0, "spread": 4 }
++    {
++      "at": 5,
++      "kind": "wasp",
++      "count": 15,
++      "x": 0,
++      "spread": 3
++    },
++    {
++      "at": 15,
++      "kind": "wasp",
++      "count": 25,
++      "x": -2,
++      "spread": 3
++    },
++    {
++      "at": 28,
++      "kind": "wasp",
++      "count": 40,
++      "x": 2,
++      "spread": 3.5
++    },
++    {
++      "at": 45,
++      "kind": "wasp",
++      "count": 60,
++      "x": 0,
++      "spread": 4
++    }
+   ]
+ }
+diff --git a/src/levels/ftue-meadow.json b/src/levels/ftue-meadow.json
+index ba9b809..0f22258 100644
+--- a/src/levels/ftue-meadow.json
++++ b/src/levels/ftue-meadow.json
+@@ -11,18 +11,39 @@
+   "queenCharge": 4,
+   "trickleInterval": 0,
+   "gates": [
+-    { "kind": "mul", "value": 2, "x": 0, "y": 8, "width": 4.0 },
++    {
++      "kind": "mul",
++      "value": 2,
++      "x": -2.8,
++      "y": 8,
++      "width": 2.4
++    },
+     {
+       "kind": "add",
+       "value": 3,
+       "x": 0,
+       "y": 15,
+       "width": 3.6,
+-      "motion": { "amplitude": 2.0, "speed": 0.7 }
++      "motion": {
++        "amplitude": 2.0,
++        "speed": 0.7
++      }
+     }
+   ],
+   "waves": [
+-    { "trigger": "step3", "kind": "wasp", "count": 8, "x": 0, "spread": 2 },
+-    { "trigger": "step5", "kind": "wasp", "count": 12, "x": 0, "spread": 3 }
++    {
++      "trigger": "step3",
++      "kind": "wasp",
++      "count": 8,
++      "x": 0,
++      "spread": 2
++    },
++    {
++      "trigger": "step5",
++      "kind": "wasp",
++      "count": 12,
++      "x": 0,
++      "spread": 3
++    }
+   ]
+ }
+diff --git a/src/levels/thistle-gauntlet.json b/src/levels/thistle-gauntlet.json
+index f02ab20..7032178 100644
+--- a/src/levels/thistle-gauntlet.json
++++ b/src/levels/thistle-gauntlet.json
+@@ -5,32 +5,115 @@
+   "laneWidth": 10,
+   "laneLength": 42,
+   "timeLimit": 90,
+-  "nestHp": 2650,
++  "nestHp": 3900,
+   "hiveHp": 50,
+   "fireInterval": 0.11,
+   "queenCharge": 7,
+   "trickleInterval": 0.8,
+   "gates": [
+-    { "kind": "add", "value": 5, "x": -2.2, "y": 8, "width": 4.2 },
+-    { "kind": "mul", "value": 3, "x": 2.8, "y": 8, "width": 2.2 },
+-    { "kind": "sub", "value": 40, "x": 0, "y": 16, "width": 4.0 },
+-    { "kind": "mul", "value": 2, "x": -3, "y": 16, "width": 2.4 },
++    {
++      "kind": "add",
++      "value": 5,
++      "x": -1.3,
++      "y": 8,
++      "width": 2.4
++    },
++    {
++      "kind": "mul",
++      "value": 3,
++      "x": 1.3,
++      "y": 8,
++      "width": 2.0
++    },
++    {
++      "kind": "sub",
++      "value": 40,
++      "x": -1.3,
++      "y": 16,
++      "width": 2.4
++    },
+     {
+       "kind": "mul",
+       "value": 2,
+-      "x": 0,
++      "x": 1.3,
++      "y": 16,
++      "width": 2.2
++    },
++    {
++      "kind": "mul",
++      "value": 2,
++      "x": 1.3,
+       "y": 24.5,
+-      "width": 2.8,
+-      "motion": { "amplitude": 3.5, "speed": 1.1 }
++      "width": 2.6,
++      "motion": {
++        "amplitude": 1.0,
++        "speed": 1.1
++      }
++    },
++    {
++      "kind": "sub",
++      "value": 600,
++      "x": -3.8,
++      "y": 4,
++      "width": 2.4
++    },
++    {
++      "kind": "sub",
++      "value": 600,
++      "x": 3.8,
++      "y": 4,
++      "width": 2.4
+     }
+   ],
+   "waves": [
+-    { "at": 4, "kind": "wasp", "count": 20, "x": 0, "spread": 3 },
+-    { "at": 14, "kind": "hornet", "count": 4, "x": -2, "spread": 2 },
+-    { "at": 24, "kind": "wasp", "count": 45, "x": 2, "spread": 3.5 },
+-    { "at": 38, "kind": "hornet", "count": 6, "x": 0, "spread": 3 },
+-    { "at": 50, "kind": "wasp", "count": 70, "x": -1, "spread": 4 },
+-    { "at": 66, "kind": "hornet", "count": 8, "x": 1, "spread": 3.5 },
+-    { "at": 76, "kind": "wasp", "count": 90, "x": 0, "spread": 4.5 }
++    {
++      "at": 4,
++      "kind": "wasp",
++      "count": 20,
++      "x": 0,
++      "spread": 3
++    },
++    {
++      "at": 14,
++      "kind": "hornet",
++      "count": 4,
++      "x": -2,
++      "spread": 2
++    },
++    {
++      "at": 24,
++      "kind": "wasp",
++      "count": 45,
++      "x": 2,
++      "spread": 3.5
++    },
++    {
++      "at": 38,
++      "kind": "hornet",
++      "count": 6,
++      "x": 0,
++      "spread": 3
++    },
++    {
++      "at": 50,
++      "kind": "wasp",
++      "count": 70,
++      "x": -1,
++      "spread": 4
++    },
++    {
++      "at": 66,
++      "kind": "hornet",
++      "count": 8,
++      "x": 1,
++      "spread": 3.5
++    },
++    {
++      "at": 76,
++      "kind": "wasp",
++      "count": 90,
++      "x": 0,
++      "spread": 4.5
++    }
+   ]
+ }
+diff --git a/src/levels/wasp-queen-nest.json b/src/levels/wasp-queen-nest.json
+index 16b44ae..09e3f01 100644
+--- a/src/levels/wasp-queen-nest.json
++++ b/src/levels/wasp-queen-nest.json
+@@ -5,46 +5,127 @@
+   "laneWidth": 10,
+   "laneLength": 44,
+   "timeLimit": 110,
+-  "nestHp": 3200,
++  "nestHp": 2500,
+   "hiveHp": 50,
+   "fireInterval": 0.11,
+   "queenCharge": 6,
+   "trickleInterval": 0.7,
+   "gates": [
+-    { "kind": "mul", "value": 2, "x": -2, "y": 10, "width": 3 },
+-    { "kind": "add", "value": 5, "x": 2.5, "y": 10, "width": 3.4 },
++    {
++      "kind": "mul",
++      "value": 2,
++      "x": 1.3,
++      "y": 10,
++      "width": 2.4
++    },
++    {
++      "kind": "add",
++      "value": 5,
++      "x": -1.3,
++      "y": 10,
++      "width": 2.6
++    },
+     {
+       "kind": "mul",
+       "value": 3,
+-      "x": 0,
++      "x": 1.3,
+       "y": 18,
+-      "width": 3.4,
+-      "motion": { "amplitude": 3, "speed": 0.6 }
++      "width": 2.6,
++      "motion": {
++        "amplitude": 0.8,
++        "speed": 0.6
++      }
++    },
++    {
++      "kind": "sub",
++      "value": 30,
++      "x": -1.3,
++      "y": 14,
++      "width": 2.4,
++      "fromPhase": 2
++    },
++    {
++      "kind": "sub",
++      "value": 600,
++      "x": -3.8,
++      "y": 5,
++      "width": 2.4
+     },
+-    { "kind": "sub", "value": 30, "x": 0, "y": 14, "width": 2.6, "fromPhase": 2 }
++    {
++      "kind": "sub",
++      "value": 600,
++      "x": 3.8,
++      "y": 5,
++      "width": 2.4
++    }
+   ],
+   "waves": [],
+   "bossPhases": [
+     {
+       "nestBelow": 1,
+-      "repeat": [{ "every": 10, "kind": "wasp", "count": 20, "x": 0, "spread": 3.5 }]
++      "repeat": [
++        {
++          "every": 10,
++          "kind": "wasp",
++          "count": 20,
++          "x": 0,
++          "spread": 3.5
++        }
++      ]
+     },
+     {
+       "nestBelow": 0.6667,
+-      "burst": [{ "kind": "hornet", "count": 8, "x": 0, "spread": 3 }],
++      "burst": [
++        {
++          "kind": "hornet",
++          "count": 8,
++          "x": 0,
++          "spread": 3
++        }
++      ],
+       "repeat": [
+-        { "every": 9, "kind": "wasp", "count": 28, "x": 0, "spread": 4 },
+-        { "every": 15, "kind": "hornet", "count": 2, "x": 0, "spread": 2.5 }
++        {
++          "every": 9,
++          "kind": "wasp",
++          "count": 28,
++          "x": 0,
++          "spread": 4
++        },
++        {
++          "every": 15,
++          "kind": "hornet",
++          "count": 2,
++          "x": 0,
++          "spread": 2.5
++        }
+       ]
+     },
+     {
+       "nestBelow": 0.3333,
+       "burst": [
+-        { "kind": "wasp", "count": 60, "x": 0, "spread": 4.5 },
+-        { "kind": "matriarch", "count": 1, "x": 0, "spread": 0 }
++        {
++          "kind": "wasp",
++          "count": 60,
++          "x": 0,
++          "spread": 4.5
++        },
++        {
++          "kind": "matriarch",
++          "count": 1,
++          "x": 0,
++          "spread": 0
++        }
+       ],
+       "gateSpeedScale": 1.4,
+-      "repeat": [{ "every": 8, "kind": "wasp", "count": 36, "x": 0, "spread": 4.5 }]
++      "repeat": [
++        {
++          "every": 8,
++          "kind": "wasp",
++          "count": 36,
++          "x": 0,
++          "spread": 4.5
++        }
++      ]
+     }
+   ]
+ }
+diff --git a/tests/balance.test.ts b/tests/balance.test.ts
+index 315e61b..3497d4a 100644
+--- a/tests/balance.test.ts
++++ b/tests/balance.test.ts
+@@ -19,8 +19,8 @@ describe('Clover Run balance', () => {
+     expect(w.outcome).toBe('lost');
+   });
+ 
+-  it('a player who aims through the x2 then x2 gates and uses the queen wins', () => {
+-    const w = play((w) => ({ aimX: w.time % 6 < 4 ? -2.4 : 2.6, firing: true, queen: true }));
++  it('a player who aims up the gate column (x 1.3) and uses the queen wins', () => {
++    const w = play(() => ({ aimX: 1.3, firing: true, queen: true }));
+     expect(w.outcome).toBe('won');
+     expect(w.hiveHp).toBeGreaterThan(0);
+   });
+diff --git a/tests/bots.ts b/tests/bots.ts
+index 6c2dcbb..dfbc9e3 100644
+--- a/tests/bots.ts
++++ b/tests/bots.ts
+@@ -10,6 +10,11 @@ export type Bot = (w: World) => PlayerInput;
+ /** Never fires. */
+ export const idleBot: Bot = () => ({ aimX: 0, firing: false, queen: false });
+ 
++/** M2-12 sweeper: holds fire, sweeps `amp` lane widths either side at `f` rad/s, queen when ready. */
++export const sweepBot =
++  (amp: number, f: number): Bot =>
++  (w) => ({ aimX: amp * Math.sin(w.time * f) * w.level.laneWidth, firing: true, queen: true });
++
+ /** Fires straight up the middle, launches the queen when ready. */
+ export const centreBot: Bot = () => ({ aimX: 0, firing: true, queen: true });
+ 
+diff --git a/tests/cloverRunEase.test.ts b/tests/cloverRunEase.test.ts
+index e345826..7450c0d 100644
+--- a/tests/cloverRunEase.test.ts
++++ b/tests/cloverRunEase.test.ts
+@@ -6,7 +6,7 @@ const CLOVER = getLevel('clover-run');
+ 
+ describe('M2-18 Clover Run ease (levels-m2.md M2-17 note)', () => {
+   it('ships the tuned knobs', () => {
+-    expect(CLOVER.nestHp).toBe(2350);
++    expect(CLOVER.nestHp).toBe(3050);
+     expect(CLOVER.hiveHp).toBe(50);
+   });
+ 
+diff --git a/tests/ftue.test.ts b/tests/ftue.test.ts
+index 82f5a96..4d6bd3e 100644
+--- a/tests/ftue.test.ts
++++ b/tests/ftue.test.ts
+@@ -24,7 +24,7 @@ function playFtue(reaction = 0.6) {
+     const reacting = f.prompt !== '' && w.time - promptSeenAt >= reaction;
+     const input: PlayerInput = { aimX: 0, firing: false, queen: false };
+     if (f.step >= FtueStep.Aim && (reacting || f.step > FtueStep.Aim)) input.firing = true;
+-    if (f.step === FtueStep.Gate) input.aimX = 0; // x2 gate is centred
++    if (f.step === FtueStep.Gate) input.aimX = w.currentGateX(0); // M2-29: x2 gate is off-centre
+     const lead = f.leadTargetX(w);
+     if (lead !== null) input.aimX = lead;
+     if (f.step === FtueStep.Queen && reacting) input.queen = true;
+diff --git a/tests/ftuePolish.test.ts b/tests/ftuePolish.test.ts
+index c979a06..55309f5 100644
+--- a/tests/ftuePolish.test.ts
++++ b/tests/ftuePolish.test.ts
+@@ -14,7 +14,8 @@ function instantPlayer(maxT = 120, aimOff = false) {
+   while (w.outcome === 'playing' && w.time < maxT) {
+     const lead = f.leadTargetX(w);
+     const input: PlayerInput = {
+-      aimX: lead === null ? 0 : aimOff ? 4.5 : lead,
++      aimX:
++        lead === null ? (f.step === FtueStep.Gate ? w.currentGateX(0) : 0) : aimOff ? 4.5 : lead,
+       firing: f.step >= FtueStep.Aim,
+       queen: true,
+     };
+@@ -59,7 +60,7 @@ describe('FTUE polish (M2-27, validation-m2.md #1 and #3)', () => {
+       if (!visible && shownAt >= 0) gone = w.time;
+       // Waits for the prompt, then taps at once.
+       const input: PlayerInput = {
+-        aimX: lead ?? 0,
++        aimX: lead ?? (f.step === FtueStep.Gate ? w.currentGateX(0) : 0),
+         firing: f.step >= FtueStep.Aim,
+         queen: visible,
+       };
+diff --git a/tests/levelTuningM2-26.test.ts b/tests/levelTuningM2-26.test.ts
+index 967ebf9..1019f94 100644
+--- a/tests/levelTuningM2-26.test.ts
++++ b/tests/levelTuningM2-26.test.ts
+@@ -8,11 +8,11 @@ describe('M2-26 tuning from validation-m2.md', () => {
+   const W = getLevel('wasp-queen-nest');
+ 
+   it('ships the spec values', () => {
+-    expect([T.nestHp, T.hiveHp]).toEqual([2650, 50]);
+-    expect([W.nestHp, W.hiveHp]).toEqual([3200, 50]);
++    expect([T.nestHp, T.hiveHp]).toEqual([3900, 50]);
++    expect([W.nestHp, W.hiveHp]).toEqual([2500, 50]);
+     expect(W.gates[1]).toMatchObject({ kind: 'add', value: 5 });
+-    expect(W.gates[2]).toMatchObject({ kind: 'mul', value: 3, width: 3.4, motion: { speed: 0.6 } });
+-    expect(W.gates[3]).toMatchObject({ kind: 'sub', x: 0, y: 14, width: 2.6, fromPhase: 2 });
++    expect(W.gates[2]).toMatchObject({ kind: 'mul', value: 3, width: 2.6, motion: { speed: 0.6 } });
++    expect(W.gates[3]).toMatchObject({ kind: 'sub', x: -1.3, y: 14, width: 2.4, fromPhase: 2 });
+   });
+ 
+   it.each([
+diff --git a/tests/levels.test.ts b/tests/levels.test.ts
+index 387a7ac..c60b4cc 100644
+--- a/tests/levels.test.ts
++++ b/tests/levels.test.ts
+@@ -12,20 +12,20 @@ describe('level data files', () => {
+       laneWidth: 10,
+       laneLength: 40,
+       timeLimit: 90,
+-      nestHp: 2350,
++      nestHp: 3050,
+       hiveHp: 50,
+       fireInterval: 0.11,
+       queenCharge: 7,
+       trickleInterval: 0.9,
+     });
+-    expect(CLOVER_RUN.gates).toHaveLength(5);
++    expect(CLOVER_RUN.gates).toHaveLength(7);
+     expect(CLOVER_RUN.gates[2]).toEqual({
+       kind: 'mul',
+       value: 3,
+-      x: 0,
++      x: 1.3,
+       y: 17,
+-      width: 2.6,
+-      motion: { amplitude: 3, speed: 0.9 },
++      width: 2.2,
++      motion: { amplitude: 0.6, speed: 0.9 },
+     });
+     expect(CLOVER_RUN.waves).toHaveLength(9);
+     expect(CLOVER_RUN.waves.reduce((s, w) => s + w.count, 0)).toBe(284);
