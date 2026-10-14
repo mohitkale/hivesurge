@@ -1,4 +1,4 @@
-# PR PENDING (number from hivesurge-review): research/m2-12-pr076-addendum
+# PR 090: research/m2-12-pr076-addendum
 
 - Branch `research/m2-12-pr076-addendum` off main `21acf39`. Owner: hivesurge-research. Not pushed.
 - Adds `playtests/m2-12/results/post-pr076/` (headless, 200 sessions/level/bot, BOT DATA) and a PROVISIONAL
