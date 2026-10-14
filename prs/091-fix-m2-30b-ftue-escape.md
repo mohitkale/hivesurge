@@ -1,4 +1,4 @@
-# PR (number pending from review): fix/m2-30b-ftue-escape
+# PR 091: fix/m2-30b-ftue-escape
 
 QA FAIL on PR 086 (already merged, at `903639c`): a player who never makes an aimed x2 hit sees
 "Drag to the x2 gate" through every retry, about 75 s each. The timeout only pulses the prompt.
