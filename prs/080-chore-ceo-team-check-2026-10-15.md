@@ -1,4 +1,4 @@
-# PR (number pending from review): chore/ceo-team-check-2026-10-15
+# PR 080: chore/ceo-team-check-2026-10-15
 
 **Summary:** CEO team-check log for 2026-10-15 00:42 IST. Updates `STATUS.md` after the post-stall restart wave (main through PR 078). Decision 38 records the new priority order. Docs only.
 
