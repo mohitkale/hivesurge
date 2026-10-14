@@ -216,7 +216,8 @@ export function waspGeometry(
   head: string = ART.waspHead,
   horns = false,
 ): THREE.BufferGeometry {
-  const abdomen = new THREE.ConeGeometry(0.3, 0.85, 6, 2);
+  // 4 height segments (was 2): the bands are per-face colours, so 2 rows aliased them away.
+  const abdomen = new THREE.ConeGeometry(0.3, 0.85, 6, 4);
   abdomen.rotateX(-Math.PI / 2); // tip points backwards (-Z)
   at(abdomen, 0, 0, -0.42);
   const thorax = new THREE.OctahedronGeometry(0.24);
@@ -233,7 +234,10 @@ export function waspGeometry(
   at(headG, 0, 0.06, 0.45);
   const sting = at(new THREE.ConeGeometry(0.05, 0.22, 3).rotateX(-Math.PI / 2), 0, 0, -0.95);
   const parts: Part[] = [
-    { geo: abdomen, color: stripes(body, band, 0.2, 0.0, -0.8, -0.15) },
+    // Colours are per face, so the band period must match the cone rows: 4 rows of 0.2125,
+    // period 0.425 with half dark = rows 1 and 3 (tail tip + mid band) in the band colour. The old
+    // 0.2 period aliased against 0.2125-high rows, which left almost no band on screen.
+    { geo: abdomen, color: stripes(body, band, 0.425, 0.845, -0.86, -0.15, 0.5) },
     { geo: thorax, color: body },
     { geo: waist, color: body },
     { geo: headG, color: head },
