@@ -12,6 +12,8 @@ export type AnalyticsEventName =
   | 'ad_failed'
   | 'revive_granted'
   | 'revive_declined'
+  | 'revive_gem_confirm'
+  | 'gems_spent'
   | 'purchase'
   | 'ftue_step';
 
@@ -75,6 +77,8 @@ export class Analytics {
       ad_failed: 0,
       revive_granted: 0,
       revive_declined: 0,
+      revive_gem_confirm: 0,
+      gems_spent: 0,
       purchase: 0,
       ftue_step: 0,
     };

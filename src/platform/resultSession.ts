@@ -51,4 +51,16 @@ export class ResultSession {
     if (revivedThisBattle) next.markReviveGranted();
     return next;
   }
+
+  /**
+   * Result state right after a granted revive, for the rest of the battle. Keeps a rewarded ad
+   * already shown, and a gem revive counts like one (revive-m2.md: blocks the interstitial on
+   * this transition, G4). `forBattleEnd` then carries it to the battle's result (PR 051).
+   */
+  static afterRevive(prev: ResultSession, source: 'ad' | 'free' | 'gems'): ResultSession {
+    const next = new ResultSession();
+    next.markReviveGranted();
+    if (prev.rewardedShown || source === 'gems') next.markRewardedShown();
+    return next;
+  }
 }

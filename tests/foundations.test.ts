@@ -53,7 +53,8 @@ describe('save store', () => {
     const b = { ...defaultSave(), revision: 7, coins: 80, gems: 9, bestStars: { x: 3, y: 2 } };
     const m = mergeSaves(a, b);
     expect(m.coins).toBe(100);
-    expect(m.gems).toBe(9);
+    // 048 follow-up: gems take the lower balance so a spend is never refunded by a merge.
+    expect(m.gems).toBe(0);
     expect(m.bestStars).toEqual({ x: 3, y: 2 });
     expect(m.noAds).toBe(true);
     expect(m.revision).toBe(8);

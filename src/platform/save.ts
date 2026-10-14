@@ -5,6 +5,15 @@ import type { KeyValueStore } from '../analytics/analytics';
  * local write and `updatedAt` records when, so a future cloud backend
  * (Supabase `saves` table with optimistic concurrency) can reconcile.
  */
+/* Kept here (not in reviveGems.ts) so the entry chunk does not pull in the gem revive code. */
+/** Persisted daily gem-revive counter (C2: the daily counter is saved, the session one is not). */
+export interface GemReviveDay {
+  day: string;
+  count: number;
+}
+
+export const emptyGemReviveDay = (): GemReviveDay => ({ day: '', count: 0 });
+
 export interface SaveData {
   version: 1;
   revision: number;
@@ -21,6 +30,8 @@ export interface SaveData {
   ftueDone: boolean;
   /** Daily ad counters for caps (G5); reset when `day` changes. */
   adDay: AdDayCounters;
+  /** M2-21c (C2): gem revives today; the per-session count is not saved. */
+  reviveGemDay: GemReviveDay;
   settings: { muted: boolean; colorBlind: boolean; haptics: boolean };
 }
 
@@ -52,6 +63,7 @@ export const defaultSave = (): SaveData => ({
   lastInterstitialAt: 0,
   ftueDone: false,
   adDay: emptyAdDay(),
+  reviveGemDay: emptyGemReviveDay(),
   settings: { muted: false, colorBlind: false, haptics: true },
 });
 
@@ -80,6 +92,10 @@ export function parseSave(raw: string | null): SaveData {
       lastInterstitialAt: num(d.lastInterstitialAt),
       ftueDone: d.ftueDone === true,
       adDay: parseAdDay(d.adDay),
+      reviveGemDay: {
+        day: typeof d.reviveGemDay?.day === 'string' ? d.reviveGemDay.day : '',
+        count: num(d.reviveGemDay?.count),
+      },
       settings: {
         muted: d.settings?.muted === true,
         colorBlind: d.settings?.colorBlind === true,
@@ -105,7 +121,13 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     revision: Math.max(a.revision, b.revision) + 1,
     updatedAt: Math.max(a.updatedAt, b.updatedAt),
     coins: Math.max(a.coins, b.coins),
-    gems: Math.max(a.gems, b.gems),
+    // Gems are spendable (gem revive): taking the max would undo a spend made on one side
+    // (spend 10 on device A, merge with stale B -> refund). Keep the lower balance for now.
+    // KNOWN GAP: this can lose gems bought or earned on the other device, and stores do NOT
+    // restore consumables like gems. Harmless until cloud save exists; must be replaced by a
+    // gem spend/grant ledger merge (PLAN M4-5) before cloud save ships.
+    gems: Math.min(a.gems, b.gems),
+    reviveGemDay: mergeGemDay(a.reviveGemDay, b.reviveGemDay),
     bestStars: stars,
     noAds: a.noAds || b.noAds,
     skins: [...new Set([...a.skins, ...b.skins])], // purchases are sticky
@@ -170,4 +192,13 @@ export class SaveStore {
       /* private mode / quota: keep playing with in-memory state */
     }
   }
+}
+
+/**
+ * Daily gem-revive counter merge (C2): the same day keeps the higher count (never resets the cap
+ * by merging); different days keep the later day's counter.
+ */
+export function mergeGemDay(a: GemReviveDay, b: GemReviveDay): GemReviveDay {
+  if (a.day === b.day) return { day: a.day, count: Math.max(a.count, b.count) };
+  return a.day > b.day ? { ...a } : { ...b };
 }

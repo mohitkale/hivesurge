@@ -55,7 +55,7 @@ describe('revive-m2.md test cases (M2-21)', () => {
     expect(o.countdown).toBe(OFFER_COUNTDOWN_S - 4);
   });
 
-  it('2. close early twice -> the offer is gone, defeat screen remains', () => {
+  it('2. close early twice, no gem option -> the offer is gone (gem cases: gemRevive.test.ts)', () => {
     const o = new ReviveOffer(loadedSession());
     o.request();
     expect(o.onAdResult('closed').kind).toBe('offer');
@@ -109,7 +109,7 @@ describe('revive-m2.md test cases (M2-21)', () => {
     expect(b.onAdResult('error')).toEqual({ kind: 'unavailable' });
     expect(b.button).toBe('unavailable');
     expect(b.takeFree()).toBeNull();
-    expect(b.decline()).toEqual({ kind: 'closed' }); // after the 3 s "Ad not available"
+    expect(b.afterNotice()).toEqual({ kind: 'closed' }); // after the 3 s "Ad not available"
   });
 
   it('4b. no free revive if no ad ever loaded this session (ad blocker)', () => {

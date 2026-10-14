@@ -7,6 +7,7 @@ import {
 } from './art/glbLoader';
 import * as THREE from 'three';
 import { haptic, Sfx } from './audio/sfx';
+import { GemReviveCaps, isEventFinalLevel, reviveGemConfig } from './platform/reviveGems';
 import { canOfferRewarded, canShowInterstitial, isLevelTransition } from './platform/adPolicy';
 import { AdPacer } from './platform/adPacer';
 import { applyPurchase } from './platform/entitlements';
@@ -42,6 +43,7 @@ import { defeatHeadline } from './ui/defeatCopy';
 import { PerfOverlay } from './ui/perfOverlay';
 import { PerfStats, perfEnabledFromUrl, stressCountFromUrl } from './ui/perfStats';
 import { UnitKind } from './sim/types';
+import { gemConfirmHtml, reviveRowHtml } from './ui/reviveOffer';
 
 type Phase = 'title' | 'battle' | 'result' | 'ad';
 
@@ -81,6 +83,10 @@ export class Game {
       )
     : NO_DEBUG; // production: the parser is tree-shaken out
   private reviveOffer: ReviveOffer | null = null;
+  /** M2-21c: gem revive config (C8 remote config seam; defaults = revive-gem.json). */
+  private readonly gemConfig = reviveGemConfig();
+  /** C2: session cap in memory, daily cap persisted in the save. */
+  private readonly gemCaps: GemReviveCaps;
   private reviveTimer = 0;
   private readonly perf = new PerfStats();
   private readonly perfOverlay = new PerfOverlay(document.getElementById('app')!);
@@ -94,6 +100,7 @@ export class Game {
     if (!this.save.ftueDone && this.save.battlesCompleted > 0) this.save.ftueDone = true;
     this.world = new World(this.currentLevel());
     this.pacer = new AdPacer(this.save.adDay);
+    this.gemCaps = new GemReviveCaps(this.save.reviveGemDay, this.gemConfig.gemCaps);
     applyTheme(document.documentElement, this.save.settings.colorBlind);
     this.sfx.setMuted(this.save.settings.muted);
     this.scene = this.makeScene();
@@ -384,7 +391,12 @@ export class Game {
           nestDamage: r.nestDamage,
         }))
     ) {
-      this.reviveOffer = new ReviveOffer(this.reviveSession);
+      this.reviveOffer = new ReviveOffer(this.reviveSession, {
+        wallet: this.save,
+        price: this.gemConfig.gemPrice,
+        caps: this.gemCaps,
+        eventFinalLevel: isEventFinalLevel(this.world.level.id),
+      });
       this.analytics.track('ad_offered', {
         placement: 'revive',
         type: 'rewarded',
@@ -400,19 +412,18 @@ export class Game {
     const pct = Math.ceil((1 - r.nestDamage) * 100);
     const o = this.reviveOffer;
     let reviveRow = '';
-    if (o && o.open) {
-      const secs = `<span class="revive-count" aria-live="off">${Math.ceil(o.countdown)}</span>`;
-      const main =
-        o.button === 'ad'
-          ? `<button class="btn ad" data-a="revive">Revive (watch ad) · ${secs}</button>`
-          : o.button === 'free'
-            ? `<button class="btn" data-a="reviveFree">Revive (free) · ${secs}</button>`
-            : '<button class="btn" data-a="unavailable" disabled>Ad not available</button>';
-      // G9: Revive and "No thanks" have the same size and style.
-      reviveRow = `<div class="row revive-row">${main}<button class="btn" data-a="noThanks">No thanks</button></div>`;
-    }
+    if (o && o.open)
+      reviveRow = o.confirmOpen
+        ? gemConfirmHtml(o.gemPrice, this.save.gems)
+        : reviveRowHtml({
+            button: o.button,
+            gemState: o.gemState,
+            price: o.gemPrice,
+            balance: this.save.gems,
+            countdown: o.countdown,
+          });
     this.overlay.innerHTML = `<div class="modal"><div class="card">
-      <h1>${defeatHeadline(r.nestDamage)}</h1><p class="reward">Nest at ${pct}% health</p>
+      <h1 tabindex="-1">${defeatHeadline(r.nestDamage)}</h1><p class="reward">Nest at ${pct}% health</p>
       <p class="small">Tip: chain ×2 into ×3 and send the Queen ahead of big waves.</p>
       ${reviveRow}
       <div class="row"><button class="btn" data-a="retry">Retry (free)</button>
@@ -426,12 +437,44 @@ export class Game {
       noThanks: () => {
         const o2 = this.reviveOffer;
         if (!o2 || !o2.open) return;
-        this.analytics.track('revive_declined', { reason: 'button', closesBefore: o2.closes });
+        this.analytics.track('revive_declined', {
+          reason: 'button',
+          closesBefore: o2.closes,
+          gemBalance: this.save.gems,
+          gemButtonState: o2.gemState,
+        });
         this.applyReviveStep(o2.decline(), r);
+      },
+      reviveGems: () => {
+        const o2 = this.reviveOffer;
+        if (!o2?.openGemConfirm()) return;
+        this.analytics.track('revive_gem_confirm', { action: 'open', balance: this.save.gems });
+        this.renderLoss(r);
+      },
+      gemBack: () => {
+        const o2 = this.reviveOffer;
+        if (!o2?.confirmOpen) return;
+        o2.backFromConfirm();
+        this.analytics.track('revive_gem_confirm', { action: 'back', balance: this.save.gems });
+        this.renderLoss(r);
+      },
+      gemSpend: () => {
+        const o2 = this.reviveOffer;
+        const step = o2?.takeGems(this.world.revives);
+        if (!step) return;
+        this.analytics.track('gems_spent', {
+          sink: 'revive',
+          amount: step.kind === 'grant' ? (step.price ?? 0) : 0,
+          balanceAfter: this.save.gems,
+        });
+        this.persist(); // debit + daily cap saved before the battle resumes
+        this.applyReviveStep(step, r);
       },
       retry: () => this.claim(r, true),
       home: () => this.claim(r),
     });
+    // Focus starts on the panel title, never on a button (no default choice).
+    this.overlay.querySelector<HTMLElement>('h1')?.focus({ preventScroll: true });
   }
 
   private async requestRevive(r: Rewards): Promise<void> {
@@ -443,7 +486,15 @@ export class Game {
     this.analytics.track('ad_requested', { placement: 'revive', attempt });
     const res = await this.watchRewarded('revive');
     if (this.reviveOffer !== o || this.result.isClaimed) return;
-    this.applyReviveStep(o.onAdResult(res), r);
+    const step = o.onAdResult(res);
+    if (step.kind === 'closed')
+      this.analytics.track('revive_declined', {
+        reason: 'no_option',
+        closesBefore: o.closes,
+        gemBalance: this.save.gems,
+        gemButtonState: o.gemState,
+      });
+    this.applyReviveStep(step, r);
   }
 
   private applyReviveStep(step: ReviveStep, r: Rewards): void {
@@ -457,14 +508,16 @@ export class Game {
         return;
       }
       this.result.markReviveGranted();
-      this.analytics.track('revive_granted', { source: step.source, attempt: step.attempt });
+      this.analytics.track('revive_granted', {
+        source: step.source,
+        attempt: step.attempt,
+        ...(step.price ? { price: step.price } : {}),
+      });
       this.stopReviveCountdown();
       this.reviveOffer = null;
       // A fresh result for the next battle end; keep the "rewarded ad shown" block (G4).
-      const shown = this.result.rewardedShown;
-      this.result = new ResultSession();
-      this.result.markReviveGranted();
-      if (shown) this.result.markRewardedShown();
+      // A gem revive blocks the interstitial like a rewarded ad (revive-m2.md, G4).
+      this.result = ResultSession.afterRevive(this.result, step.source);
       this.overlay.innerHTML = '';
       this.input.enabled = true;
       this.phase = 'battle';
@@ -476,7 +529,16 @@ export class Game {
       const o = this.reviveOffer;
       setTimeout(() => {
         if (this.reviveOffer !== o || !o?.open) return;
-        this.applyReviveStep(o.decline(), r);
+        // Stays open only while gems are valid (revive-m2.md); otherwise "no_option".
+        const next = o.afterNotice();
+        if (next.kind === 'closed')
+          this.analytics.track('revive_declined', {
+            reason: 'no_option',
+            closesBefore: o.closes,
+            gemBalance: this.save.gems,
+            gemButtonState: o.gemState,
+          });
+        this.applyReviveStep(next, r);
       }, UNAVAILABLE_MS);
       return;
     }
