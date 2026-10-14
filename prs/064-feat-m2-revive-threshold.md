@@ -1,6 +1,6 @@
-# PR (not opened, waiting on design PR 049): feat/m2-revive-threshold
+# PR 064: feat/m2-revive-threshold
 
-Built from the spec on `design/revive-threshold` @ `02b0b9d` (PR 049, **not merged** into main when this was written). Base: main `94f5844`. No PR number claimed. Open it once 049 merges, after rebasing onto that main.
+Implements design PR 049 (merged, `26851de`; spec docs/design/revive-m2.md). Base: main `57a32a0` (includes 048 gem revive).
 
 ## Changes
 
@@ -30,6 +30,20 @@ The casual bot rarely loses on Dandelion, so this sample still can't show the 30
 - The override (0.5) is used, and invalid overrides fall back.
 - Other eligibility rules still apply.
 
+## Docs updated (50% -> `revive.minNestDamage`, default 25%)
+
+- STATUS.md decision 19
+- monetization/revive-m2-21a.md: eligibility row, and the economy assumption note
+- monetization/sim/economy_sim.py: comment on `REVIVE_ELIG_SHARE`. The value 0.5 is **not** retuned; at 25% the bots put the share at 96–100% of losses. That's for monetization to update. `economy_sim.py` and `check_guardrails.py` still run OK.
+
+## Fit with 048 (gem revive)
+
+The threshold only gates whether an offer opens (`shouldOfferRevive`, plus 047's dev-only `?revive=force`). The gem option, caps and the early-close rule are unchanged, and all gem revive tests pass.
+
+## Pending
+
+`revive.gemPrice` default 10 -> 5 (monetization PR 063). 063 isn't merged: INDEX says "changes", because price 5 breaks T-G19a and G19 still says 10. It'll be a tiny follow-up once it merges.
+
 ## Checks
 
-lint ok · tests 222/222 · build ok · size budget: initial JS 2.26 KiB gzip, dist 901.37 KiB.
+npx eslint (v10.12.0) ok · tests 266/266 · build ok · size budget: initial JS 2.34 KiB gzip, dist ~907 KiB. `prettier --check .` flags 3 files that came from main (`playtests/m2-12/results/post-m2-26/sim-sessions.json`, `playtests/m2-19a-2026-10-14.md`, `prs/059-qa-m2-19a-emulation-perf.md`). This PR doesn't touch them.
