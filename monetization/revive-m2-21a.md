@@ -13,14 +13,14 @@ Test mode only.
 
 ## Recommendation
 
-| Item          | Value                                                                                                                             |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Price         | **10 gems, flat. No escalation** within a battle, session or day. That's about $0.42 at the `gems_small` rate (120 gems / $4.99). |
-| Per battle    | **1 revive total**, shared across ad, free fallback and gem (`revives === 0` already enforced by `world.revive()`)                |
-| Per session   | ≤ 2 gem revives                                                                                                                   |
-| Per day       | ≤ 3 gem revives (the ad revive keeps its own 10/day cap in `ad-placements.md`)                                                    |
-| Eligibility   | Same as `shouldOfferRevive`: not in FTUE, `revives === 0`, nest damage ≥ 50%. The gem button only appears inside that same offer. |
-| Remote config | `revive.gemPrice`, `revive.gemCaps` (session/day); values in `monetization/revive-gem.json`                                       |
+| Item          | Value                                                                                                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Price         | **10 gems, flat. No escalation** within a battle, session or day. That's about $0.42 at the `gems_small` rate (120 gems / $4.99).                                                 |
+| Per battle    | **1 revive total**, shared across ad, free fallback and gem (`revives === 0` already enforced by `world.revive()`)                                                                |
+| Per session   | ≤ 2 gem revives                                                                                                                                                                   |
+| Per day       | ≤ 3 gem revives (the ad revive keeps its own 10/day cap in `ad-placements.md`)                                                                                                    |
+| Eligibility   | Same as `shouldOfferRevive`: not in FTUE, `revives === 0`, nest damage ≥ `revive.minNestDamage` (0.25 since PR 049; was 50%). The gem button only appears inside that same offer. |
+| Remote config | `revive.gemPrice`, `revive.gemCaps` (session/day); values in `monetization/revive-gem.json`                                                                                       |
 
 ## Interaction with the existing ad and free revive (PR 030)
 
@@ -57,28 +57,34 @@ Test mode only.
 
 ## Sim impact (`python3 monetization/sim/economy_sim.py`, seed 42, 200 runs, design 91fed5c, k = 0.5)
 
-New output (ASSUMPTIONS: 50% of losses reach ≥ 50% nest damage; weekly boss and event gem targets are completed. Gems from 3-star daily targets and every-10th-level gems are not counted, so income is conservative):
+New output (ASSUMPTIONS: 95% of losses reach ≥ 25% nest damage (PR 049 threshold; the bot check in `revive-m2.md` gives 416/421 ≈ 99% at 25%, vs 48% at the old 50%), `--revive-elig`; weekly boss and event gem targets are completed. Gems from 3-star daily targets and every-10th-level gems are not counted, so income is conservative):
 
 > **Weekly-gem assumption (affects every gem number below):** the sim credits **35 gems every week to every persona** (weekly boss target 20 + event points target 15; `WEEKLY_GEMS` in `economy_sim.py`), on the assumption that every player completes both targets.
 > That is 140 of the ~230 free gems in 30 days (about 60%).
 > Re-running with `WEEKLY_GEMS = 0` (100 runs) gives about 90 free gems per 30 days (3.0/day), and coverage at 10 gems drops from 96–100% to about 38–41%.
 > Treat the coverage figures below as an upper bound until playtest data shows weekly-target completion rates. If completion is low, revisit the price (C8 remote config) before the gem revive ships.
 
-| Persona    | Free gems / 30 d  | Revive-eligible defeats / 30 d | Gems to gem-revive them all at 10 | Free income covers |
-| ---------- | ----------------- | ------------------------------ | --------------------------------- | ------------------ |
-| no-ads     | 230 (7.7/day)     | 24 (0.8/day)                   | 240                               | 96%                |
-| ad-watcher | 230               | 23                             | 230                               | 100%               |
-| payer      | 230 (+ purchases) | 22.5                           | 225                               | 100%               |
+**Re-run at the 25% threshold (PR 049), seed 42, 200 runs, design 91fed5c, k = 0.5:**
 
-At 15 gems, coverage drops to about 65%. That would put pressure on free players to buy gems, so 10 is the ceiling.
+| Persona    | Free gems / 30 d                      | Revive-eligible defeats / 30 d | Coverage at 10 gems | Coverage at 10 gems, no weekly gems | Coverage at 5 gems | Coverage at 5 gems, no weekly gems |
+| ---------- | ------------------------------------- | ------------------------------ | ------------------- | ----------------------------------- | ------------------ | ---------------------------------- |
+| no-ads     | 230 (7.7/day); 90 without weekly gems | 47 (1.57/day)                  | 49%                 | 19%                                 | 98%                | 38%                                |
+| ad-watcher | 230; 90                               | 45 (1.50/day)                  | 51%                 | 20%                                 | 100%               | 40%                                |
+| payer      | 230 (+ purchases); 90                 | 42 (1.40/day)                  | 55%                 | 21%                                 | 100%               | 43%                                |
 
-- At 10 gems, a free player could gem-revive almost every eligible defeat from earned gems alone. That competes with chest skips (3–35 gems), which is a healthy soft-currency choice, not a pressure to buy.
-- The daily cap of 3 is above the typical demand (~0.8/day), so it only binds for unusual sessions and limits loss-chasing.
-- No revenue is projected. Real conversion effects need playtest and analytics data.
+At the old 50% threshold these were 0.8 eligible defeats/day and 96–100% coverage at 10 gems.
+
+- **Flag: 10 gems no longer meets this doc's own bar.** Revive offers roughly double (about 1.5/day). At 10 gems, earned gems now cover only about half of the gem revives a no-ads player could want (about 20% if weekly gems are missed). That is below the ~65% level that ruled out 15 gems earlier.
+- **Mitigations already in place:**
+  - The ad revive stays free and is the primary path (G8).
+  - The 3/day gem cap bounds spend at 30 gems/day.
+  - "Revive all with gems" overstates real demand.
+- **Recommendation:** lower `revive.gemPrice` to **5 gems** via remote config (C8). That restores 98–100% coverage, or 38–43% without weekly gems. Alternatively, keep 10 and accept the pressure only if playtests show most players use the ad revive. This needs a MON/DES decision. `revive-gem.json` is unchanged at 10 until then (G19 passes either way).
+- No revenue is projected.
 
 ## Conditions for ENG (GO with conditions)
 
-- **C1 (pending ENG, M2-21c):** extend `ReviveOffer` with `takeGems()` (not implemented yet). Grant only after an atomic gem debit, and never when `revives > 0` or the offer is closed.
+- **C1 (done: M2-21c, PR 048, `2a5ad67`):** extend `ReviveOffer` with `takeGems()`. Grant only after an atomic gem debit, and never when `revives > 0` or the offer is closed.
 - **C2:** gem caps (2/session, 3/day) in `AdPacer`-style counters; the daily counter is persisted, the session counter is not.
 - **C3:** hide the gem button while the `free` button is shown.
 - **C4:** no IAP or gem-store link from the offer; when the balance is too low, show the button disabled.

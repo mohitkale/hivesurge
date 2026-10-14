@@ -97,8 +97,8 @@ LOGIN = [('coins', 100), ('chest', 'wood'), ('gems', 5), ('coins', 300), ('chest
 DAILY_TARGET_COINS = 260  # LIVE pool, ASSUMPTION mix of 3 coin targets
 DAILY_XP = 3 * 20 + 50    # LIVE: 20/target + 50 daily bonus
 WEEKLY_XP = 3 * 100       # ASSUMPTION: 3 of 5 weekly targets completed
-WEEKLY_GEMS = 20 + 15  # LIVE weekly boss (20) + event points (15) targets; ASSUMPTION both completed
-REVIVE_ELIG_SHARE = 0.5  # ASSUMPTION share of losses with nest damage >= 50% (REVIVE_NEST_DAMAGE, CODE revive.ts)
+WEEKLY_GEMS = arg('--weekly-gems', 20 + 15)  # LIVE weekly boss (20) + event points (15) targets; ASSUMPTION both completed (--weekly-gems 0 = none)
+REVIVE_ELIG_SHARE = arg('--revive-elig', 0.95)  # ASSUMPTION share of losses with nest damage >= revive.minNestDamage 0.25 (PR 049; bot check in revive-m2.md: 416/421 = 99% at 25%, 204/421 = 48% at 50%), rounded down
 FTUE_BATTLES = 3  # G2
 PITY, SLOTS, BATTLES, SESSIONS = 40, 4, 6, 3  # META / ASSUMPTION
 PERSONAS = {  # ASSUMPTION persona definitions
