@@ -29,3 +29,12 @@ export class FixedStepper {
     return n;
   }
 }
+
+/**
+ * Starts the timer that keeps the fixed-step sim pumping between frames; returns a stop
+ * function. Callers must stop it on teardown (fix/perf-lowend-2 review nit).
+ */
+export function startSimTimer(pump: () => void, stepSec: number): () => void {
+  const id = setInterval(pump, 1000 * stepSec);
+  return () => clearInterval(id);
+}
