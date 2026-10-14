@@ -904,8 +904,10 @@ export class Game {
       }
     }
     this.sfx.swarm(w.bees.count);
-    // M2-31: brief "Missed!" on a gate row a run of bees flew past (MISS_CUE, design to confirm).
-    const missRow = this.missCue?.update(w.rowMisses, dt) ?? -1;
+    // M2-31: brief "Missed!" on a gate row a run of bees flew past (MISS_CUE, design-confirmed).
+    // Suppressed while an FTUE prompt is on screen.
+    const missRow =
+      this.missCue?.update(w.rowMisses, dt, !!this.ftue && this.ftue.prompt !== '') ?? -1;
     if (missRow >= 0) this.float(MISS_CUE.text, w.cannonX, w.gateRowY[missRow]);
     let nestDmg = 0;
     for (const e of w.drainEvents()) {

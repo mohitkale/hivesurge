@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { getLevel } from '../src/levels';
 import { SIM_DT, World } from '../src/sim/world';
@@ -36,14 +37,47 @@ describe('M2-31 missed-gate feedback (QA S1-S3: volleys go straight up past the 
         expect(L5.gateRowY).not.toContain(y);
   });
 
-  it('cue: fires after MISS_CUE.minMisses on a row, then waits out the cooldown', () => {
-    const c = new MissCue(2, { enabled: true, minMisses: 6, cooldownS: 3 });
+  it('design ruling: Missed!, 6 bees, 4 s cooldown, 3 per level, on', () => {
+    expect(MISS_CUE).toEqual({
+      enabled: true,
+      text: 'Missed!',
+      minMisses: 6,
+      cooldownS: 4,
+      maxPerLevel: 3,
+    });
+  });
+
+  it('cue: fires after 6 misses on a row, then waits out the 4 s cooldown', () => {
+    const c = new MissCue(2);
     expect(c.update([5, 0], 0.1)).toBe(-1);
     expect(c.update([6, 0], 0.1)).toBe(0);
-    expect(c.update([20, 0], 1)).toBe(-1); // cooldown
-    expect(c.update([20, 0], 2.1)).toBe(-1); // misses during cooldown do not stack
-    expect(c.update([26, 0], 0.1)).toBe(0);
+    expect(c.update([20, 0], 3)).toBe(-1); // 3 s into the cooldown
+    expect(c.update([20, 0], 0.9)).toBe(-1); // misses during the cooldown do not stack
+    expect(c.update([26, 0], 0.2)).toBe(0); // 4.1 s: cools down, 6 new misses
     expect(new MissCue(1, { ...MISS_CUE, enabled: false }).update([99], 1)).toBe(-1);
+  });
+
+  it('cue: at most 3 per level', () => {
+    const c = new MissCue(1);
+    let n = 0;
+    for (let k = 1; k <= 20; k++) if (c.update([k * 6], 5) >= 0) n++;
+    expect(n).toBe(3);
+    expect(c.shown).toBe(3);
+  });
+
+  it('cue: suppressed while an FTUE prompt is on screen (misses then do not carry over)', () => {
+    const c = new MissCue(1);
+    expect(c.update([10], 0.1, true)).toBe(-1);
+    expect(c.update([10], 0.1, false)).toBe(-1); // absorbed while suppressed
+    expect(c.update([16], 0.1, false)).toBe(0);
+    expect(c.shown).toBe(1);
+  });
+
+  it('game.ts suppresses the cue while the FTUE prompt is non-empty', () => {
+    const g = readFileSync('src/game.ts', 'utf8');
+    expect(g).toMatch(
+      /missCue\?\.update\(\s*w\.rowMisses,\s*dt,\s*!!this\.ftue && this\.ftue\.prompt !== ''/,
+    );
   });
 
   it('a centre-firing L1 player sees the cue within 3 s; an aimed player not on the x2 row', () => {
