@@ -13,11 +13,14 @@ export class Particles {
   private readonly life: Float32Array;
   private readonly size: Float32Array;
   private next = 0;
+  /** Live particle budget (quality tier); bursts recycle within [0, budget). */
+  private budget: number;
   private readonly m = new THREE.Matrix4();
   private readonly color = new THREE.Color();
 
   constructor(max = 800) {
     this.max = max;
+    this.budget = max;
     const geo = new THREE.IcosahedronGeometry(0.12, 0);
     const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.95 });
     this.mesh = new THREE.InstancedMesh(geo, mat, max);
@@ -34,7 +37,7 @@ export class Particles {
     this.color.set(color);
     for (let k = 0; k < n; k++) {
       const i = this.next;
-      this.next = (this.next + 1) % this.max;
+      this.next = (this.next + 1) % this.budget;
       const a = Math.random() * Math.PI * 2;
       const s = speed * (0.4 + Math.random() * 0.6);
       this.px[i] = x;
@@ -50,11 +53,25 @@ export class Particles {
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }
 
+  /** Cap live particles (quality tier). Particles past the new budget are dropped. */
+  setBudget(n: number): void {
+    this.budget = Math.max(1, Math.min(this.max, Math.floor(n)));
+    for (let i = this.budget; i < this.max; i++) this.life[i] = 0;
+    if (this.next >= this.budget) this.next = 0;
+  }
+
+  /** Instances drawn last update: only up to the highest live particle (not all 800). */
+  get drawn(): number {
+    return this.mesh.count;
+  }
+
   update(dt: number): void {
-    for (let i = 0; i < this.max; i++) {
+    let hi = 0;
+    for (let i = 0; i < this.budget; i++) {
       if (this.life[i] <= 0) {
         this.m.makeScale(0, 0, 0);
       } else {
+        hi = i + 1;
         this.life[i] -= dt;
         this.vy[i] -= 14 * dt;
         this.px[i] += this.vx[i] * dt;
@@ -65,6 +82,8 @@ export class Particles {
       }
       this.mesh.setMatrixAt(i, this.m);
     }
+    // Draw only up to the highest live particle instead of the whole pool.
+    this.mesh.count = hi;
     this.mesh.instanceMatrix.needsUpdate = true;
   }
 }
