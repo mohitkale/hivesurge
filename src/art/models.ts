@@ -173,12 +173,16 @@ export function beeGeometry(
  * with fewer segments, single-segment antenna stalks and no cheek dabs, so it still reads as a bee at 16-24 px. Eng
  * owns the switch (when to use it); nothing references it yet.
  */
-export function beeCrowdGeometry(scale = 1): THREE.BufferGeometry {
+export function beeCrowdGeometry(
+  scale = 1,
+  body: string = ART.beeBody,
+  stripe: string = ART.beeStripe,
+): THREE.BufferGeometry {
   const abdomen = sphere(0.5, 6, 5);
   abdomen.scale(1, 0.92, 1.2);
   at(abdomen, 0, 0, -0.12);
   const parts: Part[] = [
-    { geo: abdomen, color: stripes(ART.beeBody, ART.beeStripe, 0.3, 0.1, -0.62, 0.3, 0.34) },
+    { geo: abdomen, color: stripes(body, stripe, 0.3, 0.1, -0.62, 0.3, 0.34) },
     { geo: at(sphere(0.3, 5, 3), 0, 0.06, 0.55), color: ART.beeHead },
     ...wingPair(0.8, 0.32, 0.42, -0.35, ART.beeWing, false),
   ];
@@ -199,6 +203,44 @@ export function beeCrowdGeometry(scale = 1): THREE.BufferGeometry {
     });
   }
   return bake(parts, scale);
+}
+
+/**
+ * Far crowd stand-in (fix/crowd-lod-hysteresis): 20-triangle elongated icosahedron with the
+ * body / stripe banding baked in, no wings (zero aWing, so the flap shader leaves it alone).
+ * Used only beyond 0.6 lane length where a unit is a few pixels tall.
+ */
+export function crowdFarGeometry(
+  scale = 1,
+  body: string = ART.beeBody,
+  stripe: string = ART.beeStripe,
+): THREE.BufferGeometry {
+  const g = new THREE.IcosahedronGeometry(0.46, 0);
+  g.scale(1, 0.8, 1.3);
+  return bake([{ geo: g, color: stripes(body, stripe, 0.4, 0.1, -0.7, 0.35, 0.45) }], scale);
+}
+
+/**
+ * Far wasp stand-in (design condition for PR 083): 16 tris, two octahedra with a pinched waist,
+ * elongated (abdomen 0.8 x 0.8 x 1.5) and all dark (no orange band: from the battle camera it
+ * read as bee yellow under deuteranopia), so it differs from the round, light far bee by
+ * silhouette and value, not hue.
+ */
+export function waspFarGeometry(scale = 1): THREE.BufferGeometry {
+  const abdomen = new THREE.OctahedronGeometry(0.46, 0);
+  abdomen.scale(0.8, 0.8, 1.5);
+  at(abdomen, 0, 0, -0.22);
+  const thorax = new THREE.OctahedronGeometry(0.24, 0);
+  thorax.scale(1, 0.9, 1.2);
+  at(thorax, 0, 0.02, 0.4);
+  return bake(
+    [
+      // All dark: an orange top face read as bee-yellow under deuteranopia (PR 083 crops).
+      { geo: abdomen, color: ART.waspBody },
+      { geo: thorax, color: ART.waspHead },
+    ],
+    scale,
+  );
 }
 
 /** Queen: bigger bee, gold crown with teal gems, cape of warm amber. */

@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+  <body style="margin: 0; background: #fff1dc; font: 12px sans-serif">
+    <canvas id="out"></canvas>
+    <script type="module">
+      // PR 083 model sheet: full / mid 148 / far 20 per skin and wasp, plus far at real 24 and 16 px
+      // (shown 1x and nearest-neighbour x6). Rendered by art/tools/crowd-lod-far-shots.mjs.
+      import * as THREE from 'three';
+      import { waspGeometry, crowdFarGeometry, waspFarGeometry } from '/src/art/models.ts';
+      import { SKINS, skinGeometry, skinCrowdGeometry, skinFarGeometry } from '/src/art/skins.ts';
+      import { ART } from '/src/art/palette.ts';
+      const gl = document.createElement('canvas');
+      const r = new THREE.WebGLRenderer({
+        canvas: gl,
+        antialias: true,
+        preserveDrawingBuffer: true,
+      });
+      r.outputColorSpace = THREE.SRGBColorSpace;
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+      const shot = (geo, px, cam) => {
+        r.setSize(px, px, false);
+        const s = new THREE.Scene();
+        s.background = new THREE.Color('#7cc46a');
+        s.add(new THREE.HemisphereLight('#fff6e0', '#6b8f4e', 1.6));
+        const d = new THREE.DirectionalLight('#fff', 1.6);
+        d.position.set(-6, 14, 6);
+        s.add(d);
+        const m = new THREE.Mesh(geo, mat);
+        m.rotation.y = Math.PI;
+        s.add(m);
+        geo.computeBoundingSphere();
+        const k = geo.boundingSphere.radius / 0.8;
+        const c = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+        c.position.set(...cam.map((v) => v * k));
+        c.lookAt(0, 0, 0);
+        r.render(s, c);
+        return gl;
+      };
+      const tris = (g) => (g.index ? g.index.count : g.getAttribute('position').count) / 3;
+      const rows = SKINS.map((sk) => [
+        `bee: ${sk.name}`,
+        [skinGeometry(sk, 1), skinCrowdGeometry(sk, 1), skinFarGeometry(sk, 1)],
+      ]);
+      const waspFull = waspGeometry(1);
+      rows.push([
+        'wasp (BEFORE: bee far shape)',
+        [waspFull, waspFull, crowdFarGeometry(1, ART.waspBody, ART.waspBand)],
+      ]);
+      rows.push(['wasp (AFTER: pinched far)', [waspFull, waspFull, waspFarGeometry(1)]]);
+      const BIG = 150,
+        ROW = BIG + 30,
+        X0 = 190;
+      const out = document.getElementById('out');
+      out.width = X0 + 3 * (BIG + 10) + 24 + 16 + 24 * 6 + 16 * 6 + 70;
+      out.height = 30 + rows.length * ROW;
+      const o = out.getContext('2d');
+      o.imageSmoothingEnabled = false;
+      o.fillStyle = '#3a2412';
+      ['full', 'mid (148 crowd)', 'far (20 / 16)', '24px', '16px', '24px x6', '16px x6'].forEach(
+        (h, i) =>
+          o.fillText(
+            h,
+            [
+              X0,
+              X0 + BIG + 10,
+              X0 + 2 * (BIG + 10),
+              X0 + 3 * (BIG + 10),
+              X0 + 3 * (BIG + 10) + 34,
+              X0 + 3 * (BIG + 10) + 60,
+              X0 + 3 * (BIG + 10) + 214,
+            ][i],
+            18,
+          ),
+      );
+      const cam = [2.2, 2.4, 3.2];
+      rows.forEach(([name, geos], ri) => {
+        const y = 30 + ri * ROW;
+        o.fillStyle = '#3a2412';
+        o.fillText(name, 8, y + 70);
+        geos.forEach((g, ci) => {
+          o.drawImage(shot(g, BIG, cam), X0 + ci * (BIG + 10), y);
+          o.fillText(`${tris(g)} tris`, X0 + ci * (BIG + 10), y + BIG + 14);
+        });
+        let x = X0 + 3 * (BIG + 10);
+        // Battle camera looks down the lane: higher, steeper view for the tiny tiles.
+        const bc = [0, 3.2, 2.4];
+        o.drawImage(shot(geos[2], 24, bc), x, y);
+        o.drawImage(shot(geos[2], 16, bc), x + 34, y);
+        o.drawImage(shot(geos[2], 24, bc), 0, 0, 24, 24, x + 60, y, 144, 144);
+        o.drawImage(shot(geos[2], 16, bc), 0, 0, 16, 16, x + 214, y, 96, 96);
+      });
+      document.title = 'ready';
+    </script>
+  </body>
+</html>

@@ -15,16 +15,26 @@ import {
 import { Particles } from './particles';
 import { drawLabel, grassTexture, labelTexture } from './textures';
 import {
+  beeCrowdGeometry,
   beeGeometry,
   cannonGeometry,
+  crowdFarGeometry,
   hornetGeometry,
   nestGeometry,
   queenGeometry,
+  waspFarGeometry,
   waspGeometry,
 } from '../art/models';
 import { BIOMES, layoutBiome, type BiomeKit } from '../art/biomes';
 import { scaledModel, type ModelLibrary } from '../art/glbLoader';
-import { DEFAULT_SKIN, skinGeometry, type BeeSkin } from '../art/skins';
+import {
+  DEFAULT_SKIN,
+  skinCrowdGeometry,
+  skinFarGeometry,
+  skinGeometry,
+  type BeeSkin,
+} from '../art/skins';
+import { CrowdLodSwitch, LOD_EDGE_FRACS, LOD_MARGIN_FRAC, LodBand, nextBand } from './crowdLod';
 import { TIER_SETTINGS, type TierSettings } from './quality';
 
 import { COLORS, type Palette } from '../ui/theme';
@@ -144,6 +154,22 @@ export class GameScene {
       wasp: this.unitMesh(this.model('unit-wasp', 0.5, waspGeometry), 400, 0.5, 30),
       hornet: this.unitMesh(this.model('unit-hornet', 0.85, hornetGeometry), 100, 0.85, 24),
     };
+    // Crowd LOD meshes (fix/crowd-lod-hysteresis): mid = 148-tri crowd bee, far = 20-tri stand-in.
+    this.lod = {
+      workerMid: this.unitMesh(
+        this.beeSkin ? skinCrowdGeometry(this.beeSkin, 0.42) : beeCrowdGeometry(0.42),
+        600,
+        0.42,
+        22,
+      ),
+      workerFar: this.unitMesh(
+        this.beeSkin ? skinFarGeometry(this.beeSkin, 0.42) : crowdFarGeometry(0.42),
+        600,
+        0.42,
+        22,
+      ),
+      waspFar: this.unitMesh(waspFarGeometry(0.5), 400, 0.5, 30),
+    };
     this.scene.add(this.particles.mesh);
     this.buildCannon();
     this.buildNest();
@@ -153,6 +179,12 @@ export class GameScene {
   }
 
   private readonly fog: THREE.Fog;
+  private readonly lod: Record<'workerMid' | 'workerFar' | 'waspFar', THREE.InstancedMesh>;
+  /** Per-side crowd switch (enter/exit thresholds + hold), exposed for the debug overlay. */
+  readonly crowdLod = {
+    bees: new CrowdLodSwitch(TIER_SETTINGS.high.crowdLod),
+    wasps: new CrowdLodSwitch(TIER_SETTINGS.high.crowdLod),
+  };
   private readonly lights: THREE.Light[] = [];
   private readonly scatterProps: THREE.InstancedMesh[] = [];
   private readonly backdropProps: THREE.InstancedMesh[] = [];
@@ -167,6 +199,8 @@ export class GameScene {
    */
   applyQuality(q: TierSettings): void {
     this.quality = q;
+    this.crowdLod.bees.thresholds = q.crowdLod;
+    this.crowdLod.wasps.thresholds = q.crowdLod;
     this.scene.fog = q.fog ? this.fog : null;
     for (const m of this.scatterProps) m.visible = q.props > 0;
     for (const m of this.backdropProps) m.visible = q.props >= 1;
@@ -365,11 +399,13 @@ export class GameScene {
   private buildHive(): void {
     const hexMat = new THREE.MeshLambertMaterial({ color: '#f2a516' });
     const hexGeo = new THREE.CylinderGeometry(0.62, 0.62, 0.8, 6);
-    for (let i = -4; i <= 4; i++) {
-      const h = new THREE.Mesh(hexGeo, hexMat);
-      h.position.set(i * 1.12, 0.4 + (i % 2 ? 0.25 : 0), 1.4);
-      this.hive.add(h);
-    }
+    // One instanced draw for the 9 hexes (was 9 meshes / 9 draw calls).
+    const hexes = new THREE.InstancedMesh(hexGeo, hexMat, 9);
+    const m = new THREE.Matrix4();
+    for (let i = -4; i <= 4; i++)
+      hexes.setMatrixAt(i + 4, m.makeTranslation(i * 1.12, 0.4 + (i % 2 ? 0.25 : 0), 1.4));
+    hexes.computeBoundingSphere();
+    this.hive.add(hexes);
     this.scene.add(this.hive);
   }
 
@@ -543,8 +579,25 @@ export class GameScene {
   render(world: World, dt: number): void {
     this.t += dt;
     const L = this.level;
-    this.syncUnits(world.bees, this.bees.worker, this.bees.queen, UnitKind.Worker, true);
-    this.syncUnits(world.wasps, this.wasps.wasp, this.wasps.hornet, UnitKind.Wasp, false);
+    const nowMs = this.t * 1000;
+    this.syncUnits(
+      world.bees,
+      [this.bees.worker, this.lod.workerMid, this.lod.workerFar],
+      this.bees.queen,
+      UnitKind.Worker,
+      true,
+      this.crowdLod.bees.update(world.bees.count, nowMs),
+    );
+    this.syncUnits(
+      world.wasps,
+      // No mid wasp model: the mid band keeps the full 154-tri wasp.
+      [this.wasps.wasp, this.wasps.wasp, this.lod.waspFar],
+      this.wasps.hornet,
+      UnitKind.Wasp,
+      false,
+      this.crowdLod.wasps.update(world.wasps.count, nowMs),
+    );
+    this.particles.mesh.visible = this.particles.mesh.count > 0;
     this.unitTime.value = this.t;
 
     // Cannon
@@ -607,20 +660,38 @@ export class GameScene {
     this.renderer.render(this.scene, this.camera);
   }
 
+  private readonly lodCounts = [0, 0, 0];
+
+  /**
+   * Write instance matrices for one side. Small units (workers / wasps) go to `bands[lod]`
+   * when crowd LOD is on; the per-unit band has its own edge hysteresis (crowdLod.ts).
+   * Meshes with no instances are hidden so they cost no draw call.
+   */
   private syncUnits(
     pool: UnitPool,
-    small: THREE.InstancedMesh,
+    bands: [THREE.InstancedMesh, THREE.InstancedMesh, THREE.InstancedMesh],
     big: THREE.InstancedMesh,
     smallKind: UnitKind,
     up: boolean,
+    crowd: boolean,
   ): void {
-    let ns = 0;
+    const n = this.lodCounts;
+    n[0] = n[1] = n[2] = 0;
     let nb = 0;
     const yaw = up ? Math.PI : 0;
+    const L = this.level.laneLength;
+    const edges = this.lodEdges;
+    edges[0] = LOD_EDGE_FRACS[0] * L;
+    edges[1] = LOD_EDGE_FRACS[1] * L;
+    const margin = LOD_MARGIN_FRAC * L;
     for (let i = 0; i < pool.count; i++) {
       const isSmall = pool.kind[i] === smallKind;
-      const mesh = isSmall ? small : big;
-      const idx = isSmall ? ns : nb;
+      // Band state is always tracked, so units are already in the right band when LOD turns on.
+      const band = (pool.lod[i] = nextBand(pool.lod[i], pool.y[i], edges, margin));
+      let b: number = LodBand.Full;
+      if (isSmall && crowd) b = bands[band] === bands[0] ? LodBand.Full : band;
+      const mesh = isSmall ? bands[b] : big;
+      const idx = isSmall ? n[b] : nb;
       if (idx >= mesh.instanceMatrix.count) continue;
       const bob = Math.sin(this.t * 18 + i * 1.7) * 0.06;
       // Big units with folded overflow HP grow slightly so the extra power reads.
@@ -634,14 +705,22 @@ export class GameScene {
         this.s.set(sc, sc, sc),
       );
       mesh.setMatrixAt(idx, this.m);
-      if (isSmall) ns++;
+      if (isSmall) n[b]++;
       else nb++;
     }
-    small.count = ns;
+    for (let k = 0; k < 3; k++) {
+      const m = bands[k];
+      if (k > 0 && m === bands[k - 1]) continue; // shared mesh (wasp mid = full)
+      m.count = n[k];
+      m.visible = n[k] > 0;
+      if (n[k] > 0) m.instanceMatrix.needsUpdate = true;
+    }
     big.count = nb;
-    small.instanceMatrix.needsUpdate = true;
-    big.instanceMatrix.needsUpdate = true;
+    big.visible = nb > 0;
+    if (nb > 0) big.instanceMatrix.needsUpdate = true;
   }
+
+  private readonly lodEdges = [0, 0];
 
   /**
    * On-screen height (CSS px) of each gate label plate and of its main glyphs

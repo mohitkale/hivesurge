@@ -1,3 +1,4 @@
+import type { CrowdLodThresholds } from './crowdLod';
 /**
  * Automatic quality scaling (fix/perf-lowend). Pure logic so it can be unit-tested.
  *
@@ -25,10 +26,20 @@ export interface TierSettings {
   props: 1 | 0.5 | 0;
   /** Live particle budget. */
   particles: number;
+  /** Crowd LOD switch per side (fix/crowd-lod-hysteresis): enter/exit unit counts. */
+  crowdLod: CrowdLodThresholds;
 }
 
 export const TIER_SETTINGS: Record<QualityTier, TierSettings> = {
-  high: { shadows: false, maxPixelRatio: 2, lighting: 'lit', fog: true, props: 1, particles: 800 },
+  high: {
+    shadows: false,
+    maxPixelRatio: 2,
+    lighting: 'lit',
+    fog: true,
+    props: 1,
+    particles: 800,
+    crowdLod: { enterAt: 160, exitAt: 110 },
+  },
   med: {
     shadows: false,
     maxPixelRatio: 1,
@@ -36,6 +47,7 @@ export const TIER_SETTINGS: Record<QualityTier, TierSettings> = {
     fog: false,
     props: 0.5,
     particles: 300,
+    crowdLod: { enterAt: 140, exitAt: 95 },
   },
   low: {
     shadows: false,
@@ -44,6 +56,7 @@ export const TIER_SETTINGS: Record<QualityTier, TierSettings> = {
     fog: false,
     props: 0,
     particles: 120,
+    crowdLod: { enterAt: 110, exitAt: 70 },
   },
 };
 

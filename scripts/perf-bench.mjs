@@ -98,8 +98,22 @@ await page.mouse.move(W / 2, H * 0.7);
 await page.mouse.down();
 const t0 = Date.now();
 let battles = 1;
+// Triangle/draw-call series (fix/crowd-lod-hysteresis): one sample per ~100 ms loop.
+const series = [];
 while (Date.now() - t0 < Number(secs) * 1000) {
   const t = (Date.now() - t0) / 1000;
+  series.push(
+    await page.evaluate(() => {
+      const i = window.__hsScene?.renderer.info.render;
+      const g = window.__hsGame;
+      return [
+        performance.now(),
+        i?.triangles ?? 0,
+        i?.calls ?? 0,
+        g ? g.world.bees.count + g.world.wasps.count : 0,
+      ];
+    }),
+  );
   await page.mouse.move(W / 2 + Math.sin(t * 1.3) * W * 0.25, H * 0.7);
   if (await page.$('.modal')) {
     await page.mouse.up();
@@ -144,6 +158,31 @@ const r = await page.evaluate(() => {
   };
 });
 r.cpuMsPerFrame = (cpuSec * 1000) / r.frames;
+{
+  // Oscillation: a >1.5x triangle swing that reverses within 0.3 s (LOD/batch flipping),
+  // as opposed to slow changes that follow the unit count.
+  const tris = series.map((x) => x[1]).filter((x) => x > 0);
+  r.trisMin = Math.min(...tris);
+  r.trisMax = Math.max(...tris);
+  r.callsMin = Math.min(...series.map((x) => x[2]).filter((x) => x > 0));
+  r.callsMax = Math.max(...series.map((x) => x[2]));
+  let flips = 0;
+  for (let i = 0; i < series.length; i++)
+    for (let j = i + 1; j < series.length && series[j][0] - series[i][0] <= 300; j++)
+      for (let k = j + 1; k < series.length && series[k][0] - series[i][0] <= 300; k++) {
+        const [a, b, c] = [series[i][1], series[j][1], series[k][1]];
+        if (
+          a &&
+          b &&
+          c &&
+          Math.max(a, b) / Math.min(a, b) > 1.5 &&
+          Math.max(b, c) / Math.min(b, c) > 1.5
+        )
+          flips++;
+      }
+  r.trisFlips300ms = flips;
+  r.unitsMax = Math.max(...series.map((x) => x[3]));
+}
 r.loadavg = readFileSync('/proc/loadavg', 'utf8').split(' ').slice(0, 3).join('/');
 const fmt = (v) => (typeof v === 'number' ? Math.round(v * 10) / 10 : v);
 console.log(
