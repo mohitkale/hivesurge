@@ -32,7 +32,7 @@ import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
 import { biomeFor } from './art/biomes';
 import { SKINS, skinById } from './art/skins';
-import { equipSkin, equippedSkinId, selectableSkins } from './platform/skinSelect';
+import { equipSkin, equippedSkinId, pickerEntries } from './platform/skinSelect';
 import { nextLevelIndex } from './levels/progress';
 import {
   debugParamsFromUrl,
@@ -251,12 +251,8 @@ export class Game {
     const level = this.currentLevel();
     const levelNo = LEVELS.indexOf(level) + 1;
     const best = this.save.bestStars[level.id] ?? 0;
-    const known = SKINS.map((s) => s.id);
-    // QA M2-19a: skin toggle, shown only once the player owns a skin (e.g. Starter Pack).
-    const skinRow =
-      selectableSkins(this.save, known).length > 1
-        ? `<div class="row"><button class="btn" data-a="skin">Bee skin: ${skinById(this.equippedSkin())?.name ?? 'Classic'}</button></div>`
-        : '';
+    // PR 069 (QA round 2): always shown, so players can see what the Starter Pack unlocks.
+    const skinRow = `<div class="row"><button class="btn" data-a="skin">Bee skin: ${skinById(this.equippedSkin())?.name ?? 'Classic'}</button></div>`;
     this.overlay.innerHTML = `
       <div class="modal"><div class="card">
         <div class="title-logo">HIVE<br/>SURGE</div>
@@ -291,27 +287,35 @@ export class Game {
   private showSkins(): void {
     const known = SKINS.map((s) => s.id);
     const current = this.equippedSkin();
-    const rows = selectableSkins(this.save, known)
-      .map((id) => {
+    const sources: Record<string, string> = {};
+    for (const sku of Object.values(CATALOG))
+      if (sku.grants.skin) sources[sku.grants.skin] = sku.title;
+    const entries = pickerEntries(this.save, known, sources);
+    const rows = entries
+      .map(({ id, owned, unlock }) => {
         const on = id === current;
         const name = skinById(id)?.name ?? 'Classic';
-        return `<div class="row"><button class="btn${on ? ' primary' : ''}" data-a="skin:${id}" aria-pressed="${on}">${on ? '✓ ' : ''}${name}</button></div>`;
+        const preview = `<img class="skin-preview" src="${import.meta.env.BASE_URL}assets/skins/${id}.png" alt="" width="40" height="40" onerror="this.style.visibility='hidden'">`;
+        return owned
+          ? `<div class="row"><button class="btn skin-row${on ? ' primary' : ''}" data-a="skin:${id}" aria-pressed="${on}">${preview}<span>${on ? '✓ ' : ''}${name}</span></button></div>`
+          : `<div class="row"><button class="btn skin-row skin-locked" data-a="locked:${id}" disabled aria-disabled="true">${preview}<span>🔒 ${name}<small>${unlock}</small></span></button></div>`;
       })
       .join('');
     this.overlay.innerHTML = `<div class="modal"><div class="card"><h2>Bee skins</h2>${rows}
       <p class="small">Your bees wear the selected skin in battle.</p>
       <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
     const handlers: Record<string, () => void> = { back: () => this.showTitle() };
-    for (const id of selectableSkins(this.save, known))
-      handlers[`skin:${id}`] = () => {
-        if (equipSkin(this.save, id, known) !== current) {
-          this.scene.dispose();
-          this.scene = this.makeScene();
-          this.resize();
-        }
-        this.persist();
-        this.showSkins();
-      };
+    for (const { id, owned } of entries)
+      if (owned)
+        handlers[`skin:${id}`] = () => {
+          if (equipSkin(this.save, id, known) !== current) {
+            this.scene.dispose();
+            this.scene = this.makeScene();
+            this.resize();
+          }
+          this.persist();
+          this.showSkins();
+        };
     this.bind(handlers);
   }
 

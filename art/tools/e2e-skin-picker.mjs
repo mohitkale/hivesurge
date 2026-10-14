@@ -31,9 +31,27 @@ const click = async (a) => {
   await wait(300);
 };
 const acts = () => p.$$eval('[data-a]', (e) => e.map((x) => x.dataset.a));
-// The title shows the skin button only once a skin is owned (eng, QA M2-19a).
+// PR 069 round 2: the skin button is always on the title; locked skins show in the picker.
 console.log('title before', await acts());
 await p.screenshot({ path: `${out}/e2e-1-title-before.png` });
+await click('skin');
+await p.screenshot({ path: `${out}/e2e-1b-picker-locked.png` });
+console.log(
+  'picker before purchase',
+  await p.$$eval('[data-a^="skin:"], [data-a^="locked:"]', (e) =>
+    e.map(
+      (x) =>
+        `${x.dataset.a}${x.disabled ? ' (disabled)' : ''}: ${x.innerText.replace(/\s+/g, ' ')}`,
+    ),
+  ),
+);
+await p.$eval('[data-a="locked:starter"]', (x) => x.click()); // disabled: must not equip
+await wait(300);
+console.log(
+  'equipped after clicking locked',
+  await p.evaluate(() => JSON.parse(localStorage.getItem('hivesurge.save.v1')).equippedSkin),
+);
+await click('back');
 await click('shop');
 await click('buy:starter_pack');
 console.log('after buy', await acts());
