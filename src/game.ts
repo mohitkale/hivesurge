@@ -41,6 +41,7 @@ import {
   seedSaveForBattle,
   type DebugParams,
 } from './debug/debugParams';
+import { aimTraceEnabledFromUrl } from './debug/aimTraceFlag';
 import { autoTriggers } from './sim/triggers';
 import { Ftue, FtueStep, shouldRunFtue } from './ftue/ftue';
 import type { LevelDef } from './sim/types';
@@ -112,6 +113,11 @@ export class Game {
     : null;
   private readonly stress = stressCountFromUrl(location.search);
   private ftueReported = 0;
+  /** M2-28d `?trace=aim` (production too, see aimTraceFlag.ts); recorder lazy-loaded. */
+  private readonly aimTraceOn = aimTraceEnabledFromUrl(location.search);
+  private aimTraceMod: Promise<typeof import('./debug/aimTrace')> | null = null;
+  private aimTrace: import('./debug/aimTrace').AimTrace | null = null;
+  private aimTraceUnmount: (() => void) | null = null;
 
   constructor(store: SaveStore) {
     this.store = store;
@@ -381,6 +387,7 @@ export class Game {
     this.world = new World(this.currentLevel());
     this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id) ? new Ftue() : null;
     this.ftueReported = 0;
+    if (this.aimTraceOn) this.startAimTrace();
     this.scene = this.makeScene();
     this.resize();
     this.overlay.innerHTML = '';
@@ -430,6 +437,39 @@ export class Game {
     () => this.sfx.loadCues(),
   ]);
 
+  /** M2-28d: a fresh trace per battle; the module loads once, on the first traced battle. */
+  private startAimTrace(): void {
+    this.aimTraceUnmount?.();
+    this.aimTraceUnmount = null;
+    this.aimTrace = null;
+    const w = this.world;
+    this.aimTraceMod ??= import('./debug/aimTrace');
+    void this.aimTraceMod.then((m) => {
+      if (this.world !== w) return; // a newer battle started while loading
+      this.aimTrace = new m.AimTrace(
+        {
+          level: w.level.id,
+          seed: w.level.seed ?? null,
+          viewport: { w: innerWidth, h: innerHeight, dpr: devicePixelRatio },
+        },
+        w,
+      );
+    });
+  }
+
+  private endAimTrace(): void {
+    const w = this.world;
+    const t = this.aimTrace!;
+    t.end(
+      w.time * 1000,
+      w.outcome === 'won' ? 'won' : 'lost',
+      Math.round((w.nestHp / w.level.nestHp) * 100),
+      w.hiveHp,
+    );
+    this.aimTraceUnmount?.();
+    void this.aimTraceMod!.then((m) => (this.aimTraceUnmount = m.mountTraceExport(t)));
+  }
+
   private endBattle(): void {
     if (this.ftue) {
       // Close the FTUE's final step so its ftue_step event is recorded.
@@ -447,6 +487,7 @@ export class Game {
     if (won) this.sfx.win();
     else this.sfx.lose();
     this.haptic(won ? 120 : 250);
+    if (this.aimTrace) this.endAimTrace();
     this.analytics.track(won ? 'level_win' : 'level_fail', {
       level: this.world.level.id,
       time: Math.round(w.time),
@@ -843,6 +884,7 @@ export class Game {
       if (this.ftue) this.ftue.update(w, input, SIM_DT);
       else autoTriggers(w);
       w.step(input);
+      if (this.aimTrace) this.aimTrace.afterStep(w);
       return w.outcome === 'playing';
     });
     if (steps === 0 && queen) this.input.queueQueen(); // keep the press for the next step
