@@ -1,3 +1,6 @@
+import { UnitKind } from '../sim/types';
+import type { World } from '../sim/world';
+
 /** Rolling frame stats for the dev perf overlay (pure, testable). */
 export class PerfStats {
   private readonly frames: number[] = [];
@@ -51,8 +54,30 @@ export function perfEnabledFromUrl(search: string, isDev: boolean): boolean {
   return isDev && new URLSearchParams(search).has('debug');
 }
 
-/** `?stress=N` (dev only): spawn N extra units at battle start for perf checks (M2-10/M2-15). */
-export function stressCountFromUrl(search: string): number {
+/**
+ * `?stress=N` (dev only): keep about N extra units alive for perf checks (M2-10/M2-15).
+ * Production ignores it: game.ts only reads it under `import.meta.env.DEV`, so this and
+ * spawnStress are stripped from production builds.
+ */
+export function stressCountFromUrl(search: string, isDev: boolean): number {
+  if (!isDev) return 0;
   const v = Number(new URLSearchParams(search).get('stress'));
   return Number.isFinite(v) && v > 0 ? Math.min(1000, Math.floor(v)) : 0;
+}
+
+/**
+ * Dev `?stress=N`: keep about N units alive (half bees from the hive, half wasps from the nest),
+ * topping up every frame because units constantly destroy each other.
+ */
+export function spawnStress(w: World, n: number): void {
+  const half = w.level.laneWidth / 2 - 0.5;
+  let k = w.stats.fired + w.wasps.count;
+  while (w.bees.count + w.wasps.count < n) {
+    const x = -half + ((k++ * 0.618) % 1) * 2 * half;
+    const beeShort = w.bees.count < n / 2;
+    const ok = beeShort
+      ? w.bees.spawn(UnitKind.Worker, x, 1.2 + (k % 7) * 0.4)
+      : w.wasps.spawn(UnitKind.Wasp, x, w.level.laneLength - 1 - (k % 7) * 0.4);
+    if (ok < 0) break;
+  }
 }

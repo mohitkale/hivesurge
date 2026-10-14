@@ -24,9 +24,9 @@ describe('perf overlay stats (M2-15)', () => {
   it('is opt-in via ?debug; ?stress is clamped', () => {
     expect(perfEnabledFromUrl('', true)).toBe(false);
     expect(perfEnabledFromUrl('?debug', true)).toBe(true);
-    expect(stressCountFromUrl('?stress=500')).toBe(500);
-    expect(stressCountFromUrl('?stress=99999')).toBe(1000);
-    expect(stressCountFromUrl('?stress=abc')).toBe(0);
+    expect(stressCountFromUrl('?stress=500', true)).toBe(500);
+    expect(stressCountFromUrl('?stress=99999', true)).toBe(1000);
+    expect(stressCountFromUrl('?stress=abc', true)).toBe(0);
   });
 });
 
@@ -44,5 +44,21 @@ describe('perf overlay is dev-only (PR 071 review nit)', () => {
     // Exactly one construction, and no unguarded F3 handler elsewhere.
     expect(src.match(/new PerfOverlay\(/g)).toHaveLength(1);
     expect(src.match(/'F3'/g)).toHaveLength(1);
+  });
+});
+
+describe('?stress=N is dev-only (like ?debug / F3, 187a1e8)', () => {
+  it('production ignores ?stress', () => {
+    expect(stressCountFromUrl('?stress=500', false)).toBe(0);
+    expect(stressCountFromUrl('?debug&stress=1000', false)).toBe(0);
+  });
+
+  it('game.ts reads and runs it only under import.meta.env.DEV', () => {
+    const g = readFileSync('src/game.ts', 'utf8');
+    expect(g).toMatch(
+      /stress = import\.meta\.env\.DEV \? stressCountFromUrl\(location\.search, true\) : 0/,
+    );
+    expect(g).toMatch(/if \(import\.meta\.env\.DEV && this\.stress > 0\) spawnStress\(/);
+    expect(g).not.toMatch(/private spawnStress/);
   });
 });

@@ -54,8 +54,7 @@ import { Input } from './ui/input';
 import { starRowHtml, starsLabel } from './ui/stars';
 import { defeatHeadline } from './ui/defeatCopy';
 import { PerfOverlay } from './ui/perfOverlay';
-import { PerfStats, perfEnabledFromUrl, stressCountFromUrl } from './ui/perfStats';
-import { UnitKind } from './sim/types';
+import { PerfStats, perfEnabledFromUrl, spawnStress, stressCountFromUrl } from './ui/perfStats';
 import { gemConfirmHtml, reviveRowHtml } from './ui/reviveOffer';
 
 type Phase = 'title' | 'battle' | 'result' | 'ad';
@@ -113,7 +112,8 @@ export class Game {
   private readonly perfOverlay: PerfOverlay | null = import.meta.env.DEV
     ? new PerfOverlay(document.getElementById('app')!)
     : null;
-  private readonly stress = stressCountFromUrl(location.search);
+  /** Dev-only `?stress=N`; 0 and tree-shaken out of production builds (like the overlay). */
+  private readonly stress = import.meta.env.DEV ? stressCountFromUrl(location.search, true) : 0;
   private ftueReported = 0;
   private missCue: MissCue | null = null;
   /** M2-32: sim time when the trap tip hides (0 = not showing). */
@@ -255,24 +255,6 @@ export class Game {
     this.hud?.setQueenFocus(f.step === FtueStep.Queen && w.queenReady);
     const lx = f.leadTargetX(w);
     this.scene.setLeadLine(lx === null ? null : { x: lx, y: w.level.gates[1].y });
-  }
-
-  /**
-   * Dev `?stress=N`: keep about N units alive (half bees from the hive, half wasps from the nest),
-   * topping up every frame because units constantly destroy each other.
-   */
-  private spawnStress(n: number): void {
-    const w = this.world;
-    const half = w.level.laneWidth / 2 - 0.5;
-    let k = w.stats.fired + w.wasps.count;
-    while (w.bees.count + w.wasps.count < n) {
-      const x = -half + ((k++ * 0.618) % 1) * 2 * half;
-      const beeShort = w.bees.count < n / 2;
-      const ok = beeShort
-        ? w.bees.spawn(UnitKind.Worker, x, 1.2 + (k % 7) * 0.4)
-        : w.wasps.spawn(UnitKind.Wasp, x, w.level.laneLength - 1 - (k % 7) * 0.4);
-      if (ok < 0) break;
-    }
   }
 
   private currentLevel(): LevelDef {
@@ -910,7 +892,7 @@ export class Game {
         this.persist();
       }
     }
-    if (this.stress > 0) this.spawnStress(this.stress);
+    if (import.meta.env.DEV && this.stress > 0) spawnStress(this.world, this.stress);
     if (this.ftue) this.updateFtueUi(w);
 
     if (this.input.firing) {
