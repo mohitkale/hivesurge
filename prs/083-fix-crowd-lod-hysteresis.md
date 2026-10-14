@@ -37,3 +37,24 @@ Main has **no crowd LOD switch**. Eng's 20-tri proxy LOD (`bc2513e`) was dropped
 ## Checks
 
 Lint and build pass. Tests: see the follow-up section (the hysteresis tests first sat in `src/render/`, which vitest's `tests/**` include never ran; 333 at `b759d2f` did not include them).
+
+## Follow-up (review of 083)
+
+- `src/render/crowdLod.test.ts` is now `tests/crowdLodHysteresis.test.ts`, so `npm test` runs it. That adds 7 tests: 333 → 340.
+- **Design condition, far wasp:** `waspFarGeometry` (16 tris) replaces the bee-shaped far wasp (the 20-tri icosahedron in wasp colours).
+  - Shape: two octahedra with a pinched waist; the abdomen is scaled (0.8, 0.8, 1.5).
+  - Colour: all dark (body `waspBody`, thorax `waspHead`).
+  - I first tried an orange band on the upper front faces. From the battle camera that face reads as bee yellow under deuteranopia, so I removed it. Wasps now read apart from bees by silhouette and value, not hue.
+  - `tests/crowdLodFarShapes.test.ts` (3 tests) checks: ≤ 20 tris each; the wasp has a different tri count, is slimmer, and is > 1.3× more elongated than the far bee; its mean luminance is < 0.5× the far bee's. Total is now 343.
+- **Screenshots** are in `art/screenshots/crowd-lod-far/`. They come from `art/tools/crowd-lod-far-shots.mjs` (puppeteer, dev server) and `art/tools/crowd-lod-far-post.py` (x4 crops and the deuteranopia filter).
+  - Deuteranopia uses the Machado 2009 matrix at severity 1.0 in linear RGB.
+  - `model-sheet.png` (and `-deuteranopia`): full / mid 148 / far for all 7 skins and the wasp (before and after), plus the far model at real 24 px and 16 px, shown at 1× and ×6.
+  - `clash-{high,low}-wasp-before-after.png`: ?stress=320, phone portrait 540×960. A mixed clash is spawned beyond 0.6 L (bees 0.62–0.71 L, wasps 0.73–0.82 L), the sim is frozen, the crowd switch is forced on, and the crop is shown ×4 normal | deuteranopia. "Before" swaps in the old far wasp mesh.
+  - `clash-{high,low}-skins.png`: the same clash for every skin. Raw shots are `battle-<q>-<skin>-wasp-<before|after>-{full,farcrop,farcrop-x4,farcrop-x4-deuteranopia}.png`, with metadata in `shots.json`.
+  - Far units are about 10 CSS px on screen at 540×960 (20–30 device px on 2–3× phones). The 16/24 px reads are on the model sheet.
+- **Readability findings:**
+  - Far bees read as light, round, warm blobs and far wasps as dark, slim, pointed shapes. They stay apart in normal and deuteranopia, on high and low.
+  - The old far wasp was already separable by value, but it was a same-shape dark blob.
+  - Skin body colours carry through to the far tier (Starter orange, Frost pale cream, Lantern and Maple amber).
+  - The far tier drops accessories. Starter's teal star shows at mid (172 tris, on the model sheet) but not at far.
+  - The far bee's stripes are mostly lost at 16 px; colour and silhouette carry it.
