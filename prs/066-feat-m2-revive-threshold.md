@@ -45,4 +45,4 @@ The `revive.gemPrice` default goes 10 → 5 (CEO decision 36) in its own PR 067 
 
 ## Checks
 
-npx eslint (v10) + prettier ok · tests 266/266 · build ok · size budget: initial JS 2.34 KiB gzip, dist ~907 KiB. `tests/sizeBudget.test.ts` (from main) timed out once at 5 s while the box was busy; it passes alone (4/4) and on rerun.
+npx eslint (v10) + prettier ok · tests 280/280 · build ok · size budget: initial JS 2.36 KiB gzip, dist 909.83 KiB. `tests/sizeBudget.test.ts` (from main) timed out once at 5 s while the box was busy; it passes alone (4/4) and on rerun.
