@@ -59,10 +59,60 @@ describe('quality tiers (fix/perf-lowend)', () => {
     for (let i = 0; i < 600; i++) q.sample(i === 300 ? 900 : 16);
     expect(q.tier).toBe('high');
   });
-  it('steps up at most once per session (no ping-pong)', () => {
+  it('climbs back from the floor after a load spike (fix/perf-lowend-2)', () => {
+    const q = new AutoQuality('high', false, 1);
+    for (let i = 0; i < 600; i++) q.sample(100); // spike: high -> med -> low -> floor
+    expect(q.label).toBe('low@floor (auto)');
+    const seen: string[] = [];
+    for (let i = 0; i < 6000; i++) if (q.sample(10)) seen.push(q.label);
+    expect(seen).toEqual(['low (auto)', 'med (auto)', 'high (auto)']);
+  });
+  it('needs sustained headroom before climbing (hysteresis)', () => {
     const q = new AutoQuality('low', false, 1);
-    for (let i = 0; i < 3000; i++) q.sample(8);
-    expect(q.tier).toBe('med');
+    // 45 fps is above the 28 fps drop line but below the 50 fps climb line: stays put.
+    for (let i = 0; i < 3000; i++) expect(q.sample(1000 / 45)).toBe(false);
+    // 100 fps: no climb before 6 s since the last change.
+    const q2 = new AutoQuality('low', false, 1);
+    let t = 0;
+    let at = -1;
+    for (let i = 0; i < 2000 && at < 0; i++) {
+      t += 10;
+      if (q2.sample(10)) at = t;
+    }
+    expect(at).toBeGreaterThanOrEqual(6000);
+  });
+  it('caps only the med <-> high flip-flop', () => {
+    const q = new AutoQuality('med', false, 1);
+    const flips: string[] = [];
+    for (let round = 0; round < 4; round++) {
+      for (let i = 0; i < 1500; i++) if (q.sample(8)) flips.push(q.tier);
+      for (let i = 0; i < 60; i++) if (q.sample(100)) flips.push(q.tier);
+    }
+    // One promotion to high; afterwards it drops to med/low and climbs back to med only.
+    expect(flips.filter((t) => t === 'high')).toHaveLength(1);
+    expect(flips.at(-1)).not.toBe('high');
+    expect(flips.filter((t) => t === 'med').length).toBeGreaterThan(1);
+  });
+  it('a pinned tier survives battle start and auto ticks', () => {
+    for (const tier of ['low', 'med', 'high'] as const) {
+      const q = new AutoQuality(tier, true, 0.75);
+      const pr = q.pixelRatio;
+      for (let round = 0; round < 3; round++) {
+        q.onBattleStart();
+        for (let i = 0; i < 1000; i++) expect(q.sample(round % 2 ? 5 : 250)).toBe(false);
+      }
+      expect(q.tier).toBe(tier);
+      expect(q.pixelRatio).toBe(pr);
+      expect(q.label).toBe(`${tier} (pinned)`);
+    }
+  });
+  it('play-start hitches inside the settle time do not drop the tier', () => {
+    const q = new AutoQuality('high', false, 1);
+    q.onBattleStart();
+    // Play start: 2 s of shader-compile / GLB-swap hitches, then smooth frames.
+    for (let i = 0; i < 5; i++) expect(q.sample(400)).toBe(false);
+    for (let i = 0; i < 600; i++) expect(q.sample(16)).toBe(false);
+    expect(q.tier).toBe('high');
   });
   it('a pinned tier never changes', () => {
     const q = new AutoQuality('med', true, 2);
@@ -140,5 +190,41 @@ describe('input independent of render fps (fix/perf-lowend)', () => {
     expect(input.aimX).toBe(0);
     input.reset();
     expect(input.takeFire()).toBe(false);
+  });
+});
+
+describe('perf-lowend-2 helpers', () => {
+  it('sim timer stops on teardown', async () => {
+    const { startSimTimer } = await import('../src/sim/fixedStep');
+    let n = 0;
+    const stop = startSimTimer(() => n++, 0.005);
+    await new Promise((r) => setTimeout(r, 40));
+    stop();
+    const after = n;
+    expect(after).toBeGreaterThan(0);
+    await new Promise((r) => setTimeout(r, 40));
+    expect(n).toBe(after);
+  });
+  it('gate floaters: one per gate per cooldown, at most 3 live', async () => {
+    const { FloaterLimiter } = await import('../src/ui/floaterLimiter');
+    const f = new FloaterLimiter(600, 3, 700);
+    expect(f.allow(0, 0)).toBe(true);
+    expect(f.allow(0, 100)).toBe(false); // same gate, same spot: would overlap
+    expect(f.allow(1, 100)).toBe(true);
+    expect(f.allow(2, 100)).toBe(true);
+    expect(f.allow(3, 100)).toBe(false); // 3 live
+    expect(f.allow(0, 800)).toBe(true);
+  });
+  it('overlay text: real fps to one decimal, verts and tris', async () => {
+    const { PerfStats } = await import('../src/ui/perfStats');
+    const { formatPerf } = await import('../src/ui/perfOverlay');
+    const s = new PerfStats();
+    for (let i = 0; i < 60; i++) s.sample(i % 2 ? 33.3 : 50, 40, 25000);
+    expect(s.avgFps).toBeCloseTo(24.0, 1);
+    const t = formatPerf(s, 300, 0.6, 'low (pinned)', 61234);
+    expect(t).toContain('fps 24.0');
+    expect(t).toContain('verts 61.2k');
+    expect(t).toContain('tris 25.0k');
+    expect(t).toContain('low (pinned)');
   });
 });

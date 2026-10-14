@@ -18,6 +18,13 @@ export class PerfStats {
     this.peakTriangles = Math.max(this.peakTriangles, triangles);
   }
 
+  /** Mean fps over the window (frames / time): real fps, not snapped to vsync steps. */
+  get avgFps(): number {
+    if (this.frames.length === 0) return 0;
+    const sum = this.frames.reduce((a, b) => a + b, 0);
+    return sum > 0 ? (this.frames.length * 1000) / sum : 0;
+  }
+
   /** Median fps over the window (robust to single hitches). */
   get medianFps(): number {
     if (this.frames.length === 0) return 0;

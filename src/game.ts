@@ -26,7 +26,8 @@ import { CATALOG, type Sku } from './platform/platform';
 import { Analytics } from './analytics/analytics';
 import type { SaveData, SaveStore } from './platform/save';
 import { AutoQuality, initialTier, qualityOverrideFromUrl } from './render/quality';
-import { FixedStepper } from './sim/fixedStep';
+import { FixedStepper, startSimTimer } from './sim/fixedStep';
+import { FloaterLimiter } from './ui/floaterLimiter';
 import { applyTheme, palette } from './ui/theme';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
@@ -154,14 +155,27 @@ export class Game {
     // First launch: no menu, straight into the FTUE battle.
     if (shouldRunFtue(this.save.ftueDone, this.currentLevel().id)) this.startBattle();
     else this.showTitle();
-    requestAnimationFrame(this.frame);
+    this.rafId = requestAnimationFrame(this.frame);
     // Keeps the sim (and input) moving even when frames take longer than a sim step.
-    setInterval(this.pumpSim, 1000 * SIM_DT);
+    this.stopSimTimer = startSimTimer(this.pumpSim, SIM_DT);
+  }
+
+  private rafId = 0;
+  private stopSimTimer: () => void = () => {};
+  private disposed = false;
+  private readonly floaters = new FloaterLimiter();
+
+  /** Teardown (HMR / tests): stop the frame loop and the 60 Hz sim timer, free the GL context. */
+  dispose(): void {
+    this.disposed = true;
+    cancelAnimationFrame(this.rafId);
+    this.stopSimTimer();
+    this.scene.dispose();
   }
 
   /** Current quality tier (debug overlay, perf bench). */
   get qualityTier(): string {
-    return this.quality.tier + (this.quality.floor ? '@floor' : '');
+    return this.quality.label;
   }
 
   private resize(): void {
@@ -379,6 +393,7 @@ export class Game {
     this.input.setPicker((x, y) => this.scene.pickLaneX(x, y), this.world.maxCannonX);
     this.input.enabled = true;
     this.stepper.reset();
+    this.quality.onBattleStart();
     this.simLast = performance.now();
     this.phase = 'battle';
     this.platform.gameplayStart();
@@ -770,7 +785,8 @@ export class Game {
 
   // ---------- loop ----------
   private frame = (now: number) => {
-    requestAnimationFrame(this.frame);
+    if (this.disposed) return;
+    this.rafId = requestAnimationFrame(this.frame);
     const frameMs = now - this.last;
     const dt = Math.min(0.1, frameMs / 1000);
     if (this.phase === 'battle' && this.quality.sample(frameMs)) {
@@ -784,7 +800,14 @@ export class Game {
       const info = this.scene.renderer.info.render;
       this.perf.sample(frameMs, info.calls, info.triangles);
       const units = this.world.bees.count + this.world.wasps.count;
-      this.perfOverlay.update(dt, this.perf, units, this.quality.pixelRatio);
+      this.perfOverlay.update(
+        dt,
+        this.perf,
+        units,
+        this.quality.pixelRatio,
+        this.quality.label,
+        () => this.scene.countVertices(),
+      );
     }
   };
 
@@ -832,7 +855,12 @@ export class Game {
         case 'gate':
           this.scene.onGate(e.gate, e.x, e.y, e.spawned);
           this.sfx.pop(w.bees.count);
-          if (e.spawned >= 2 && Math.random() < 0.15) this.float(`+${e.spawned}`, e.x, e.y);
+          if (
+            e.spawned >= 2 &&
+            Math.random() < 0.15 &&
+            this.floaters.allow(e.gate, performance.now())
+          )
+            this.float(`+${e.spawned}`, e.x, e.y);
           break;
         case 'trap':
           this.scene.onTrap(e.gate, e.x, e.y);

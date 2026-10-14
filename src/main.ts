@@ -11,7 +11,9 @@ const store = new SaveStore(new LocalSaveBackend(localStorage));
 Promise.all([import('./game'), store.load()])
   .then(([{ Game }]) => {
     if (overlay) overlay.innerHTML = '';
-    new Game(store);
+    const game = new Game(store);
+    // Dev HMR: tear the old game down (frame loop, sim timer, GL context) before reloading.
+    import.meta.hot?.dispose(() => game.dispose());
   })
   .catch((err: unknown) => {
     console.error(err);

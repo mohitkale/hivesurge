@@ -67,22 +67,31 @@ export function initialTier(override: QualityTier | null, rendererName: string):
   return isSoftwareRenderer(rendererName) ? 'low' : 'high';
 }
 
+/** Play-start frames that never count toward a tier change. */
+export const BATTLE_START_GRACE_MS = 2500;
+
 export interface AutoQualityOptions {
   /** Step down when the rolling average fps stays below this. */
   downFps?: number;
-  /** Step up when it stays above this. */
+  /** Step up when it stays above this (well above downFps: hysteresis band). */
   upFps?: number;
   /** Rolling window length in ms. */
   windowMs?: number;
-  /** Minimum time between changes, ms (lets the new tier settle before judging it). */
+  /** Minimum time after any change before stepping down again, ms. */
   settleMs?: number;
-  /** Steps up allowed per session (0 disables, avoids high/low ping-pong). */
-  maxUpSteps?: number;
+  /** Headroom must last this long since the last change before stepping up, ms. */
+  upSettleMs?: number;
+  /** med -> high promotions allowed per session (caps high/med flip-flopping). */
+  maxHighUps?: number;
 }
 
 /**
- * Rolling-average fps watcher. Steps: high -> med -> low -> low@floor. Feed it frame times;
- * it returns true when the tier or pixel ratio changed.
+ * Rolling-average fps watcher. Steps: high -> med -> low -> low@floor and back up.
+ * Feed it frame times; it returns true when the tier or pixel ratio changed.
+ *
+ * fix/perf-lowend-2: it can climb back from low/floor after a load spike (only after
+ * upSettleMs of sustained headroom, doubled each time a climb is undone within one
+ * window), and only the med <-> high flip is capped per session.
  */
 export class AutoQuality {
   tier: QualityTier;
@@ -92,7 +101,9 @@ export class AutoQuality {
   private readonly samples: number[] = [];
   private sum = 0;
   private sinceChange = 0;
-  private upSteps = 0;
+  private highUps = 0;
+  private bounces = 0;
+  private lastWasUp = false;
   private readonly o: Required<AutoQualityOptions>;
 
   constructor(
@@ -103,7 +114,15 @@ export class AutoQuality {
   ) {
     this.tier = start;
     this.pinned = pinned;
-    this.o = { downFps: 28, upFps: 55, windowMs: 2000, settleMs: 2500, maxUpSteps: 1, ...opts };
+    this.o = {
+      downFps: 28,
+      upFps: 50,
+      windowMs: 2000,
+      settleMs: 2500,
+      upSettleMs: 6000,
+      maxHighUps: 1,
+      ...opts,
+    };
   }
 
   get settings(): TierSettings {
@@ -113,6 +132,11 @@ export class AutoQuality {
   get pixelRatio(): number {
     const cap = this.floor ? LOW_FLOOR_PIXEL_RATIO : this.settings.maxPixelRatio;
     return Math.min(this.deviceRatio, cap);
+  }
+
+  /** Label for the overlay / bench: tier, floor, and whether it is pinned. */
+  get label(): string {
+    return `${this.tier}${this.floor ? '@floor' : ''}${this.pinned ? ' (pinned)' : ' (auto)'}`;
   }
 
   /** Rolling average fps over the window (0 until the window has filled). */
@@ -126,8 +150,24 @@ export class AutoQuality {
     this.sinceChange = 0;
   }
 
+  /**
+   * Battle start: forget title/transition frames (scene rebuild, shader compiles) so they
+   * cannot trigger a drop. Never changes the tier, pinned or not.
+   */
+  onBattleStart(): void {
+    this.reset();
+    this.graceLeft = BATTLE_START_GRACE_MS;
+  }
+
+  /** Frames ignored right after battle start (shader compiles, GLB swap, scene rebuild). */
+  private graceLeft = 0;
+
   sample(frameMs: number): boolean {
     const ms = Math.max(0, Math.min(1000, frameMs));
+    if (this.graceLeft > 0) {
+      this.graceLeft -= ms;
+      return false;
+    }
     this.samples.push(ms);
     this.sum += ms;
     this.sinceChange += ms;
@@ -136,23 +176,32 @@ export class AutoQuality {
     if (this.pinned || this.sinceChange < this.o.settleMs) return false;
     const fps = this.avgFps;
     if (fps === 0) return false;
-    if (fps < this.o.downFps) return this.change(-1);
-    if (fps > this.o.upFps && this.upSteps < this.o.maxUpSteps) return this.change(1);
+    if (fps < this.o.downFps) return this.down();
+    const upAfter = Math.min(60000, this.o.upSettleMs * 2 ** this.bounces);
+    if (fps > this.o.upFps && this.sinceChange >= upAfter) return this.up();
     return false;
   }
 
-  private change(dir: -1 | 1): boolean {
+  private down(): boolean {
     const i = TIERS.indexOf(this.tier);
-    if (dir < 0) {
-      if (i < TIERS.length - 1) this.tier = TIERS[i + 1];
-      else if (!this.floor && this.deviceRatio > LOW_FLOOR_PIXEL_RATIO) this.floor = true;
-      else return false;
-    } else {
-      if (this.floor) this.floor = false;
-      else if (i > 0) this.tier = TIERS[i - 1];
-      else return false;
-      this.upSteps++;
-    }
+    if (i < TIERS.length - 1) this.tier = TIERS[i + 1];
+    else if (!this.floor && this.deviceRatio > LOW_FLOOR_PIXEL_RATIO) this.floor = true;
+    else return false;
+    // A climb that is undone right away is a bounce: wait longer before the next climb.
+    if (this.lastWasUp && this.sinceChange < this.o.settleMs + this.o.windowMs) this.bounces++;
+    this.lastWasUp = false;
+    this.reset();
+    return true;
+  }
+
+  private up(): boolean {
+    if (this.floor) this.floor = false;
+    else if (this.tier === 'low') this.tier = 'med';
+    else if (this.tier === 'med' && this.highUps < this.o.maxHighUps) {
+      this.tier = 'high';
+      this.highUps++;
+    } else return false;
+    this.lastWasUp = true;
     this.reset();
     return true;
   }

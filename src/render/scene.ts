@@ -462,6 +462,19 @@ export class GameScene {
     }
   }
 
+  /** Vertices submitted per frame: visible meshes x instances (debug overlay; art ask). */
+  countVertices(): number {
+    let n = 0;
+    this.scene.traverseVisible((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      const g = m.geometry;
+      const v = g.index ? g.index.count : (g.getAttribute('position')?.count ?? 0);
+      n += v * ((m as THREE.InstancedMesh).isInstancedMesh ? (m as THREE.InstancedMesh).count : 1);
+    });
+    return n;
+  }
+
   /** Lane-space x under a screen point, or null. */
   pickLaneX(ndcX: number, ndcY: number): number | null {
     this.raycaster.setFromCamera({ x: ndcX, y: ndcY } as THREE.Vector2, this.camera);
