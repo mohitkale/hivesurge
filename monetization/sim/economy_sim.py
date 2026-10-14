@@ -231,7 +231,7 @@ def main():
         print(f"{k}: day-30 median Epic level (mean of {len(BYRAR['E'])} Epics, unowned=0) {med(k,29,'epic_lvl'):.2f}, best Epic {med(k,29,'epic_max'):g}, season tier {med(k,29,'tier'):g}")
     gap = st.median(r[-1]['epic_lvl'] for r in res['payer_pass']) - st.median(r[-1]['epic_lvl'] for r in res['f2p_no_ads'])
     print(f"Epic-level gap payer - no-ads (day 30): {gap:+.2f} -> tier-18-to-gems trigger (>1): {'YES' if gap > 1 else 'no'}")
-    REV_PRICE = arg('--revive-gems', 10)
+    REV_PRICE = arg('--revive-gems', 5)  # CEO decision 36
     print(f"\nGem revive (M2-21a, price {REV_PRICE} gems, 1 revive/battle): free gem income vs revive-eligible defeats over {DAYS} days")
     for k in PERSONAS:
         gi, re_ = med(k, DAYS - 1, 'gin'), med(k, DAYS - 1, 'rev_elig')
