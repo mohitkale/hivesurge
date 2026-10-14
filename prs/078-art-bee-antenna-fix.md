@@ -1,4 +1,4 @@
-# PR (number pending; next free on main is 078) — art/bee-antenna-fix (base: main @ ff371fc)
+# PR 078 — art/bee-antenna-fix (base: main @ ff371fc)
 
 DES-approved. The full-size worker bee's antenna tips floated: each stalk was aimed away from its
 teal tip (largest tip-to-stalk gap 0.26 units).
