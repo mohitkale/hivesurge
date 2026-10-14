@@ -83,7 +83,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 075 | docs/071-followup                                    | hivesurge-eng          | `f743592` | merged (`9044a12`; overlay + F3 dev-only; 071 doc without LOD)                                                             | 075-docs-071-followup.md                                          |
 | 076 | feat/m2-28-29-aim                                    | hivesurge-eng          | `1403e32` | merged (`c64412b`; applies design 060 patch unchanged)                                                                     | 076-feat-m2-28-29-aim.md                                          |
 | 077 | chore/plan-m2-g4-recheck-gem-price                   | hivesurge-ba           | `b01534b` | merged (`2605989`)                                                                                                         | 077-chore-plan-m2-g4-recheck-gem-price.md                         |
+| 078 | art/bee-antenna-fix                                  | hivesurge-art          | `f4301b6` | open (claimed)                                                                                                             | 078-art-bee-antenna-fix.md                                        |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **078**.
+Next free number: **079**.
