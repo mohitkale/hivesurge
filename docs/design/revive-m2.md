@@ -8,7 +8,8 @@ Fixes PR 002 QA bug 1: closing the revive ad early burns the battle's only reviv
 
 ## Revive offer state
 
-- Shown on defeat when: not in FTUE (G2, first 3 battles), `revives === 0` this battle, nest damage at least 50% (current rule), and rewarded caps not hit (G5: 12/session, 30/day, revive 10/day per ad-placements).
+- Shown on defeat when: not in FTUE (G2, first 3 battles), `revives === 0` this battle, **nest damage at least `revive.minNestDamage`** (remote config, **default 0.25**; was 0.5), rewarded caps not hit (G5: 12/session, 30/day, revive 10/day per ad-placements), and, for the gem option, not an event final level. The threshold applies to every loss type, including hive break and time-out.
+- Why 25%: on Dandelion Drift, hive-break losses happen at 30 to 41% nest damage, so at 50% the offer almost never appeared on the losses where a revive helps most.
 - The offer has a **10 s countdown** (ring around the button). When it reaches 0, the offer closes and the normal defeat screen remains (Retry / Home). The countdown pauses while an ad is on screen and resumes when the ad returns.
 - Buttons: three, see "Gem revive (M2-21b)" below.
 
@@ -21,9 +22,26 @@ Fixes PR 002 QA bug 1: closing the revive ad early burns the battle's only reviv
 | Load error or timeout (no ad shown within 5 s)     | see below                          | no               | revive offer                    | no                         |
 | No fill (adapter reports no ad available)          | see below                          | no               | revive offer                    | no                         |
 
-**Retry limit (anti-exploit):** at most **2 early closes per offer**. After the second early close the offer **stays open**: the watch-ad button stays visible but disabled with the label "Ad limit reached" (same size), the gem button stays active if the player can afford it and gem caps allow, "No thanks" stays, and the remaining countdown keeps running. If the gem option is unaffordable, capped or hidden, there is no valid option left, so the offer closes and the normal defeat screen shows (as today). Early closes never grant anything, so the limit only stops ad-spam loops and protects portal metrics.
+**Retry limit (anti-exploit):** **2 early closes are allowed per offer**, and `adEnabled = closes < 2`.
 
-**Code change required in M2-21c: PR 030 currently closes the offer after 2 early closes; change it to this rule.**
+- **First early close** (`closes` becomes 1): the player returns to the offer and the ad button is **still enabled**. That is one retry.
+- **Second early close** (`closes` becomes 2): the ad button becomes disabled, labelled "Ad limit reached" (same size). The offer **stays open** only if the gem option is valid (affordable, within caps, not hidden). "No thanks" stays, and the remaining countdown keeps running. If the gem option is not valid, there is no option left, so the offer closes and the normal defeat screen shows.
+
+Early closes never grant anything, so the limit only stops ad-spam loops and protects portal metrics.
+
+**Worked example** (10 s countdown, 14 gems, price 10):
+
+| Time | Action                                   | `closes` | Ad button                       | Gem button | Offer                 |
+| ---- | ---------------------------------------- | -------- | ------------------------------- | ---------- | --------------------- |
+| 0 s  | defeat, offer shown                      | 0        | enabled                         | enabled    | open, 10 s            |
+| 2 s  | taps Revive (watch ad); countdown paused | 0        | (ad playing)                    |            | open, 8 s             |
+| ad   | closes the ad early                      | 1        | **enabled** (retry)             | enabled    | open, 8 s resumes     |
+| 4 s  | taps Revive again, closes early again    | 2        | **disabled** "Ad limit reached" | enabled    | open, 6 s             |
+| 6 s  | taps gems, confirms                      | 2        | disabled                        |            | revive granted (gems) |
+
+With 4 gems instead of 14, the offer closes right after the second early close (no valid option left).
+
+**Code note:** PR 047 implements `adEnabled = closes < 2` with the offer kept open only when gems are valid. That is correct for this rule. (Older note: PR 030 closed the offer after 2 early closes; M2-21c changed that.)
 
 ## Ad unavailable (load failure or no fill)
 
@@ -103,7 +121,7 @@ Funnel in admin (M6-1): offered, requested, completed, granted, by level.
 
 ## Test cases (for M2-21)
 
-1. Close early, then the offer returns with the countdown resumed, `revives === 0`, no reward.
+1. Close early once: the offer returns with the countdown resumed, the ad button **still enabled**, `closes === 1`, `revives === 0`, and no reward.
 2. Close early twice with enough gems (caps allow): the offer stays open, the ad button is disabled with "Ad limit reached" (same size), the gem button is active, "No thanks" is shown, and the countdown keeps running from where it was. Close early twice with too few gems (or gem caps hit, or gem hidden): the offer closes and the defeat screen shows.
 3. Close early, then complete, then the revive is granted once. A second offer never appears.
 4. After at least one ad has loaded this session, no fill gives a free revive. A second no fill in the same session shows "Ad not available" (disabled). The offer stays open only if the gem option is valid, and otherwise closes after 3 s.
@@ -118,3 +136,16 @@ Funnel in admin (M6-1): offered, requested, completed, granted, by level.
 13. Gem caps: third gem revive in a session, or fourth in a day, means the gem button is hidden.
 14. `isEventFinalLevel = true` hides the gem button (stub false until M7-3).
 15. No button has focus, highlight or animation on open (snapshot test).
+
+## Offer frequency at the 25% threshold (bot check)
+
+Casual bot, 200 seeds per stage, levels as on `main` @ `9b969f9` (before PR 044's retune). "Offer" = loss with nest damage at or above the threshold (other eligibility rules ignored).
+
+| Stage | Level            | Losses | Hive-break losses | Offer at 50% | Offer at 25% |
+| ----- | ---------------- | ------ | ----------------- | ------------ | ------------ |
+| 2     | dandelion-drift  | 1      | 1                 | 1            | 1            |
+| 3     | clover-run       | 48     | 1                 | 48           | 48           |
+| 4     | thistle-gauntlet | 172    | 85                | 150 (87%)    | 167 (97%)    |
+| 5     | wasp-queen-nest  | 200    | 0                 | 5 (2.5%)     | 200 (100%)   |
+
+The casual bot rarely loses on Dandelion, so this sample cannot show the 30 to 41% hive-break case from playtests. The boss gains the most: time-out losses there end around 40 to 45% nest damage. Rerun after PR 044 lands.
