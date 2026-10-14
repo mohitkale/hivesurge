@@ -53,6 +53,13 @@ export class World {
   stats = { fired: 0, gateSpawns: 0, peakBees: 0, kills: 0, queens: 0 };
   /** Bees (incl. queens) that crossed each gate line, traps included. */
   readonly gatePasses: number[];
+  /**
+   * M2-31: rows of positive (non-trap) gates, by y. `rowMisses[r]` counts bees that crossed row
+   * r's y without passing any of its gates (a missed gate). Counters only, no per-bee events.
+   */
+  readonly gateRowY: number[] = [];
+  readonly rowMisses: number[] = [];
+  private readonly rowMask: number[] = [];
   /** FTUE: while true, wasps reaching the hive deal no damage (ftue-m2.md: no loss before step 5). */
   hiveShield = false;
 
@@ -90,6 +97,16 @@ export class World {
       .filter((w) => w.at !== undefined)
       .sort((a, b) => (a.at as number) - (b.at as number));
     for (let i = 0; i < level.gates.length; i++) if (!this.gateActive(i)) this.gateXs[i] = OFF_LANE;
+    level.gates.forEach((g, i) => {
+      if (g.kind === 'sub' || g.fromPhase) return; // traps and phase gates are not targets
+      let r = this.gateRowY.indexOf(g.y);
+      if (r < 0) {
+        r = this.gateRowY.push(g.y) - 1;
+        this.rowMisses.push(0);
+        this.rowMask.push(0);
+      }
+      this.rowMask[r] |= 1 << i;
+    });
   }
 
   /** Gates with `fromPhase` stay inactive (off-lane, invisible) until that boss phase. */
@@ -303,6 +320,11 @@ export class World {
           continue;
         }
         this.applyGate(i, g);
+      }
+      for (let r = 0; r < this.gateRowY.length; r++) {
+        const ry = this.gateRowY[r];
+        if (ry > prevY && ry <= b.y[i] && (b.gates[i] & this.rowMask[r]) === 0 && b.hp[i] > 0)
+          this.rowMisses[r]++;
       }
 
       if (b.y[i] >= L.laneLength - 0.5 && b.hp[i] > 0) {

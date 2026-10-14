@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { gateLabel } from '../sim/gates';
+import { trapFill, trapLabelText } from '../ui/trapTelegraph';
 import { UnitKind, type GateDef, type LevelDef } from '../sim/types';
 import type { UnitPool } from '../sim/units';
 import type { World } from '../sim/world';
@@ -46,6 +47,8 @@ interface GateView {
   texture: THREE.CanvasTexture;
   lastShown: number;
   pulse: number;
+  /** M2-32: trap fill bar (drains as the trap absorbs bees). */
+  fill?: THREE.Mesh;
   label: THREE.Mesh;
 }
 
@@ -415,6 +418,25 @@ export class GameScene {
       group.add(post, flower);
     }
     group.add(panel, label);
+    let fill: THREE.Mesh | undefined;
+    if (g.kind === 'sub') {
+      // M2-32: drain bar under the label plate (same tilt), full width when fresh.
+      const bw = lh * 1.7;
+      const back = new THREE.Mesh(
+        new THREE.PlaneGeometry(bw + 0.08, lh * 0.2),
+        new THREE.MeshBasicMaterial({ color: '#2a1033', transparent: true, depthTest: false }),
+      );
+      fill = new THREE.Mesh(
+        new THREE.PlaneGeometry(bw, lh * 0.13),
+        new THREE.MeshBasicMaterial({ color: '#ff5a5a', transparent: true, depthTest: false }),
+      );
+      back.position.set(0, -lh * 0.62, 0.001);
+      fill.position.set(0, -lh * 0.62, 0.002);
+      fill.userData.w = bw;
+      back.renderOrder = 11;
+      fill.renderOrder = 12;
+      label.add(back, fill);
+    }
     group.position.set(g.x, 0, -g.y);
     this.scene.add(group);
     this.gates.push({
@@ -423,6 +445,7 @@ export class GameScene {
       canvas: texture.image as HTMLCanvasElement,
       lastShown: g.value,
       pulse: 0,
+      fill,
       label,
     });
   }
@@ -542,10 +565,18 @@ export class GameScene {
       if (g.kind === 'sub') {
         const left = world.trapRemaining(i);
         if (left !== gv.lastShown && gv.canvas) {
+          // M2-32: the label stays at the starting value; the bar under it drains.
+          if (gv.fill) {
+            const f = trapFill(g, left);
+            gv.fill.scale.x = Math.max(f, 1e-4);
+            gv.fill.position.x = (-(1 - f) * (gv.fill.userData.w as number)) / 2;
+          }
+          const wasLive = gv.lastShown > 0;
           gv.lastShown = left;
+          if (left > 0 && wasLive) continue; // fixed label: no redraw while the trap holds
           drawLabel(
             gv.canvas,
-            left > 0 ? `−${left}` : '✓',
+            trapLabelText(g, left),
             left > 0 ? PALETTE.trap : '#999',
             left > 0 ? 'trap' : 'broken',
           );
