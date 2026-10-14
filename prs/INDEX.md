@@ -84,7 +84,10 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 076 | feat/m2-28-29-aim                                    | hivesurge-eng          | `1403e32` | merged (`c64412b`; applies design 060 patch unchanged)                                                                  | 076-feat-m2-28-29-aim.md                                          |
 | 077 | chore/plan-m2-g4-recheck-gem-price                   | hivesurge-ba           | `b01534b` | merged (`2605989`)                                                                                                      | 077-chore-plan-m2-g4-recheck-gem-price.md                         |
 | 078 | art/bee-antenna-fix                                  | hivesurge-art          | `f4301b6` | merged (`6f7fca2`)                                                                                                      | 078-art-bee-antenna-fix.md                                        |
+| 079 | feat/m2-28d-aim-trace                                | hivesurge-eng          | `76c440d` | open (claimed; in progress, waiting on eng's ready tip)                                                                 | 079-feat-m2-28d-aim-trace.md                                      |
+| 080 | chore/ceo-team-check-2026-10-15                      | hivesurge-ceo          | `2119c49` | open (claimed; STATUS decision 38)                                                                                      | 080-chore-ceo-team-check-2026-10-15.md                            |
+| 081 | design/m5-1-meta-validation                          | hivesurge-design       | —         | open (claimed; M5-1, docs only, provisional; tip TBD)                                                                   | 081-design-m5-1-meta-validation.md                                |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **079**.
+Next free number: **082**.
