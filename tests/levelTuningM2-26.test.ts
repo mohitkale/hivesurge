@@ -16,7 +16,7 @@ describe('M2-26 tuning from validation-m2.md', () => {
   });
 
   it.each([
-    ['thistle-gauntlet', 0.6, 0.75],
+    ['thistle-gauntlet', 0.65, 0.75],
     // Design target 55% +/- 5 (validation-m2.md, boss row). Measured 59.5%: inside, 0.5 pp from the top.
     ['wasp-queen-nest', 0.5, 0.6],
   ] as const)(
