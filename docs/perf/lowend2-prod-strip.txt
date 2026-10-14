@@ -1,0 +1,5 @@
+# 2026-10-14 23:44 IST production build of docs/071-followup: grep for perf overlay code in dist/
+"perf-overlay": 0 js files
+"fps ": 0 js files
+"verts ": 0 js files
+"F3": 0 js files
