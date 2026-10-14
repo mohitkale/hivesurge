@@ -1,6 +1,6 @@
-# PR 064: feat/m2-revive-threshold
+# PR 066: feat/m2-revive-threshold
 
-Implements design PR 049 (merged, `26851de`; spec docs/design/revive-m2.md). Base: main `81d22ae` (includes 048 gem revive).
+Implements design PR 049 (merged, `26851de`; spec docs/design/revive-m2.md). Base: main `5329e56` (includes 048 gem revive).
 
 ## Changes
 
@@ -30,11 +30,10 @@ The casual bot rarely loses on Dandelion, so this sample still can't show the 30
 - The override (0.5) is used, and invalid overrides fall back.
 - Other eligibility rules still apply.
 
-## Docs updated (50% -> `revive.minNestDamage`, default 25%)
+## Docs
 
-- STATUS.md decision 19
-- monetization/revive-m2-21a.md: eligibility row, and the economy assumption note
-- monetization/sim/economy_sim.py: comment on `REVIVE_ELIG_SHARE`. The value 0.5 is **not** retuned; at 25% the bots put the share at 96–100% of losses. That's for monetization to update. `economy_sim.py` and `check_guardrails.py` still run OK.
+- STATUS.md decision 19: 50% → `revive.minNestDamage` (default 25%), any loss type.
+- `monetization/revive-m2-21a.md` and the `economy_sim.py` comment: already updated by monetization in PR 063 (merged `7eeb4c9`). On rebase I kept main's text, so this PR doesn't change them.
 
 ## Fit with 048 (gem revive)
 
@@ -42,8 +41,8 @@ The threshold only gates whether an offer opens (`shouldOfferRevive`, plus 047's
 
 ## Not in this PR
 
-`revive.gemPrice` stays at 10. A change to 5 is on hold: monetization keeps 10 in PR 063, and lowering it needs CEO approval first.
+The `revive.gemPrice` default goes 10 → 5 (CEO decision 36) in its own PR 067 (`feat/m2-21c-gem-price-5`, with monetization's `8c38ed6`). Merge order: either works. The two PRs share no files after this rebase.
 
 ## Checks
 
-npx eslint (v10.12.0) + prettier ok · tests 266/266 · build ok · size budget: initial JS 2.34 KiB gzip, dist ~907 KiB. Base: main `81d22ae`.
+npx eslint (v10) + prettier ok · tests 266/266 · build ok · size budget: initial JS 2.34 KiB gzip, dist ~907 KiB. `tests/sizeBudget.test.ts` (from main) timed out once at 5 s while the box was busy; it passes alone (4/4) and on rerun.
