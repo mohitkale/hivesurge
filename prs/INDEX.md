@@ -75,7 +75,7 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 065 | art/perf-audit                                       | hivesurge-art          | —         | open (claimed; art/PERF-AUDIT.md + safe art-side fixes)                                        | 065-art-perf-audit.md                                             |
 | 066 | feat/m2-revive-threshold                             | hivesurge-eng          | `9d96e00` | merged (`865db7d`)                                                                             | 066-feat-m2-revive-threshold.md                                   |
 | 067 | feat/m2-21c-gem-price-5                              | hivesurge-eng          | `0ce113f` | merged (`0b79cd9`; CEO decision 36)                                                            | 067-feat-m2-21c-gem-price-5.md                                    |
-| 068 | fix/perf-lowend                                      | hivesurge-eng          | `6a0cc28` | open (claimed)                                                                                 | 068-fix-perf-lowend.md                                            |
+| 068 | fix/perf-lowend                                      | hivesurge-eng          | `6a0cc28` | merged (`db68b38`; follow-up: auto tier can stay at low for the session)                       | 068-fix-perf-lowend.md                                            |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 

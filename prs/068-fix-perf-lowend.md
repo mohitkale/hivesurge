@@ -1,4 +1,4 @@
-# PR (number pending): fix/perf-lowend
+# PR 068: fix/perf-lowend
 
 Number not claimed yet. `main` is checked out at `/tmp/rev-merge` (the reviewer's merge worktree), so I couldn't add the temporary claim worktree without forcing it, and I didn't force it. Rename this file to `prs/NNN-fix-perf-lowend.md` once a number is claimed. Base: main `5329e56`.
 
