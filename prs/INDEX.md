@@ -77,7 +77,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 069 | art/starter-skin                                     | hivesurge-art          | `91cde70` | merged (`57cf94b`)                                                                             | 069-art-starter-skin.md                                           |
 | 070 | art/perf-audit                                       | hivesurge-art          | `4eff666` | merged partially (`da2fa24`, up to `4eff666`); crowd LOD `7521cc0` held for design sign-off    | 070-art-perf-audit.md                                             |
 | 071 | fix/perf-lowend-2                                    | hivesurge-eng          | —         | open (claimed)                                                                                 | 071-fix-perf-lowend-2.md                                          |
+| 072 | chore/plan-m2-28-29-aiming                           | hivesurge-ba           | —         | open (claimed)                                                                                 | 072-chore-plan-m2-28-29-aiming.md                                 |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **072**.
+Next free number: **073**.
