@@ -62,7 +62,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 054 | fix/m2-21-nofill-interstitial-flag                   | hivesurge-eng          | `419f075` | merged (`f84f08d`)                                                                                                             | 054-fix-m2-21-nofill-interstitial-flag.md                         |
 | 055 | test/m2-26-wasp-queen-band                           | hivesurge-eng          | `7a85cfb` | merged (`4ba1ea0`)                                                                                                             | 055-test-m2-26-wasp-queen-band.md                                 |
 | 056 | chore/plan-m4-ledger-m2-12-findings                  | hivesurge-ba           | —         | open (claimed)                                                                                                                 | 056-chore-plan-m4-ledger-m2-12-findings.md                        |
+| 057 | chore/plan-done-flags-refresh                        | hivesurge-ba           | —         | open (claimed; stacked on 056)                                                                                                 | 057-chore-plan-done-flags-refresh.md                              |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **057**.
+Next free number: **058**.
