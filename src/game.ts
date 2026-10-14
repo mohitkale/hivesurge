@@ -255,6 +255,7 @@ export class Game {
     this.hud?.setQueenFocus(f.step === FtueStep.Queen && w.queenReady);
     const lx = f.leadTargetX(w);
     this.scene.setLeadLine(lx === null ? null : { x: lx, y: w.level.gates[1].y });
+    this.scene.setDemoGhost(f.demoX(w)); // M2-30b
   }
 
   /**
@@ -396,7 +397,7 @@ export class Game {
     this.scene.dispose();
     this.world = new World(this.currentLevel());
     this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id)
-      ? new Ftue(0, 1, this.save.ftueStep)
+      ? new Ftue(0, 1, this.save.ftueStep, this.save.ftueStep2Fails + 1)
       : null;
     this.ftueReported = 0;
     this.missCue = new MissCue(this.world.gateRowY.length);
@@ -491,6 +492,12 @@ export class Game {
       this.updateFtueUi(this.world);
       this.hud?.setPrompt('', false);
       this.scene.setLeadLine(null);
+      this.scene.setDemoGhost(null);
+      // M2-30b: count FTUE attempts that ended with step 2 still not learned.
+      if (this.ftue.step === FtueStep.Gate && !this.ftue.stepKnown) {
+        this.save.ftueStep2Fails++;
+        this.persist();
+      }
     }
     this.platform.gameplayStop();
     this.input.enabled = false;

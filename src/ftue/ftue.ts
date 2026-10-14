@@ -41,6 +41,21 @@ export const AIMED_HITS = 6;
 /** M2-29: the cannon must be at least this far from centre (lane units) for a hit to count. */
 export const AIM_MIN_OFFSET = 1.5;
 
+/**
+ * M2-30b escape for players who never make an aimed x2 hit. Attempts are counted per FTUE
+ * battle that ends with step 2 not learned (saved as `ftueStep2Fails`). Design can tune both.
+ * - From attempt FTUE_STEP2_DEMO_ATTEMPT, step 2 shows a ghost cannon sliding from the centre
+ *   onto the x2 gate.
+ * - From attempt FTUE_STEP2_MAX_ATTEMPTS, step 2 completes (and is saved as learned) at its
+ *   6 s timeout, so the FTUE continues.
+ * Attempt 1 is unchanged (M2-29: 6 aimed hits, timeout only pulses).
+ */
+export const FTUE_STEP2_DEMO_ATTEMPT = 2;
+export const FTUE_STEP2_MAX_ATTEMPTS = 3;
+/** Ghost demo loop: slide time and hold time at the gate, seconds. */
+export const FTUE_DEMO_SLIDE_S = 1.2;
+export const FTUE_DEMO_HOLD_S = 0.6;
+
 /** Seconds before a step's timeout fallback (spec column "Timeout fallback"). */
 const TIMEOUTS: Partial<Record<FtueStep, number>> = {
   [FtueStep.Aim]: 4,
@@ -91,7 +106,19 @@ export class Ftue {
     private readonly gateX2 = 0,
     private readonly movingGate = 1,
     private readonly knownThrough: number = FtueStep.Boot,
+    /** M2-30b: 1-based FTUE attempt at step 2 (saved fails + 1). */
+    readonly step2Attempt = 1,
   ) {}
+
+  /** M2-30b: ghost cannon x for the step 2 demo, or null when no demo is shown. */
+  demoX(w: World): number | null {
+    if (this.step !== FtueStep.Gate || this.stepKnown) return null;
+    if (this.step2Attempt < FTUE_STEP2_DEMO_ATTEMPT) return null;
+    const period = FTUE_DEMO_SLIDE_S + FTUE_DEMO_HOLD_S;
+    const p = Math.min(1, (this.stepTime % period) / FTUE_DEMO_SLIDE_S);
+    const ease = p * p * (3 - 2 * p);
+    return ease * w.currentGateX(this.gateX2);
+  }
 
   /** The current step was already completed in an earlier attempt (M2-30/M2-33). */
   get stepKnown(): boolean {
@@ -129,6 +156,17 @@ export class Ftue {
     const timeout = TIMEOUTS[this.step];
     if (timeout !== undefined && this.stepTime >= timeout && this.stepKnown) {
       // Retry: a step already learned never holds the player (no prompt, no pulse).
+      this.stepTimedOut = true;
+      this.advance(w);
+      return;
+    }
+    if (
+      this.step === FtueStep.Gate &&
+      this.step2Attempt >= FTUE_STEP2_MAX_ATTEMPTS &&
+      timeout !== undefined &&
+      this.stepTime >= timeout
+    ) {
+      // M2-30b escape: after FTUE_STEP2_MAX_ATTEMPTS attempts, step 2 completes at its timeout.
       this.stepTimedOut = true;
       this.advance(w);
       return;

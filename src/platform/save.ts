@@ -36,6 +36,8 @@ export interface SaveData {
   ftueStep: number;
   /** M2-33: the player has fired (held) at least once; the hold hint is not shown again. */
   holdUsed: boolean;
+  /** M2-30b: FTUE battles that ended with step 2 (aimed x2 hits) not learned. */
+  ftueStep2Fails: number;
   /** Daily ad counters for caps (G5); reset when `day` changes. */
   adDay: AdDayCounters;
   /** M2-21c (C2): gem revives today; the per-session count is not saved. */
@@ -74,6 +76,7 @@ export const defaultSave = (): SaveData => ({
   ftueDone: false,
   ftueStep: 0,
   holdUsed: false,
+  ftueStep2Fails: 0,
   adDay: emptyAdDay(),
   reviveGemDay: emptyGemReviveDay(),
   settings: { muted: false, colorBlind: false, haptics: true },
@@ -107,6 +110,7 @@ export function parseSave(raw: string | null): SaveData {
       ftueDone: d.ftueDone === true,
       ftueStep: Math.min(6, Math.floor(num(d.ftueStep))),
       holdUsed: d.holdUsed === true,
+      ftueStep2Fails: Math.min(99, Math.floor(num(d.ftueStep2Fails))),
       adDay: parseAdDay(d.adDay),
       reviveGemDay: {
         day: typeof d.reviveGemDay?.day === 'string' ? d.reviveGemDay.day : '',
@@ -152,6 +156,7 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     ftueDone: a.ftueDone || b.ftueDone,
     ftueStep: Math.max(a.ftueStep, b.ftueStep),
     holdUsed: a.holdUsed || b.holdUsed,
+    ftueStep2Fails: Math.max(a.ftueStep2Fails, b.ftueStep2Fails),
   };
 }
 
