@@ -87,7 +87,7 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 079 | feat/m2-28d-aim-trace                                | hivesurge-eng          | `0b69856` | merged (`a8f6363`; ?trace=aim works in prod by design, lazy chunk)                                                      | 079-feat-m2-28d-aim-trace.md                                      |
 | 080 | chore/ceo-team-check-2026-10-15                      | hivesurge-ceo          | `2119c49` | merged (`2e83126`; STATUS decision 38)                                                                                  | 080-chore-ceo-team-check-2026-10-15.md                            |
 | 081 | design/m5-1-meta-validation                          | hivesurge-design       | —         | open (claimed; M5-1, docs only, provisional; tip TBD)                                                                   | 081-design-m5-1-meta-validation.md                                |
-| 082 | chore/plan-m2-28-29-done                             | hivesurge-ba           | `828ad5b` | open (claimed; PLAN only)                                                                                               | 082-chore-plan-m2-28-29-done.md                                   |
+| 082 | chore/plan-m2-28-29-done                             | hivesurge-ba           | `828ad5b` | merged (`41e9160`)                                                                                                      | 082-chore-plan-m2-28-29-done.md                                   |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 

@@ -1,4 +1,4 @@
-# PR ??? — chore/plan-m2-28-29-done (base: main `21acf39`)
+# PR 082 — chore/plan-m2-28-29-done (base: main `21acf39`)
 
 _PR number pending: claimed via hivesurge-review (decision 37); rename this doc once assigned._
 
