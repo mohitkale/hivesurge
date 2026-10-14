@@ -81,7 +81,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 073 | art/crowd-lod-wasp-band                              | hivesurge-art          | `7ff5509` | claimed; held: wasp-band commit `8e7608c` lost in the box reboot (work is uncommitted in art's worktree), art to re-commit | 073-art-crowd-lod-wasp-band.md                                    |
 | 075 | docs/071-followup                                    | hivesurge-eng          | —         | open (claimed; 071 doc without the LOD evidence + prod gate on the F3/URL perf overlay)                                    | 075-docs-071-followup.md                                          |
 | 076 | feat/m2-28-29-aim                                    | hivesurge-eng          | `71c6e00` | open (claimed; implements PR 060 spec)                                                                                     | 076-feat-m2-28-29-aim.md                                          |
+| 077 | chore/plan-m2-g4-recheck-gem-price                   | hivesurge-ba           | `b01534b` | open (claimed; PLAN only)                                                                                                  | 077-chore-plan-m2-g4-recheck-gem-price.md                         |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **077**.
+Next free number: **078**.
