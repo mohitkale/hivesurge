@@ -10,6 +10,11 @@ export type Bot = (w: World) => PlayerInput;
 /** Never fires. */
 export const idleBot: Bot = () => ({ aimX: 0, firing: false, queen: false });
 
+/** M2-12 sweeper: holds fire, sweeps `amp` lane widths either side at `f` rad/s, queen when ready. */
+export const sweepBot =
+  (amp: number, f: number): Bot =>
+  (w) => ({ aimX: amp * Math.sin(w.time * f) * w.level.laneWidth, firing: true, queen: true });
+
 /** Fires straight up the middle, launches the queen when ready. */
 export const centreBot: Bot = () => ({ aimX: 0, firing: true, queen: true });
 

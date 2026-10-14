@@ -14,7 +14,8 @@ function instantPlayer(maxT = 120, aimOff = false) {
   while (w.outcome === 'playing' && w.time < maxT) {
     const lead = f.leadTargetX(w);
     const input: PlayerInput = {
-      aimX: lead === null ? 0 : aimOff ? 4.5 : lead,
+      aimX:
+        lead === null ? (f.step === FtueStep.Gate ? w.currentGateX(0) : 0) : aimOff ? 4.5 : lead,
       firing: f.step >= FtueStep.Aim,
       queen: true,
     };
@@ -59,7 +60,7 @@ describe('FTUE polish (M2-27, validation-m2.md #1 and #3)', () => {
       if (!visible && shownAt >= 0) gone = w.time;
       // Waits for the prompt, then taps at once.
       const input: PlayerInput = {
-        aimX: lead ?? 0,
+        aimX: lead ?? (f.step === FtueStep.Gate ? w.currentGateX(0) : 0),
         firing: f.step >= FtueStep.Aim,
         queen: visible,
       };

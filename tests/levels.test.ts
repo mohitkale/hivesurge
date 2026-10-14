@@ -12,20 +12,20 @@ describe('level data files', () => {
       laneWidth: 10,
       laneLength: 40,
       timeLimit: 90,
-      nestHp: 2350,
+      nestHp: 3050,
       hiveHp: 50,
       fireInterval: 0.11,
       queenCharge: 7,
       trickleInterval: 0.9,
     });
-    expect(CLOVER_RUN.gates).toHaveLength(5);
+    expect(CLOVER_RUN.gates).toHaveLength(7);
     expect(CLOVER_RUN.gates[2]).toEqual({
       kind: 'mul',
       value: 3,
-      x: 0,
+      x: 1.3,
       y: 17,
-      width: 2.6,
-      motion: { amplitude: 3, speed: 0.9 },
+      width: 2.2,
+      motion: { amplitude: 0.6, speed: 0.9 },
     });
     expect(CLOVER_RUN.waves).toHaveLength(9);
     expect(CLOVER_RUN.waves.reduce((s, w) => s + w.count, 0)).toBe(284);
