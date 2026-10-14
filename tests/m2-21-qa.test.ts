@@ -12,11 +12,17 @@ describe('M2-21 QA follow-ups', () => {
     expect(debugParamsFromUrl(q, true, IDS)).toEqual({
       level: 'dandelion-drift',
       reviveForce: true,
+      battle: null,
     });
-    expect(debugParamsFromUrl(q, false, IDS)).toEqual({ level: null, reviveForce: false });
+    expect(debugParamsFromUrl(q, false, IDS)).toEqual({
+      level: null,
+      reviveForce: false,
+      battle: null,
+    });
     expect(debugParamsFromUrl('?level=nope&revive=1', true, IDS)).toEqual({
       level: null,
       reviveForce: false,
+      battle: null,
     });
   });
 

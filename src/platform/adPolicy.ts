@@ -45,3 +45,21 @@ export function isLevelTransition(replay: boolean): boolean {
 export function canOfferRewarded(s: Pick<AdPolicyState, 'battlesCompleted' | 'ftueDone'>): boolean {
   return s.ftueDone && s.battlesCompleted >= FTUE_BATTLES;
 }
+
+/**
+ * The interstitial decision on a result-screen claim (game.ts `claim`): a level transition
+ * (G3), the policy (G1, G4, G6, min gap) and the session/day caps (G5). Shared with tests.
+ */
+export function shouldShowInterstitialOnClaim(
+  s: AdPolicyState,
+  now: number,
+  rewardedShownThisTransition: boolean,
+  replay: boolean,
+  pacer: { canInterstitial(): boolean },
+): boolean {
+  return (
+    isLevelTransition(replay) &&
+    canShowInterstitial(s, now, rewardedShownThisTransition) &&
+    pacer.canInterstitial()
+  );
+}
