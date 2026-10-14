@@ -234,6 +234,11 @@ export class Game {
     const f = this.ftue!;
     for (; this.ftueReported < f.completed.length; this.ftueReported++) {
       const e = f.completed[this.ftueReported];
+      // M2-30/M2-33: remember learned steps so a retry does not re-gate or re-prompt them.
+      if (e.step > this.save.ftueStep) {
+        this.save.ftueStep = e.step;
+        this.persist();
+      }
       this.analytics.track('ftue_step', {
         step: e.step,
         msSinceFirstInput: e.msSinceFirstInput,
@@ -385,7 +390,9 @@ export class Game {
     this.sfx.unlock();
     this.scene.dispose();
     this.world = new World(this.currentLevel());
-    this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id) ? new Ftue() : null;
+    this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id)
+      ? new Ftue(0, 1, this.save.ftueStep)
+      : null;
     this.ftueReported = 0;
     if (this.aimTraceOn) this.startAimTrace();
     this.scene = this.makeScene();
@@ -394,7 +401,7 @@ export class Game {
     this.analytics.track('level_start', { level: this.world.level.id });
     this.hud = new Hud(this.hudRoot);
     // FTUE shows a single prompt: hide the generic launch hint from the first frame.
-    if (this.ftue) this.hud.hideHint();
+    if (this.ftue || this.save.holdUsed) this.hud.hideHint();
     this.hud.queenBtn.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
       this.input.queueQueen();
@@ -888,7 +895,14 @@ export class Game {
       return w.outcome === 'playing';
     });
     if (steps === 0 && queen) this.input.queueQueen(); // keep the press for the next step
-    if (this.input.firing) this.hud?.hideHint();
+    if (this.input.firing) {
+      this.hud?.hideHint();
+      // M2-33: the generic hold hint is shown only until the player has used hold once.
+      if (!this.save.holdUsed) {
+        this.save.holdUsed = true;
+        this.persist();
+      }
+    }
     if (this.stress > 0) this.spawnStress(this.stress);
     if (this.ftue) this.updateFtueUi(w);
 

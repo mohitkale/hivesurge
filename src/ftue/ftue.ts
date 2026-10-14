@@ -81,14 +81,26 @@ export class Ftue {
   aimedHits = 0;
   private passesSeen = 0;
 
-  /** Indices into the FTUE level's gates (spec layout: x2 at y 8, moving +3 at y 15). */
+  /**
+   * Indices into the FTUE level's gates (spec layout: x2 at y 8, moving +3 at y 15).
+   * `knownThrough` (M2-30/M2-33): the highest step this player completed in an earlier FTUE
+   * attempt (saved). On a retry those steps show no prompt and never block: each still
+   * completes on its exit condition, or at its timeout instead of pulsing.
+   */
   constructor(
     private readonly gateX2 = 0,
     private readonly movingGate = 1,
+    private readonly knownThrough: number = FtueStep.Boot,
   ) {}
+
+  /** The current step was already completed in an earlier attempt (M2-30/M2-33). */
+  get stepKnown(): boolean {
+    return this.step !== FtueStep.Boot && this.step <= this.knownThrough;
+  }
 
   /** Step 4's prompt waits for a full queen meter (spec trigger "queen meter full"). */
   get prompt(): string {
+    if (this.stepKnown) return '';
     if (this.step === FtueStep.Queen && !this.queenPromptShown) return '';
     return FTUE_PROMPTS[this.step];
   }
@@ -115,6 +127,12 @@ export class Ftue {
     if (this.step !== FtueStep.Queen || this.queenPromptShown) this.stepTime += dt;
     if (input.firing && this.firstInputAt < 0) this.firstInputAt = w.time;
     const timeout = TIMEOUTS[this.step];
+    if (timeout !== undefined && this.stepTime >= timeout && this.stepKnown) {
+      // Retry: a step already learned never holds the player (no prompt, no pulse).
+      this.stepTimedOut = true;
+      this.advance(w);
+      return;
+    }
     if (timeout !== undefined && this.stepTime >= timeout && !this.emphasis) {
       this.emphasis = true;
       this.stepTimedOut = true;

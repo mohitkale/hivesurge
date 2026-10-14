@@ -30,6 +30,10 @@ export interface SaveData {
   lastInterstitialAt: number;
   /** FTUE finished (first win, or a later launch). Gates ads/offers (G1, G2). */
   ftueDone: boolean;
+  /** M2-30: highest FTUE step completed in any attempt (FtueStep value, 0 = none). */
+  ftueStep: number;
+  /** M2-33: the player has fired (held) at least once; the hold hint is not shown again. */
+  holdUsed: boolean;
   /** Daily ad counters for caps (G5); reset when `day` changes. */
   adDay: AdDayCounters;
   /** M2-21c (C2): gem revives today; the per-session count is not saved. */
@@ -65,6 +69,8 @@ export const defaultSave = (): SaveData => ({
   battlesCompleted: 0,
   lastInterstitialAt: 0,
   ftueDone: false,
+  ftueStep: 0,
+  holdUsed: false,
   adDay: emptyAdDay(),
   reviveGemDay: emptyGemReviveDay(),
   settings: { muted: false, colorBlind: false, haptics: true },
@@ -95,6 +101,8 @@ export function parseSave(raw: string | null): SaveData {
       battlesCompleted: num(d.battlesCompleted),
       lastInterstitialAt: num(d.lastInterstitialAt),
       ftueDone: d.ftueDone === true,
+      ftueStep: Math.min(6, Math.floor(num(d.ftueStep))),
+      holdUsed: d.holdUsed === true,
       adDay: parseAdDay(d.adDay),
       reviveGemDay: {
         day: typeof d.reviveGemDay?.day === 'string' ? d.reviveGemDay.day : '',
@@ -137,6 +145,8 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     skins: [...new Set([...a.skins, ...b.skins])], // purchases are sticky
     battlesCompleted: Math.max(a.battlesCompleted, b.battlesCompleted),
     ftueDone: a.ftueDone || b.ftueDone,
+    ftueStep: Math.max(a.ftueStep, b.ftueStep),
+    holdUsed: a.holdUsed || b.holdUsed,
   };
 }
 
