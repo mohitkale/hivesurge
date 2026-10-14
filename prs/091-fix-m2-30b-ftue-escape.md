@@ -33,6 +33,8 @@ This adds an escape. The branch is cut from main `d6d8672` because 086 had alrea
 - **Headless (dev, fresh profile, 3 attempts holding the centre):**
   - A1: stuck in step 2, no ghost; `ftueStep2Fails` becomes 1.
   - A2: the ghost slides to −2.80 while the prompt stays; fails becomes 2.
-  - A3: the ghost shows, step 2 completes at about 8.5 s of battle time, and the FTUE moves through
+  - A3: the ghost shows, step 2 completes 6.0 s after the step 2 prompt appears
+    (corrected in PR fix/m2-31c-miss-cue-input; about 11.5 s of battle in QA's run, because battle
+    time also includes boot and step 1), and the FTUE moves through
     "Aim ahead of moving gates" to "Tap the queen!". The saved `ftueStep` reaches 3.
   - No page errors.

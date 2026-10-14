@@ -73,3 +73,20 @@ describe('M2-30b FTUE step 2 escape', () => {
     );
   });
 });
+
+describe('M2-30b escape timing (review: 6.0 s after the step 2 prompt)', () => {
+  it('attempt 3: step 2 completes exactly 6.0 s after its prompt appears', () => {
+    const w = new World(level);
+    const f = new Ftue(0, 1, 1, FTUE_STEP2_MAX_ATTEMPTS);
+    const input: PlayerInput = { aimX: 0, firing: true, queen: false };
+    let promptAt = -1;
+    let doneAt = -1;
+    for (let i = 0; i < 60 * 30 && doneAt < 0; i++) {
+      f.update(w, input, SIM_DT);
+      if (promptAt < 0 && f.prompt === FTUE_PROMPTS[FtueStep.Gate]) promptAt = w.time;
+      if (promptAt >= 0 && f.step > FtueStep.Gate) doneAt = w.time;
+      w.step(input);
+    }
+    expect(doneAt - promptAt).toBeCloseTo(6.0, 1);
+  });
+});

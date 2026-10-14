@@ -919,7 +919,7 @@ export class Game {
     // Suppressed while an FTUE prompt is on screen.
     const missRow =
       this.missCue?.update(w.rowMisses, dt, !!this.ftue && this.ftue.prompt !== '') ?? -1;
-    if (missRow >= 0) this.float(MISS_CUE.text, w.cannonX, w.gateRowY[missRow]);
+    if (missRow >= 0) this.float(MISS_CUE.text, w.cannonX, w.gateRowY[missRow], 'miss', 1);
     let nestDmg = 0;
     for (const e of w.drainEvents()) {
       switch (e.type) {
@@ -973,9 +973,10 @@ export class Game {
     if (w.outcome !== 'playing') this.endBattle();
   }
 
-  private float(text: string, x: number, y: number): void {
-    this.proj.set(x, 1.5, -y).project(this.scene.camera);
+  private float(text: string, x: number, y: number, variant: '' | 'miss' = '', h = 1.5): void {
+    this.proj.set(x, h, -y).project(this.scene.camera);
     const r = this.canvas.getBoundingClientRect();
-    this.hud?.floater(text, ((this.proj.x + 1) / 2) * r.width, ((1 - this.proj.y) / 2) * r.height);
+    const sx = ((this.proj.x + 1) / 2) * r.width;
+    this.hud?.floater(text, sx, ((1 - this.proj.y) / 2) * r.height, variant);
   }
 }
