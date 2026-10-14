@@ -207,3 +207,299 @@ Shipped casual 41.5% matches QA's 1 win in 4. Nest HP is very sensitive (about 6
 **Casual bot definition** (for M2-18 to add to `tests/bots.ts`): every 1.5 s it picks a target. It takes the best visible non-trap gate (mul scores 3x its value), but 35% of the time picks a random non-trap gate. It aims at the gate's current x with no lead, plus noise (sum of 3 uniforms, about sd 1.2 lane units). It lifts its finger (no fire) 15% of the time. It launches the queen 1 s after it is ready. It uses its own RNG seeded from the run seed.
 
 **Centre bot stays at 0%, on purpose.** The plan's "casual/centre about 70%" would mean aiming does not matter, and that breaks the existing test "aiming beats firing straight". Decision: the 65 to 75% band applies to the casual bot. The centre bot must stay below casual (it is currently 0%). BA: please read M2-18's acceptance as "casual bot 65 to 75%, idle loses, centre below casual".
+
+## M2-28: aiming pillar (2026-10-14)
+
+M2-12 (PR 052, re-run after M2-26 in research PR 059) found the M2-12 sweeper (holds fire, aims `0.35 × laneWidth × sin(1.3 t)`, queen when ready; `sweepBot(0.35, 1.3)` in `playtests/m2-12/sim-sessions.ts`) wins 100% on L1 to L5, so aiming adds nothing over wiggling.
+
+**Why it wins:** bees fly straight, so a sweeper's payoff is the average gate value over where its stream lands, and a sine sweep spends most of its time at the turn points (x ±3.5) and little at the centre. The old layouts put good gates at x ±2.4 to 2.8 (where the sweeper dwells) and moving gates with amplitude 3 to 3.5 that cross the whole sweep.
+
+**Fix (same recipe on L2 to L5):**
+
+1. **Edge traps on the sweep line:** two `sub 600` gates at x ±3.8, width 2.4 (span |x| ≥ 2.6), at y 4 to 5, before any multiplier. A ±3.5 sweeper puts about 47% of its bees there; a player aiming at the gate column (x 1.3) loses about 5 to 10% to aim noise. 600 lasts the whole battle.
+2. **One gate column off the sweep peaks and off the centre:** best gates stacked at **x 1.3** (span about 0.2 to 2.4). A centre-only player misses it (centre bot stays below casual), the sweeper crosses it fast.
+3. **Moving gates keep a short swing** (amplitude 0.6 to 1.0, was 2.5 to 3.5) inside the column, so lead aiming still matters but the gate never travels into the sweep's dwell zone.
+4. **Decoy on the left** (`add` gate at x -1.3) for the casual bot's 35% random picks; on L4 the -40 trap moves under it (x -1.3, y 16), on L5 the phase-2 -30 trap too.
+5. **Nest HP re-centred** so the casual bot is back in band.
+
+### Results (headless, 200 seeds per bot, scratch copy of main `83942ae`)
+
+Before = main. After = values below. L1 after = M2-29 layout only (see `ftue-m2.md`).
+
+| Stage | Level            | Idle before → after | Sweep before → after | Casual before → after | Aim before → after | Aim − sweep before → after | Casual band (current) |
+| ----- | ---------------- | ------------------- | -------------------- | --------------------- | ------------------ | -------------------------- | --------------------- |
+| 1     | ftue-meadow      | lose → lose         | 100 → 100            | 100 → 100             | 100 → 100          | 0 → 0 (exempt, see below)  | ≥ 95                  |
+| 2     | dandelion-drift  | lose → lose         | 100 → **0**          | 98.5 → 98             | 100 → 100          | 0 → **100**                | ≥ 90                  |
+| 3     | clover-run       | lose → lose         | 100 → **0**          | 74 → 71               | 100 → 100          | 0 → **100**                | 65 to 75              |
+| 4     | thistle-gauntlet | lose → lose         | 100 → **0**          | 65 → 68.5             | 100 → 84.5         | 0 → **84.5**               | 65 to 75              |
+| 5     | wasp-queen-nest  | lose → lose         | 100 → **54.5**       | 59.5 → **54.5**       | 100 → 100          | 0 → **45.5**               | 55 ± 5                |
+
+Idle loses on every level (base seed, as `levelsBalance`). All 245 repo tests pass in the scratch copy with these values (including 18 px gate labels, gate contrast, the casual-band tests, `aim > centre`, and the new M2-28/M2-29 tests below), once the pinned values in the tests are updated (reference patch).
+
+Notes:
+
+- **L4 aim 84.5%:** the aim bot picks its plan on the base seed only, so it overfits a little. Still ≥ 75% (validator) and 84.5 points above the sweeper.
+- **L5:** the sweeper falls off a cliff between nest HP 2500 (54.5%) and 2600 (14.5%), but at 2600 the aim bot's base-seed plan drops to 5.5%. 2500 keeps aim at 100% and casual at 54.5% (target 55, so centred; it was 59.5).
+- **L1 (FTUE) is exempt (proposal, CEO note):** the FTUE is action-gated and the hive is shielded until step 5, so any layout that beats a sweeper there would also hurt the ≥ 95% casual and 30 s FTUE targets. M2-29 makes the FTUE itself teach aiming instead. L2 meets the 15-point gap without hurting casual, so it is not relaxed.
+
+### Robustness: other sweep shapes (200 seeds, win %)
+
+| Stage | ±3.5 at 1.3 (M2-12) | ±2.5 at 1.3 | ±4.5 at 1.3 | ±3.5 at 0.9 | ±3.5 at 1.8 | ±2.0 at 0.9 (gate-seeker) |
+| ----- | ------------------- | ----------- | ----------- | ----------- | ----------- | ------------------------- |
+| 2     | 0                   | 100         | 0           | 1           | 0           | 100                       |
+| 3     | 0                   | 100         | 0           | 100         | 100         | 100                       |
+| 4     | 0                   | 100         | 0           | 98.5        | 100         | 100                       |
+| 5     | 54.5                | 100         | 0           | 46.5        | 50.5        | 100                       |
+
+(L3 at 3050 and L4 at 3900; L2 and L5 at the values below.) **Risk, flagged:** the gap holds for the M2-12 sweeper and for wide sweeps, but not for a narrow ±2 to ±2.5 wiggle, which still covers the x 1.3 column about 40% of the time and stays out of the edge traps; on L3 and L4 a slower or faster ±3.5 sweep also still wins. M2-28's acceptance names the M2-12 sweeper, so it is met, but a player can still win by wiggling near the centre-right. A stronger fix (half-lane trap on the decoy side, tried in scratch) beats the narrow sweeps too but needs nest HP about 2× (L3 6000, L4 8000+) and still lets ±2 sweeps win, so I did not ship it. Proposal for M2-28b: measure a narrow sweeper on real players (QA) before going further.
+
+### CI check for ENG (research request, PR 059)
+
+New test `tests/aimPillarM2-28.test.ts`, alongside the casual-band tests:
+
+- Add `sweepBot(amp, f)` to `tests/bots.ts` (same definition as `playtests/m2-12/sim-sessions.ts`).
+- For each of `dandelion-drift`, `clover-run`, `thistle-gauntlet`, `wasp-queen-nest`: `winRate(L, aimBot(L), 200) - winRate(L, sweepBot(0.35, 1.3), 200) >= 0.15`. Timeout 600 s per level (bot runs are CPU-heavy).
+- `ftue-meadow` is exempt (above).
+- Keep the casual-band tests, updating pinned values: `cloverRunEase` (nest 3050, casual 65 to 75), `levelTuningM2-26` (thistle 3900, casual 60 to 75; boss 2500, gates per below, casual 50 to 60), `levels.test` (clover 7 gates, gate 2 per below), `balance.test` (scripted Clover player aims at x 1.3).
+
+### Casual targets: discrepancy (flagged)
+
+The difficulty-curve table at the top of this doc still says L3 80% and L4 70% (research PR 059 quotes those). They are stale: M2-17 set Clover Run to casual 65 to 75%, `validation-m2.md` (M2-4, PR 035) and M2-26 retuned L4 to about 65% (test band 60 to 75%), and stage 2 to ≥ 90%. PLAN.md's M2-28 row says "casual in each level's target range" and points at those tasks. I used the current bands: L1 ≥ 95, L2 ≥ 90, L3 65 to 75, L4 65 to 75, L5 55 ± 5. The table above should be read with those; BA to fix the old column.
+
+### Exact values for ENG (replace `nestHp` and `gates`; everything else unchanged)
+
+**dandelion-drift** (nestHp 1200 → 1500):
+
+```json
+{
+  "nestHp": 1500,
+  "gates": [
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": 1.3,
+      "y": 9,
+      "width": 2.4
+    },
+    {
+      "kind": "add",
+      "value": 2,
+      "x": -1.3,
+      "y": 9,
+      "width": 2.4
+    },
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": 1.3,
+      "y": 18,
+      "width": 2.4,
+      "motion": {
+        "amplitude": 0.8,
+        "speed": 0.8
+      }
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": -3.8,
+      "y": 5,
+      "width": 2.4
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": 3.8,
+      "y": 5,
+      "width": 2.4
+    }
+  ]
+}
+```
+
+**clover-run** (nestHp 2350 → 3050):
+
+```json
+{
+  "nestHp": 3050,
+  "gates": [
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": 1.3,
+      "y": 9,
+      "width": 2.2
+    },
+    {
+      "kind": "add",
+      "value": 2,
+      "x": -1.3,
+      "y": 9,
+      "width": 2.2
+    },
+    {
+      "kind": "mul",
+      "value": 3,
+      "x": 1.3,
+      "y": 17,
+      "width": 2.2,
+      "motion": {
+        "amplitude": 0.6,
+        "speed": 0.9
+      }
+    },
+    {
+      "kind": "sub",
+      "value": 25,
+      "x": -3,
+      "y": 24.5,
+      "width": 3.2
+    },
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": 1.3,
+      "y": 25,
+      "width": 2.6
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": -3.8,
+      "y": 5,
+      "width": 2.4
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": 3.8,
+      "y": 5,
+      "width": 2.4
+    }
+  ]
+}
+```
+
+**thistle-gauntlet** (nestHp 2650 → 3900):
+
+```json
+{
+  "nestHp": 3900,
+  "gates": [
+    {
+      "kind": "add",
+      "value": 5,
+      "x": -1.3,
+      "y": 8,
+      "width": 2.4
+    },
+    {
+      "kind": "mul",
+      "value": 3,
+      "x": 1.3,
+      "y": 8,
+      "width": 2.0
+    },
+    {
+      "kind": "sub",
+      "value": 40,
+      "x": -1.3,
+      "y": 16,
+      "width": 2.4
+    },
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": 1.3,
+      "y": 16,
+      "width": 2.2
+    },
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": 1.3,
+      "y": 24.5,
+      "width": 2.6,
+      "motion": {
+        "amplitude": 1.0,
+        "speed": 1.1
+      }
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": -3.8,
+      "y": 4,
+      "width": 2.4
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": 3.8,
+      "y": 4,
+      "width": 2.4
+    }
+  ]
+}
+```
+
+**wasp-queen-nest** (nestHp 3200 → 2500):
+
+```json
+{
+  "nestHp": 2500,
+  "gates": [
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": 1.3,
+      "y": 10,
+      "width": 2.4
+    },
+    {
+      "kind": "add",
+      "value": 5,
+      "x": -1.3,
+      "y": 10,
+      "width": 2.6
+    },
+    {
+      "kind": "mul",
+      "value": 3,
+      "x": 1.3,
+      "y": 18,
+      "width": 2.6,
+      "motion": {
+        "amplitude": 0.8,
+        "speed": 0.6
+      }
+    },
+    {
+      "kind": "sub",
+      "value": 30,
+      "x": -1.3,
+      "y": 14,
+      "width": 2.4,
+      "fromPhase": 2
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": -3.8,
+      "y": 5,
+      "width": 2.4
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": 3.8,
+      "y": 5,
+      "width": 2.4
+    }
+  ]
+}
+```
+
+**ftue-meadow** (M2-29): gate 0 `{ "kind": "mul", "value": 2, "x": 0, "y": 8, "width": 4.0 }` → `{ "kind": "mul", "value": 2, "x": -2.8, "y": 8, "width": 2.4 }`.
+
+Full unified diff of the level JSON, the FTUE step and the test updates (scratch, for reference): `docs/design/m2-28-29-eng-reference.patch`.
