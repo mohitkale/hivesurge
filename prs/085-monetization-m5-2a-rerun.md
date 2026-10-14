@@ -1,4 +1,4 @@
-# PR TBD — monetization/m5-2a-rerun (base: main @ 7229e05)
+# PR 085 — monetization/m5-2a-rerun (base: main @ 7229e05)
 
 **Summary:** M5-2a re-run requested by design after M5-1 validation (PR 081, `126a7bc`, `docs/design/validation-m5.md`, PROVISIONAL). The sim now matches the spec:
 
