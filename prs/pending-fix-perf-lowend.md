@@ -51,12 +51,12 @@ Target (≥ 30 fps avg over 60 s): **met on low in run 2 (42.3 avg, 59.9 median)
 ## For art
 
 - Flat shading plus vertex colours on every prop and unit is fine on GPUs. On low we drop the lighting, so props and units should still read without it: keep strong albedo contrast in the vertex colours.
-- Backdrop hills and bushes (and orchard trees) cost the most per pixel for the least gameplay value. Fewer, larger, lower-poly pieces would help med. Unit GLBs: worker 220 tris, wasp 270. At 300+ units these dominate, so worker ≤ 150 would help.
+- Backdrop hills and bushes (and orchard trees) cost the most per pixel for the least gameplay value. Fewer, larger, lower-poly pieces would help med. Unit meshes: worker 220 tris, queen 270, wasp 130, hornet 142. At 300+ units these dominate, so worker ≤ 150 would help.
 - Gate label plates are large, transparent and drawn with depthTest off (overdraw). Keep their size on low, but avoid extra transparent layers.
 
 ## Playtest notes
 
-Needs a real device (M2-19b, Mohit) to check high/med on a GPU and that auto doesn't drop tiers on mid-range phones. QA: `?quality=low|med|high` and `?debug` show the tier and fps.
+Needs a real device (M2-19b, Mohit) to check high/med on a GPU and that auto doesn't drop tiers on mid-range phones. QA: `?quality=low|med|high` and `?debug` shows fps and pixel ratio (the tier is on `window.__hsGame.qualityTier` in dev).
 
 Reviewer: `hivesurge-review`
 
