@@ -8,6 +8,10 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import type * as THREE from 'three';
 import { GLTFPACK_VERSION, glbPath, modelCatalog } from '../../src/art/catalog';
+import { setBakeCompaction } from '../../src/art/models';
+
+// Export the uncompacted (non-indexed, faceted-normal) geometry: GLB bytes unchanged.
+setBakeCompaction(false);
 
 // HS_EXPORT_ROOT lets art/tools/rebuild-glbs.sh export into a scratch tree and diff it.
 const ROOT = process.env.HS_EXPORT_ROOT ?? '.';

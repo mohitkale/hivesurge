@@ -1,0 +1,1268 @@
+[
+  {
+    "assets": "assets=off",
+    "biome": "clover",
+    "medianMs": 233.29999999999927,
+    "p99Ms": 650,
+    "frames": 21,
+    "calls": 44,
+    "triangles": 180179,
+    "programs": 9,
+    "materials": 23,
+    "transparentMats": 5,
+    "shadowMap": false,
+    "pixelRatio": 0.75,
+    "glbUsed": [],
+    "objs": [
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 124,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 124,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 40,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 73,
+        "count": 5,
+        "cap": 5,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 72,
+        "count": 12,
+        "cap": 12,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 124,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 36,
+        "count": 5,
+        "cap": 5,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 20,
+        "count": 32,
+        "cap": 32,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 84,
+        "count": 12,
+        "cap": 12,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 36,
+        "count": 8,
+        "cap": 8,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 220,
+        "count": 566,
+        "cap": 600,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 270,
+        "count": 0,
+        "cap": 200,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 130,
+        "count": 250,
+        "cap": 400,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 142,
+        "count": 0,
+        "cap": 100,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 20,
+        "count": 800,
+        "cap": 800,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "barrel",
+        "tris": 264,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "line",
+        "name": "",
+        "tris": 0.6666666666666666,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 382,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      }
+    ]
+  },
+  {
+    "assets": "assets=on",
+    "biome": "clover",
+    "medianMs": 653.7000000000007,
+    "p99Ms": 2033.2999999999993,
+    "frames": 9,
+    "calls": 44,
+    "triangles": 134639,
+    "programs": 9,
+    "materials": 23,
+    "transparentMats": 5,
+    "shadowMap": false,
+    "pixelRatio": 0.75,
+    "glbUsed": ["unit-bee", "unit-queen", "unit-wasp", "unit-hornet", "prop-cannon"],
+    "objs": [
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 124,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 124,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 40,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 73,
+        "count": 5,
+        "cap": 5,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 72,
+        "count": 12,
+        "cap": 12,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 124,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 36,
+        "count": 5,
+        "cap": 5,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 20,
+        "count": 32,
+        "cap": 32,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 84,
+        "count": 12,
+        "cap": 12,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 36,
+        "count": 8,
+        "cap": 8,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 220,
+        "count": 359,
+        "cap": 600,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 270,
+        "count": 0,
+        "cap": 200,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 130,
+        "count": 250,
+        "cap": 400,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 142,
+        "count": 0,
+        "cap": 100,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 20,
+        "count": 800,
+        "cap": 800,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "barrel",
+        "tris": 264,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "line",
+        "name": "",
+        "tris": 0.6666666666666666,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 382,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      }
+    ]
+  },
+  {
+    "assets": "assets=on",
+    "biome": "orchard",
+    "medianMs": 650,
+    "p99Ms": 1183.300000000001,
+    "frames": 10,
+    "calls": 44,
+    "triangles": 134644,
+    "programs": 9,
+    "materials": 23,
+    "transparentMats": 5,
+    "shadowMap": false,
+    "pixelRatio": 0.75,
+    "glbUsed": ["unit-bee", "unit-queen", "unit-wasp", "unit-hornet", "prop-cannon"],
+    "objs": [
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 124,
+        "count": 12,
+        "cap": 12,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 72,
+        "count": 16,
+        "cap": 16,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 12,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 72,
+        "count": 13,
+        "cap": 13,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 73,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 36,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 32,
+        "count": 5,
+        "cap": 5,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 20,
+        "count": 32,
+        "cap": 32,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 84,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 36,
+        "count": 6,
+        "cap": 6,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 220,
+        "count": 359,
+        "cap": 600,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 270,
+        "count": 0,
+        "cap": 200,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 130,
+        "count": 250,
+        "cap": 400,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 142,
+        "count": 0,
+        "cap": 100,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "inst",
+        "name": "",
+        "tris": 20,
+        "count": 800,
+        "cap": 800,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "barrel",
+        "tris": 264,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "line",
+        "name": "",
+        "tris": 0.6666666666666666,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 382,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 12,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 24,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 80,
+        "count": 1,
+        "cap": 1,
+        "transparent": false,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      },
+      {
+        "type": "mesh",
+        "name": "",
+        "tris": 2,
+        "count": 1,
+        "cap": 1,
+        "transparent": true,
+        "shadow": false
+      }
+    ]
+  }
+]
