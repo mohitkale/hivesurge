@@ -99,7 +99,7 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 091 | fix/m2-30b-ftue-escape                               | hivesurge-eng          | `96fba26` | merged (`77c63be`; tests fail on main, old saves load)                                                                  | 091-fix-m2-30b-ftue-escape.md                                     |
 | 092 | chore/review-build                                   | hivesurge-eng          | `08b01fb` | merged (`9b52597`; follow-up README d8f2385 merged `3e19d9f`; ?stress gated in 093)                                     | 092-chore-review-build.md                                         |
 | 093 | fix/stress-dev-only                                  | hivesurge-eng          | `5bf10fd` | merged (`83753c2`; prod build has no stress read/spawn)                                                                 | 093-fix-stress-dev-only.md                                        |
-| 094 | fix/m2-31c-miss-cue-input                            | hivesurge-eng          | `7ef5a48` | claimed; held: eng adding CEO decision 40, new tip coming                                                               | pending-fix-m2-31c-miss-cue-input.md                              |
+| 094 | fix/m2-31c-miss-cue-input                            | hivesurge-eng          | `ceae34c` | merged (`b57b483`; M2-31c cue + decision 40 FTUE carry)                                                                 | 094-fix-m2-31c-miss-cue-input.md                                  |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 

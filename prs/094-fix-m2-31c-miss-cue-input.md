@@ -1,4 +1,4 @@
-# PR (number pending from review): fix/m2-31c-miss-cue-input
+# PR 094: fix/m2-31c-miss-cue-input
 
 QA recheck of the M2-31 miss cue (PR 087), the pointer-hold report, and review's additions. This PR
 changes no gameplay: it does not retune L1, and the escape timing is unchanged.
