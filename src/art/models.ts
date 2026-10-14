@@ -152,6 +152,29 @@ export function beeGeometry(
   return bake(parts, scale);
 }
 
+/**
+ * PROPOSED (needs DES sign-off): crowd LOD for the worker bee, <=150 tris. Same silhouette and
+ * palette as `beeGeometry` (striped amber abdomen, dark head, pale wings, team-teal antenna tips)
+ * with fewer segments and without the cheek dabs, so it still reads as a bee at 16-24 px. Eng
+ * owns the switch (when to use it); nothing references it yet.
+ */
+export function beeCrowdGeometry(scale = 1): THREE.BufferGeometry {
+  const abdomen = sphere(0.5, 6, 5);
+  abdomen.scale(1, 0.92, 1.2);
+  at(abdomen, 0, 0, -0.12);
+  const parts: Part[] = [
+    { geo: abdomen, color: stripes(ART.beeBody, ART.beeStripe, 0.3, 0.1, -0.62, 0.3, 0.34) },
+    { geo: at(sphere(0.3, 5, 3), 0, 0.06, 0.55), color: ART.beeHead },
+    ...wingPair(0.8, 0.32, 0.42, -0.35, ART.beeWing, false),
+  ];
+  for (const side of [-1, 1])
+    parts.push({
+      geo: at(new THREE.TetrahedronGeometry(0.08), side * 0.17, 0.5, 0.8),
+      color: ART.beeTeam,
+    });
+  return bake(parts, scale);
+}
+
 /** Queen: bigger bee, gold crown with teal gems, cape of warm amber. */
 export function queenGeometry(scale = 1): THREE.BufferGeometry {
   const base = beeGeometry(1, ART.queenBody, ART.queenStripe);
