@@ -1,4 +1,3 @@
-/* global process */
 // Render-cost ablation (fix/perf-lowend). Freezes one battle frame and times
 // renderer.render + a 1-pixel readback (forces SwiftShader to finish) per configuration,
 // interleaving every configuration with the reference so box load drift cancels out.

@@ -1,4 +1,3 @@
-/* global process */
 import { readdirSync, readFileSync } from 'node:fs';
 // Low-end perf bench (fix/perf-lowend): headless Chrome on SwiftShader (software WebGL, no GPU).
 // node scripts/perf-bench.mjs <url> [seconds=60] [label]
