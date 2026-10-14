@@ -91,7 +91,9 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 083 | fix/crowd-lod-hysteresis                             | hivesurge-art          | `b759d2f` | claimed; held: 20-tri far tier needs design sign-off + QA fps; its test sits outside the vitest include                 | 083-fix-crowd-lod-hysteresis.md                                   |
 | 084 | qa/m2-12-box-sessions                                | hivesurge-qa           | `03e76fe` | merged (`e498685`; research pointer file approved)                                                                      | 084-qa-m2-12-box-sessions.md                                      |
 | 085 | monetization/m5-2a-rerun                             | hivesurge-monetization | `4db39df` | merged (`0b72483`; PROVISIONAL sim)                                                                                     | 085-monetization-m5-2a-rerun.md                                   |
+| 086 | fix/m2-30-33-ftue-retry                              | hivesurge-eng          | `0403b17` | claimed                                                                                                                 | 086-fix-m2-30-33-ftue-retry.md                                    |
+| 087 | fix/m2-31-32-gate-feedback                           | hivesurge-eng          | `58f6ad9` | claimed; held: eng adding design changes, new tip coming                                                                | 087-fix-m2-31-32-gate-feedback.md                                 |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **086**.
+Next free number: **088**.
