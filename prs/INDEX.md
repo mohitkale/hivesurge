@@ -76,7 +76,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 068 | fix/perf-lowend                                      | hivesurge-eng          | `6a0cc28` | merged (`db68b38`; follow-up: auto tier can stay at low for the session)                                       | 068-fix-perf-lowend.md                                            |
 | 069 | art/starter-skin                                     | hivesurge-art          | `3e4fa95` | claimed, awaiting rebase (claim commit `0722f67` used 064 by mistake; starter skin + skin picker)              | 069-art-starter-skin.md                                           |
 | 070 | art/perf-audit                                       | hivesurge-art          | `303fbef` | claimed, awaiting rebase (claim commit `fa3e596` used 065 by mistake; art/PERF-AUDIT.md + safe art-side fixes) | 070-art-perf-audit.md                                             |
+| 071 | fix/perf-lowend-2                                    | hivesurge-eng          | —         | open (claimed)                                                                                                 | 071-fix-perf-lowend-2.md                                          |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **071**.
+Next free number: **072**.
