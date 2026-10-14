@@ -5,6 +5,25 @@ const WORKER_SPEED = 7;
 
 export const FTUE_LEVEL_ID = 'ftue-meadow';
 
+/**
+ * Decision 40: a win before step 5 does not finish the FTUE; the remaining steps carry into
+ * the next battle on L2 (resuming after the furthest learned step, via `knownThrough`).
+ * Gate indices per level: the off-centre x2 gate (step 2) and the moving gate (step 3).
+ * Only the FTUE level shields the hive and slows the moving gate on the step 3 timeout, so L2
+ * keeps its own difficulty.
+ */
+export const FTUE_CARRY_LEVEL_ID = 'dandelion-drift';
+export const FTUE_LEVELS: Record<string, { gateX2: number; movingGate: number }> = {
+  [FTUE_LEVEL_ID]: { gateX2: 0, movingGate: 1 },
+  [FTUE_CARRY_LEVEL_ID]: { gateX2: 0, movingGate: 2 },
+};
+
+/** Ftue for a level (L1 or the L2 carry), resuming after `knownThrough`. */
+export function ftueForLevel(levelId: string, knownThrough: number, step2Attempt: number): Ftue {
+  const g = FTUE_LEVELS[levelId] ?? FTUE_LEVELS[FTUE_LEVEL_ID];
+  return new Ftue(g.gateX2, g.movingGate, knownThrough, step2Attempt, levelId === FTUE_LEVEL_ID);
+}
+
 /** ftue-m2.md step flow. */
 export enum FtueStep {
   Boot = 0,
@@ -108,7 +127,14 @@ export class Ftue {
     private readonly knownThrough: number = FtueStep.Boot,
     /** M2-30b: 1-based FTUE attempt at step 2 (saved fails + 1). */
     readonly step2Attempt = 1,
+    /** FTUE level only: hive shield before step 5 and the step 3 timeout slow-down. */
+    private readonly onFtueLevel = true,
   ) {}
+
+  /** Index of the moving gate (lead line, step 3). */
+  get movingGateIndex(): number {
+    return this.movingGate;
+  }
 
   /** M2-30b: ghost cannon x for the step 2 demo, or null when no demo is shown. */
   demoX(w: World): number | null {
@@ -148,7 +174,7 @@ export class Ftue {
   /** Call before each `world.step(input)`. */
   update(w: World, input: PlayerInput, dt: number): void {
     if (this.done) return;
-    w.hiveShield = this.step < FtueStep.Finish;
+    w.hiveShield = this.onFtueLevel && this.step < FtueStep.Finish;
     if (this.step === FtueStep.Queen && w.queenReady) this.queenPromptShown = true;
     // The queen step's clock (and timeout) starts when the meter is full.
     if (this.step !== FtueStep.Queen || this.queenPromptShown) this.stepTime += dt;
@@ -174,7 +200,8 @@ export class Ftue {
     if (timeout !== undefined && this.stepTime >= timeout && !this.emphasis) {
       this.emphasis = true;
       this.stepTimedOut = true;
-      if (this.step === FtueStep.Lead) w.gateSpeedMul[this.movingGate] = LEAD_TIMEOUT_SPEED_MUL;
+      if (this.step === FtueStep.Lead && this.onFtueLevel)
+        w.gateSpeedMul[this.movingGate] = LEAD_TIMEOUT_SPEED_MUL;
     }
     // Prompt steps advance only after the prompt has been on screen for the minimum dwell.
     const dwellOk = this.stepTime >= MIN_PROMPT_DWELL_S;
@@ -253,7 +280,16 @@ export function leadX(w: World, gate: number): number {
   return w.gateXAhead(gate, travel);
 }
 
-/** FTUE runs only for a player who has not finished it, on the FTUE level. */
+/** FTUE runs only for a player who has not finished it, on L1 or (decision 40 carry) L2. */
 export function shouldRunFtue(ftueDone: boolean, levelId: string): boolean {
-  return !ftueDone && levelId === FTUE_LEVEL_ID;
+  return !ftueDone && levelId in FTUE_LEVELS;
+}
+
+/**
+ * Decision 40: does this win finish the FTUE? Yes once step 5 is complete (`done`). A win on the
+ * L2 carry also ends it (L2 is the last FTUE level), so ads/offers gating (G1/G2) cannot stay
+ * on forever.
+ */
+export function ftueDoneOnWin(f: Ftue, levelId: string): boolean {
+  return f.done || levelId === FTUE_CARRY_LEVEL_ID;
 }

@@ -67,7 +67,9 @@ describe('M2-30b FTUE step 2 escape', () => {
         .ftueStep2Fails,
     ).toBe(2);
     const g = readFileSync('src/game.ts', 'utf8');
-    expect(g).toMatch(/new Ftue\(0, 1, this\.save\.ftueStep, this\.save\.ftueStep2Fails \+ 1\)/);
+    expect(g).toMatch(
+      /ftueForLevel\(this\.world\.level\.id, this\.save\.ftueStep, this\.save\.ftueStep2Fails \+ 1\)/,
+    );
     expect(g).toMatch(
       /this\.ftue\.step === FtueStep\.Gate && !this\.ftue\.stepKnown\) \{\s*this\.save\.ftueStep2Fails\+\+/,
     );

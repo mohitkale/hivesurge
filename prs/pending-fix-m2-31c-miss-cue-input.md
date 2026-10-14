@@ -83,3 +83,76 @@ changes no gameplay: it does not retune L1, and the escape timing is unchanged.
   run". 091 is merged, so the fix is in `prs/091-fix-m2-30b-ftue-escape.md` on this branch.
 - **Test:** `tests/ftueEscapeM2-30b.test.ts` now also asserts that the gap from prompt to
   completion is 6.0 s.
+
+## Decision 40: FTUE carries into L2 (CEO picked option c)
+
+Review numbered this PR 094. At the CEO's request this change is bundled with the "Missed!" fix.
+
+### Behaviour
+
+- **Winning early doesn't finish the FTUE.** A win before step 5 no longer marks the FTUE done
+  (`ftueDoneOnWin` in `src/ftue/ftue.ts`). The furthest learned step stays in `save.ftueStep`
+  (from 086).
+- **The next battle (L2, `dandelion-drift`) runs the FTUE again.** Steps up to the saved one are
+  "learned" (086 rule): they show no prompt and never block. The player gets the prompt for the
+  first unlearned step. After an L1 centre-hold win, that is "Drag to the x2 gate".
+- **Gates used on L2:** step 2 uses L2's x2 gate (index 0, x 1.3). Aimed hits need cannon x in
+  1.5–2.5. Step 3's lead line uses L2's moving x2 gate (index 2).
+- **091 still holds on L2:** attempt counting, the ghost demo and the 6.0 s escape all work there.
+  An L1 battle that ends in step 2 counts as a failed attempt, even if it was a win. So an L1
+  centre-holder sees the ghost demo on their first L2 battle.
+- **A full FTUE still marks done,** as before (step 5 complete).
+- **L2 is the last FTUE level.** A win on L2 ends the FTUE even before step 5. Otherwise
+  `ftueDone` could stay false forever, keeping the G1/G2 ad and offer gating on. This is ENG's
+  choice; design can revisit it.
+- **Relaunch:** the old rule ("FTUE done on a later launch once a battle was played") now applies
+  only when there is no saved FTUE progress (`ftueStep` 0, i.e. old saves). Otherwise the carried
+  steps survive a relaunch.
+
+### Hive shield on L2 (checked)
+
+- The FTUE's hive shield before step 5 and the step 3 timeout slow-down now apply **only on L1**.
+  L2 keeps its own difficulty.
+- The L2 waves have no FTUE triggers.
+- **Sim check:** the same bots with and without the FTUE running on L2 give identical results
+  (outcome, time, nest HP and hive HP):
+
+  | bot    | result           |
+  | ------ | ---------------- |
+  | centre | won 50.3 s       |
+  | aim    | won 38.0 s       |
+  | sweep  | lost at time-out |
+
+- **L2 win rates (200 seeds, the FTUE doesn't change them):** casual 98%, aim 100%, centre 80%,
+  sweep 0%.
+
+### Odd findings for design (currently inactive)
+
+- **Centre-holders still get through:** a centre-holder wins L2 80% of the time, and that win ends
+  the FTUE. So a player who never aims can still finish the FTUE across L1 and L2 without learning
+  to aim. They do see the step 2 prompt and the ghost demo on L2.
+- **Relaunch skips the title:** with the FTUE unfinished, the app auto-starts the current FTUE
+  level on launch (first-launch rule). After an L1 win, that means a relaunch goes straight into
+  an L2 battle.
+- **Short prompt gap on L2:** a learned step 1 waits for 1 s of firing or its 4 s timeout, so an
+  idle player sees no prompt for the first ~5.5 s of L2.
+
+### Tests and checks
+
+- **Tests:** `tests/ftueCarryDecision40.test.ts` covers:
+  - an L1 centre-hold win leaves the FTUE not done, with step 1 saved;
+  - L2 resumes at step 2 with its prompt, then step 3;
+  - no shield or slow-down on L2;
+  - the 091 escape on L2;
+  - the 086 learned steps hidden on L2;
+  - a full FTUE still marks done, and an L2 win ends it;
+  - the game wiring.
+- The 086 and 091 source checks were updated for `ftueForLevel`, and the existing FTUE tests stay
+  green.
+- **Headless (390×844, fresh profile):**
+  - Holding the centre on L1 won at 26 s of battle time with the FTUE in step 2. The save then
+    had `ftueDone: false`, `ftueStep: 1` and `ftueStep2Fails: 1`.
+  - Claim went to the title, then Play started L2 (`dandelion-drift`).
+  - From a relaunch with that save, L2 auto-starts. At 8 s it shows "Drag to the x2 gate" with
+    the ghost demo sliding to x 1.3, and `hiveShield` is false.
+  - Screenshot: `docs/qa/decision40-l2-carried-prompt.png`. No page errors.

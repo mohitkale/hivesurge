@@ -45,7 +45,7 @@ import { aimTraceEnabledFromUrl } from './debug/aimTraceFlag';
 import { MISS_CUE, MissCue } from './ui/missCue';
 import { shouldShowTrapTip, TRAP_TIP } from './ui/trapTelegraph';
 import { autoTriggers } from './sim/triggers';
-import { Ftue, FtueStep, shouldRunFtue } from './ftue/ftue';
+import { Ftue, FtueStep, ftueDoneOnWin, ftueForLevel, shouldRunFtue } from './ftue/ftue';
 import type { LevelDef } from './sim/types';
 import { applyMultiplier, computeRewards, type Rewards } from './sim/rewards';
 import { SIM_DT, World } from './sim/world';
@@ -134,8 +134,10 @@ export class Game {
         this.debug.battle,
         LEVELS.map((l) => l.id),
       );
-    // ftue-m2.md: FTUE counts as done on a later launch once a battle was played.
-    if (!this.save.ftueDone && this.save.battlesCompleted > 0) this.save.ftueDone = true;
+    // ftue-m2.md: FTUE counts as done on a later launch once a battle was played. Decision 40:
+    // not when FTUE progress is saved (ftueStep > 0); those steps carry on. Old saves have 0.
+    if (!this.save.ftueDone && this.save.battlesCompleted > 0 && this.save.ftueStep === 0)
+      this.save.ftueDone = true;
     this.world = new World(this.currentLevel());
     this.pacer = new AdPacer(this.save.adDay);
     this.gemCaps = new GemReviveCaps(this.save.reviveGemDay, this.gemConfig.gemCaps);
@@ -254,7 +256,7 @@ export class Game {
     this.hud?.setPrompt(f.prompt, f.emphasis);
     this.hud?.setQueenFocus(f.step === FtueStep.Queen && w.queenReady);
     const lx = f.leadTargetX(w);
-    this.scene.setLeadLine(lx === null ? null : { x: lx, y: w.level.gates[1].y });
+    this.scene.setLeadLine(lx === null ? null : { x: lx, y: w.level.gates[f.movingGateIndex].y });
     this.scene.setDemoGhost(f.demoX(w)); // M2-30b
   }
 
@@ -379,7 +381,7 @@ export class Game {
     this.scene.dispose();
     this.world = new World(this.currentLevel());
     this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id)
-      ? new Ftue(0, 1, this.save.ftueStep, this.save.ftueStep2Fails + 1)
+      ? ftueForLevel(this.world.level.id, this.save.ftueStep, this.save.ftueStep2Fails + 1)
       : null;
     this.ftueReported = 0;
     this.missCue = new MissCue(this.world.gateRowY.length);
@@ -769,7 +771,10 @@ export class Game {
     this.save.bestStars[id] = Math.max(this.save.bestStars[id] ?? 0, r.stars);
     this.save.battlesCompleted++;
     // FTUE is done after its first win (replays of level 1 run without prompts).
-    if (this.ftue && this.world.outcome === 'won') this.save.ftueDone = true;
+    // Decision 40: a win finishes the FTUE only once step 5 is done (or on the L2 carry, the
+    // last FTUE level); otherwise the remaining steps carry into the next battle.
+    if (this.ftue && this.world.outcome === 'won' && ftueDoneOnWin(this.ftue, id))
+      this.save.ftueDone = true;
     const now = Date.now();
     // G3: interstitials only at level transitions. Retry replays the same level, so it is not one.
     if (shouldShowInterstitialOnClaim(this.save, now, rewardedShown, replay, this.pacer)) {
