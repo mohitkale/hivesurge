@@ -2,24 +2,24 @@
 
 > **Label (read first):** Automated agent play on the box with **software-render** (SwiftShader / CPU WebGL). Box load average during sessions was about **5–22**. These are **not human players**. **FPS is low-confidence** (box/software-render artefact; not a device claim).
 
-| Field | Value |
-| ----- | ----- |
-| Tester | hivesurge-qa (agent, Computer drag + Q queen) |
-| Build | main @ `21acf39` |
-| Server | `http://127.0.0.1:43565/?debug` (loopback only) |
-| Fresh save | Chrome Incognito (new window per session) |
-| Protocol | `research/m2-12-local-playtest-protocol.md` §2 (20-min cap; stopped earlier by 3-loss stuck rule) |
-| Analytics export | Not done (localStorage not inspected) |
-| Screenshots | `playtests/m2-12/qa/img/` (12 key frames) |
-| Raw notes | `/tmp/qa-m2-12/notes.md` (session scratch; not in repo) |
+| Field            | Value                                                                                             |
+| ---------------- | ------------------------------------------------------------------------------------------------- |
+| Tester           | hivesurge-qa (agent, Computer drag + Q queen)                                                     |
+| Build            | main @ `21acf39`                                                                                  |
+| Server           | `http://127.0.0.1:43565/?debug` (loopback only)                                                   |
+| Fresh save       | Chrome Incognito (new window per session)                                                         |
+| Protocol         | `research/m2-12-local-playtest-protocol.md` §2 (20-min cap; stopped earlier by 3-loss stuck rule) |
+| Analytics export | Not done (localStorage not inspected)                                                             |
+| Screenshots      | `playtests/m2-12/qa/img/` (12 key frames)                                                         |
+| Raw notes        | `/tmp/qa-m2-12/notes.md` (session scratch; not in repo)                                           |
 
 ## Headline
 
-| Session | Outcome | Time to first win | Drop-off | Ads / offers |
-| ------- | ------- | ----------------- | -------- | ------------ |
-| S1 | L1 lost ×3 (nest 98%, 80%, 38%). No win. | — | L1 Meadow Start | None seen |
-| S2 | L1 lost ×3 (nest 21%, 31%, 37%); 21–32 bees unfired at timeout. No win. | — | L1 Meadow Start | None seen |
-| S3 | L1 lost once (8%), then **won 3★** with 4 s left (first win at **192 s**). L2 Dandelion Drift lost ×3 (99%, 98%, 82%). | 192 s (L1) | **L2** at ~390 s | None seen |
+| Session | Outcome                                                                                                                | Time to first win | Drop-off         | Ads / offers |
+| ------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------- | ------------ |
+| S1      | L1 lost ×3 (nest 98%, 80%, 38%). No win.                                                                               | —                 | L1 Meadow Start  | None seen    |
+| S2      | L1 lost ×3 (nest 21%, 31%, 37%); 21–32 bees unfired at timeout. No win.                                                | —                 | L1 Meadow Start  | None seen    |
+| S3      | L1 lost once (8%), then **won 3★** with 4 s left (first win at **192 s**). L2 Dandelion Drift lost ×3 (99%, 98%, 82%). | 192 s (L1)        | **L2** at ~390 s | None seen    |
 
 Defeat screens offered only **Retry (free)** and **Home** (coins). No ad, shop prompt, or revive offer in battle.
 
@@ -29,9 +29,9 @@ Overlay samples from battle screenshots (sparse, not 1 Hz sampling). Renderer sh
 
 | Session | Instantaneous (approx) | Overlay median (typ) | Overlay 1% low (typ) | Load avg (start → later) |
 | ------- | ---------------------- | -------------------- | -------------------- | ------------------------ |
-| S1 | 11–29 | ~15–16 (med 12–30) | ~5–7 (2.5–20) | ~5–8 |
-| S2 | 13–27 | ~22 (med 15–30) | ~5–12 (2–15) | ~11–12 |
-| S3 | — | ~12–15 (med 8.6–20) | ~5–6 (1.7–7.5) | ~11 → 18.5 (peak ~22) |
+| S1      | 11–29                  | ~15–16 (med 12–30)   | ~5–7 (2.5–20)        | ~5–8                     |
+| S2      | 13–27                  | ~22 (med 15–30)      | ~5–12 (2–15)         | ~11–12                   |
+| S3      | —                      | ~12–15 (med 8.6–20)  | ~5–6 (1.7–7.5)       | ~11 → 18.5 (peak ~22)    |
 
 **Overall:** median about **12–22**, 1% low about **5**. Do not use for M2-19a device gates.
 
