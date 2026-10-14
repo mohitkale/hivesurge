@@ -24,7 +24,7 @@ function playFtue(reaction = 0.6) {
     const reacting = f.prompt !== '' && w.time - promptSeenAt >= reaction;
     const input: PlayerInput = { aimX: 0, firing: false, queen: false };
     if (f.step >= FtueStep.Aim && (reacting || f.step > FtueStep.Aim)) input.firing = true;
-    if (f.step === FtueStep.Gate) input.aimX = 0; // x2 gate is centred
+    if (f.step === FtueStep.Gate) input.aimX = w.currentGateX(0); // M2-29: x2 gate is off-centre
     const lead = f.leadTargetX(w);
     if (lead !== null) input.aimX = lead;
     if (f.step === FtueStep.Queen && reacting) input.queen = true;

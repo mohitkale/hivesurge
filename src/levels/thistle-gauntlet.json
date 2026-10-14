@@ -5,32 +5,115 @@
   "laneWidth": 10,
   "laneLength": 42,
   "timeLimit": 90,
-  "nestHp": 2650,
+  "nestHp": 3900,
   "hiveHp": 50,
   "fireInterval": 0.11,
   "queenCharge": 7,
   "trickleInterval": 0.8,
   "gates": [
-    { "kind": "add", "value": 5, "x": -2.2, "y": 8, "width": 4.2 },
-    { "kind": "mul", "value": 3, "x": 2.8, "y": 8, "width": 2.2 },
-    { "kind": "sub", "value": 40, "x": 0, "y": 16, "width": 4.0 },
-    { "kind": "mul", "value": 2, "x": -3, "y": 16, "width": 2.4 },
+    {
+      "kind": "add",
+      "value": 5,
+      "x": -1.3,
+      "y": 8,
+      "width": 2.4
+    },
+    {
+      "kind": "mul",
+      "value": 3,
+      "x": 1.3,
+      "y": 8,
+      "width": 2.0
+    },
+    {
+      "kind": "sub",
+      "value": 40,
+      "x": -1.3,
+      "y": 16,
+      "width": 2.4
+    },
     {
       "kind": "mul",
       "value": 2,
-      "x": 0,
+      "x": 1.3,
+      "y": 16,
+      "width": 2.2
+    },
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": 1.3,
       "y": 24.5,
-      "width": 2.8,
-      "motion": { "amplitude": 3.5, "speed": 1.1 }
+      "width": 2.6,
+      "motion": {
+        "amplitude": 1.0,
+        "speed": 1.1
+      }
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": -3.8,
+      "y": 4,
+      "width": 2.4
+    },
+    {
+      "kind": "sub",
+      "value": 600,
+      "x": 3.8,
+      "y": 4,
+      "width": 2.4
     }
   ],
   "waves": [
-    { "at": 4, "kind": "wasp", "count": 20, "x": 0, "spread": 3 },
-    { "at": 14, "kind": "hornet", "count": 4, "x": -2, "spread": 2 },
-    { "at": 24, "kind": "wasp", "count": 45, "x": 2, "spread": 3.5 },
-    { "at": 38, "kind": "hornet", "count": 6, "x": 0, "spread": 3 },
-    { "at": 50, "kind": "wasp", "count": 70, "x": -1, "spread": 4 },
-    { "at": 66, "kind": "hornet", "count": 8, "x": 1, "spread": 3.5 },
-    { "at": 76, "kind": "wasp", "count": 90, "x": 0, "spread": 4.5 }
+    {
+      "at": 4,
+      "kind": "wasp",
+      "count": 20,
+      "x": 0,
+      "spread": 3
+    },
+    {
+      "at": 14,
+      "kind": "hornet",
+      "count": 4,
+      "x": -2,
+      "spread": 2
+    },
+    {
+      "at": 24,
+      "kind": "wasp",
+      "count": 45,
+      "x": 2,
+      "spread": 3.5
+    },
+    {
+      "at": 38,
+      "kind": "hornet",
+      "count": 6,
+      "x": 0,
+      "spread": 3
+    },
+    {
+      "at": 50,
+      "kind": "wasp",
+      "count": 70,
+      "x": -1,
+      "spread": 4
+    },
+    {
+      "at": 66,
+      "kind": "hornet",
+      "count": 8,
+      "x": 1,
+      "spread": 3.5
+    },
+    {
+      "at": 76,
+      "kind": "wasp",
+      "count": 90,
+      "x": 0,
+      "spread": 4.5
+    }
   ]
 }

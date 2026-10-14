@@ -11,18 +11,39 @@
   "queenCharge": 4,
   "trickleInterval": 0,
   "gates": [
-    { "kind": "mul", "value": 2, "x": 0, "y": 8, "width": 4.0 },
+    {
+      "kind": "mul",
+      "value": 2,
+      "x": -2.8,
+      "y": 8,
+      "width": 2.4
+    },
     {
       "kind": "add",
       "value": 3,
       "x": 0,
       "y": 15,
       "width": 3.6,
-      "motion": { "amplitude": 2.0, "speed": 0.7 }
+      "motion": {
+        "amplitude": 2.0,
+        "speed": 0.7
+      }
     }
   ],
   "waves": [
-    { "trigger": "step3", "kind": "wasp", "count": 8, "x": 0, "spread": 2 },
-    { "trigger": "step5", "kind": "wasp", "count": 12, "x": 0, "spread": 3 }
+    {
+      "trigger": "step3",
+      "kind": "wasp",
+      "count": 8,
+      "x": 0,
+      "spread": 2
+    },
+    {
+      "trigger": "step5",
+      "kind": "wasp",
+      "count": 12,
+      "x": 0,
+      "spread": 3
+    }
   ]
 }

@@ -20,7 +20,7 @@ export enum FtueStep {
 export const FTUE_PROMPTS: Record<FtueStep, string> = {
   [FtueStep.Boot]: '',
   [FtueStep.Aim]: 'Hold and drag to aim',
-  [FtueStep.Gate]: 'Shoot through the x2 gate',
+  [FtueStep.Gate]: 'Drag to the x2 gate',
   [FtueStep.Lead]: 'Aim ahead of moving gates',
   [FtueStep.Queen]: 'Tap the queen!',
   [FtueStep.Finish]: 'Smash the nest!',
@@ -35,6 +35,11 @@ export const MIN_PROMPT_DWELL_S = 1.5;
 
 /** validation-m2.md #3 (M2-27): step 3 timeout halves the moving gate's speed. */
 export const LEAD_TIMEOUT_SPEED_MUL = 0.5;
+
+/** M2-29: aimed hits on the off-centre x2 gate to finish step 2. */
+export const AIMED_HITS = 6;
+/** M2-29: the cannon must be at least this far from centre (lane units) for a hit to count. */
+export const AIM_MIN_OFFSET = 1.5;
 
 /** Seconds before a step's timeout fallback (spec column "Timeout fallback"). */
 const TIMEOUTS: Partial<Record<FtueStep, number>> = {
@@ -70,6 +75,11 @@ export class Ftue {
   private firstInputAt = -1;
   private gateMark = 0;
   private stepTimedOut = false;
+  /** M2-29: seconds the cannon has been continuously inside gate x2's span while firing. */
+  aimHoldS = 0;
+  /** M2-29: aimed, off-centre hits on gate x2 this step. */
+  aimedHits = 0;
+  private passesSeen = 0;
 
   /** Indices into the FTUE level's gates (spec layout: x2 at y 8, moving +3 at y 15). */
   constructor(
@@ -120,9 +130,22 @@ export class Ftue {
         if (input.firing) this.fireHeld += dt;
         if (this.fireHeld >= 1.0 && dwellOk) this.advance(w);
         break;
-      case FtueStep.Gate:
-        if (w.gatePasses[this.gateX2] - this.gateMark >= 10 && dwellOk) this.advance(w);
+      case FtueStep.Gate: {
+        const g = w.level.gates[this.gateX2];
+        const inSpan =
+          input.firing &&
+          Math.abs(w.cannonX - w.currentGateX(this.gateX2)) <= g.width / 2 &&
+          Math.abs(w.cannonX) >= AIM_MIN_OFFSET;
+        this.aimHoldS = inSpan ? this.aimHoldS + dt : 0;
+        const passes = w.gatePasses[this.gateX2];
+        // Crossing bees count only if they were fired from inside the span: the hold must be
+        // at least one bee travel time to the gate row.
+        if (this.aimHoldS >= (g.y - CANNON_Y) / WORKER_SPEED)
+          this.aimedHits += passes - this.passesSeen;
+        this.passesSeen = passes;
+        if (this.aimedHits >= AIMED_HITS && dwellOk) this.advance(w);
         break;
+      }
       case FtueStep.Lead:
         if (w.gatePasses[this.movingGate] - this.gateMark >= 5 && dwellOk) this.advance(w);
         break;
@@ -152,7 +175,11 @@ export class Ftue {
     this.stepTime = 0;
     this.emphasis = false;
     this.stepTimedOut = false;
-    if (this.step === FtueStep.Gate) this.gateMark = w.gatePasses[this.gateX2];
+    if (this.step === FtueStep.Gate) {
+      this.passesSeen = w.gatePasses[this.gateX2];
+      this.aimHoldS = 0;
+      this.aimedHits = 0;
+    }
     if (this.step === FtueStep.Lead) {
       this.gateMark = w.gatePasses[this.movingGate];
       w.fireTrigger('step3');

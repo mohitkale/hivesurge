@@ -19,8 +19,8 @@ describe('Clover Run balance', () => {
     expect(w.outcome).toBe('lost');
   });
 
-  it('a player who aims through the x2 then x2 gates and uses the queen wins', () => {
-    const w = play((w) => ({ aimX: w.time % 6 < 4 ? -2.4 : 2.6, firing: true, queen: true }));
+  it('a player who aims up the gate column (x 1.3) and uses the queen wins', () => {
+    const w = play(() => ({ aimX: 1.3, firing: true, queen: true }));
     expect(w.outcome).toBe('won');
     expect(w.hiveHp).toBeGreaterThan(0);
   });
