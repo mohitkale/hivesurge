@@ -34,6 +34,10 @@ Scope: `docs/design/meta-m5.md` (chests, collectible bees, loadout slots, hive r
 
 The average is about +5 points at 0.95, +13 at 0.90 and +18.5 at 0.85, so about 1.2 to 1.4 win points per 1% easier. The sim assumes 2.0 (`win_sens`). The real effect of catch-up and loss assist is therefore about 35% smaller than the sim shows. That makes the 5% catch-up cap and the 0.85 floor safe; they are not too generous.
 
+### QA box sessions (landed on main after this branch's base, `7229e05`): pace caveat
+
+QA's 3 box sessions (`research/m2-12-qa-sessions.md`, PR 084, build `21acf39`; automated agent play on software render, **not human players**) are much slower than the bots. In 2 of 3 sessions L1 was lost 3 times with no win. One session won L1 at 192 s and then dropped off at L2 after 3 losses. Read literally, a new player may not reach stage 3 (slot 1) or stage 5 (slot 2) in session 1 at all, and the bot-based "n = 5 on day 1" is an upper bound. That doesn't change the meta conclusions (slots still open with bees owned), but it means FTUE/L2 issues (stuck hint, L2 −600 traps unexplained) come before meta pacing. Re-check slot timings once those are fixed.
+
 ## Findings
 
 ### 1. Unlock pacing vs stage progress: OK
