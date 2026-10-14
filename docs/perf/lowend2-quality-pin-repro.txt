@@ -1,0 +1,22 @@
+# ?quality pin repro, 2026-10-14 ~17:20 IST. Headless Chrome + SwiftShader, 1024x594, ?debug&stress=320,
+# fresh save (FTUE battle auto-starts), dev server on main 20072fd (includes PR 068).
+# Columns: state before play -> about 9 s into play.
+# deviceScaleFactor 1:
+auto {"tier":"low","dpr":1,"pr":0.6,calls 34} => {"tier":"low@floor","pr":0.5,calls 34}
+low  {"tier":"low","dpr":1,"pr":0.6,calls 34} => {"tier":"low","pr":0.6,calls 34}
+med  {"tier":"med","dpr":1,"pr":1,calls 42}   => {"tier":"med","pr":1,calls 42}
+high {"tier":"high","dpr":1,"pr":1,calls 44}  => {"tier":"high","pr":1,calls 44}
+# deviceScaleFactor 0.75 (browser zoom 75 %):
+auto {"tier":"low","pr":0.6}  => {"tier":"low@floor","pr":0.5}
+low  {"tier":"low","pr":0.6}  => {"tier":"low","pr":0.6}
+med  {"tier":"med","pr":0.75} => {"tier":"med","pr":0.75}
+high {"tier":"high","pr":0.75} => {"tier":"high","pr":0.75}
+#
+# Result: on main the pin works. Each tier gives different draws and pixel ratio, and play start keeps it.
+# QA's server (http://127.0.0.1:5182) runs from /workspace/hivesurge-wt/qa-main, which is a DETACHED
+# worktree at e7abf40, before PR 068: `grep -c AutoQuality qa-main/src/render/quality.ts` = 0. That build has
+# the old QualityScaler (steps 2/1.5/1.25/1/0.75, no ?quality parsing). It drops to 0.75 a few seconds
+# into play and ignores the param, which is exactly what QA saw (dpr 0.75 everywhere, same draws and tris).
+# Fixes here: the overlay now prints the tier and "(pinned)"/"(auto)", so a stale build is obvious.
+# A play-start grace period stops hitches from dropping a tier. A test proves a pin survives play start
+# and auto ticks.
