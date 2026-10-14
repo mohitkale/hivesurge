@@ -42,9 +42,13 @@ export class PerfStats {
   }
 }
 
-/** Dev overlay is opt-in: `?debug` in the URL (or toggled with F3); hidden by default. */
-export function perfEnabledFromUrl(search: string): boolean {
-  return new URLSearchParams(search).has('debug');
+/**
+ * Dev overlay is opt-in: `?debug` in the URL (or toggled with F3); hidden by default.
+ * Dev builds only, like the other QA params: production ignores `?debug` (and game.ts does
+ * not even construct the overlay outside `import.meta.env.DEV`, so it is stripped).
+ */
+export function perfEnabledFromUrl(search: string, isDev: boolean): boolean {
+  return isDev && new URLSearchParams(search).has('debug');
 }
 
 /** `?stress=N` (dev only): spawn N extra units at battle start for perf checks (M2-10/M2-15). */

@@ -106,7 +106,10 @@ export class Game {
   private readonly reviveMinNestDamage = reviveMinNestDamage();
   private reviveTimer = 0;
   private readonly perf = new PerfStats();
-  private readonly perfOverlay = new PerfOverlay(document.getElementById('app')!);
+  /** Dev-only perf overlay (?debug / F3); null and tree-shaken out of production builds. */
+  private readonly perfOverlay: PerfOverlay | null = import.meta.env.DEV
+    ? new PerfOverlay(document.getElementById('app')!)
+    : null;
   private readonly stress = stressCountFromUrl(location.search);
   private ftueReported = 0;
 
@@ -143,10 +146,13 @@ export class Game {
       },
       adModeFromUrl(location.search),
     );
-    this.perfOverlay.visible = perfEnabledFromUrl(location.search);
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'F3') this.perfOverlay.visible = !this.perfOverlay.visible;
-    });
+    if (import.meta.env.DEV && this.perfOverlay) {
+      const overlay = this.perfOverlay;
+      overlay.visible = perfEnabledFromUrl(location.search, true);
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'F3') overlay.visible = !overlay.visible;
+      });
+    }
     window.addEventListener('resize', () => this.resize());
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.input.firing = false;
@@ -800,7 +806,7 @@ export class Game {
     this.last = now;
     this.pumpSim();
     this.scene.render(this.world, this.phase === 'ad' ? 0 : dt);
-    if (this.perfOverlay.visible) {
+    if (import.meta.env.DEV && this.perfOverlay?.visible) {
       const info = this.scene.renderer.info.render;
       this.perf.sample(frameMs, info.calls, info.triangles);
       const units = this.world.bees.count + this.world.wasps.count;
