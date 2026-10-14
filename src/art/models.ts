@@ -119,6 +119,17 @@ function wingPair(
   });
 }
 
+/** Thin 3-sided antenna stalk running from `a` to `b`. */
+function stalkBetween(a: THREE.Vector3, b: THREE.Vector3): THREE.BufferGeometry {
+  const dir = b.clone().sub(a);
+  const g = new THREE.CylinderGeometry(0.03, 0.03, dir.length(), 3);
+  g.applyQuaternion(
+    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize()),
+  );
+  const mid = a.clone().add(b).multiplyScalar(0.5);
+  return g.translate(mid.x, mid.y, mid.z);
+}
+
 /** Worker bee: round, fuzzy, bright. ~1 unit long before scale. */
 export function beeGeometry(
   scale = 1,
@@ -135,12 +146,16 @@ export function beeGeometry(
     ...wingPair(0.8, 0.32, 0.42, -0.35, ART.beeWing, false),
   ];
   for (const side of [-1, 1]) {
-    const ant = new THREE.CylinderGeometry(0.03, 0.03, 0.34, 3);
-    ant.rotateX(-0.5);
-    ant.rotateZ(side * 0.4);
-    parts.push({ geo: at(ant, side * 0.1, 0.36, 0.7), color: ART.beeStripe });
+    // Antenna stalk from the head straight to the teal tip (DES-approved fix: the old stalk was
+    // aimed elsewhere and the tips floated). The tip position, sizes, colours and the triangle count
+    // are unchanged, so the silhouette stays the same.
+    const tip = new THREE.Vector3(side * 0.17, 0.5, 0.8);
     parts.push({
-      geo: at(new THREE.OctahedronGeometry(0.07), side * 0.17, 0.5, 0.8),
+      geo: stalkBetween(new THREE.Vector3(side * 0.08, 0.3, 0.66), tip),
+      color: ART.beeStripe,
+    });
+    parts.push({
+      geo: at(new THREE.OctahedronGeometry(0.07), tip.x, tip.y, tip.z),
       color: ART.beeTeam,
     });
     // Cheek fuzz: light dabs keep the face friendly from above.

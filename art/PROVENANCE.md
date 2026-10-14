@@ -53,13 +53,13 @@ Date = first commit of the file. sha256 = first 16 hex chars.
 | `art/models/biome-orchard-pearTree.glb`     | 3332  | `51faa193ef3fe30b` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
 | `art/models/biome-orchard-pebble.glb`       | 2524  | `96311ac6d8f15625` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
 | `art/models/prop-nest.glb`                  | 6260  | `2966158c8fbb9454` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `art/models/skin-bee-blossom.glb`           | 6816  | `2d09a051099ac421` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `art/models/skin-bee-classic.glb`           | 6048  | `75ddb383481507b2` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `art/models/skin-bee-frost.glb`             | 6616  | `8228196e75818103` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `art/models/skin-bee-lantern.glb`           | 6192  | `aabd4753f24001a5` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `art/models/skin-bee-maple.glb`             | 6208  | `08a8fc3eceb74a2c` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `art/models/skin-bee-starter.glb`           | 6556  | `6ce237ecdbe3188a` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `art/models/skin-bee-sunny.glb`             | 6208  | `e5c29c9ad9a832cc` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
+| `art/models/skin-bee-blossom.glb`           | 6816  | `beb8eb53eaee9e83` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
+| `art/models/skin-bee-classic.glb`           | 6044  | `41d9334f2596fc03` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
+| `art/models/skin-bee-frost.glb`             | 6612  | `68885da61b4fbeb6` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
+| `art/models/skin-bee-lantern.glb`           | 6188  | `2d16770ed8cc4e7b` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
+| `art/models/skin-bee-maple.glb`             | 6212  | `7342f4806946758e` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
+| `art/models/skin-bee-starter.glb`           | 6556  | `8eb1ddada4f5ab2e` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
+| `art/models/skin-bee-sunny.glb`             | 6204  | `79ce5c17f0e9ef43` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
 | `public/assets/audio/fire.ogg`              | 677   | `32c94ec7bc5ce468` | `art/tools/make-audio.sh`                               | 2026-10-10 |
 | `public/assets/audio/hum.ogg`               | 14096 | `aca92268c82cb2cd` | `art/tools/make-audio.sh`                               | 2026-10-10 |
 | `public/assets/audio/hurt.ogg`              | 1190  | `e81df59984b10582` | `art/tools/make-audio.sh`                               | 2026-10-10 |
@@ -117,9 +117,9 @@ Date = first commit of the file. sha256 = first 16 hex chars.
 | `public/assets/icons/unlock.svg`            | 435   | `edf4f34ac334669a` | `art/tools/make-icons.py`                               | 2026-10-10 |
 | `public/assets/icons/wasp.svg`              | 588   | `bc71713242ab9ff2` | `art/tools/make-icons.py`                               | 2026-10-10 |
 | `public/assets/models/prop-cannon.glb`      | 5468  | `a3ce8aa54f57a2be` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `public/assets/models/unit-bee.glb`         | 6048  | `75ddb383481507b2` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
+| `public/assets/models/unit-bee.glb`         | 6044  | `41d9334f2596fc03` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
 | `public/assets/models/unit-hornet.glb`      | 4780  | `dfbb5600a1d58a15` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `public/assets/models/unit-queen.glb`       | 6776  | `e6e84a6198429876` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
+| `public/assets/models/unit-queen.glb`       | 6772  | `faef06640cd95773` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
 | `public/assets/models/unit-wasp.glb`        | 4600  | `9cf861ea6e1a3840` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`)    | 2026-10-10 |
-| `public/assets/skins/classic.png`           | 4315  | `bacbaaf7dc51e9de` | `art/tools/skin-thumbs.mjs` (renders `skin-thumb.html`) | 2026-10-14 |
-| `public/assets/skins/starter.png`           | 4632  | `e378859b10193d3a` | `art/tools/skin-thumbs.mjs` (renders `skin-thumb.html`) | 2026-10-14 |
+| `public/assets/skins/classic.png`           | 4193  | `edc2d40a635fa429` | `art/tools/skin-thumbs.mjs` (renders `skin-thumb.html`) | 2026-10-14 |
+| `public/assets/skins/starter.png`           | 4518  | `4854e4cc056a8235` | `art/tools/skin-thumbs.mjs` (renders `skin-thumb.html`) | 2026-10-14 |
