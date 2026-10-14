@@ -142,3 +142,7 @@ Flagged, NOT applied (bigger, or owned by another team):
 
 - Bots: `scratch/meta.ts` (casual and aim bots from `tests/bots.ts`, 200 seeds per level, rewards from `computeRewards`), `scratch/esens.ts` (enemy counts scaled), built with rolldown and run on the box. Scratch worktree `/workspace/scratch/m5` @ main `21acf39`.
 - Sim: `python3 monetization/sim/economy_sim.py --design-ref main --runs 200` (identical to `last_run.md`), plus two copies: per-chest pity (`econ_pity_chest.py`) and an instrumented copy (`meta_sim.py`) for first-drop and slot timings.
+
+## Addendum (M5-1b): expectedP refit after the M5-2a rerun
+
+The M5-2a rerun (`monetization/m5-2a-rerun` @ `4db39df`) added per-chest pity, the boss Gold chest and rooms. Median P vs the old expectedP: no-ads 94%, ad-watcher 100%, payer 103%, no hard wall by day 30 (stages 125 to 128, about 4.2 stages/day). The recommended ~10% cut above (sim finding and MON item above) is **cancelled**. expectedP in `meta-m5.md` is now refit to the ad-watcher median, with the early points raised: 3:5, 5:7, 10:18, 14:24, 25:34, 36:42, 52:46, 74:54, 111:61, 160:71 (160 unverified). Interpolation is unchanged.
