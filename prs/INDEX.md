@@ -94,7 +94,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 086 | fix/m2-30-33-ftue-retry                              | hivesurge-eng          | `0403b17` | merged (`903639c`; old saves load, 6/7 tests fail without fix)                                                          | 086-fix-m2-30-33-ftue-retry.md                                    |
 | 087 | fix/m2-31-32-gate-feedback                           | hivesurge-eng          | `58f6ad9` | claimed; held: eng adding design changes, new tip coming                                                                | 087-fix-m2-31-32-gate-feedback.md                                 |
 | 088 | design/m5-1b-expectedp-refit                         | hivesurge-design       | `101047a` | merged (`cbcb5ae`; docs only, provisional; sim mismatches vs 085 noted)                                                 | 088-design-m5-1b-expectedp-refit.md                               |
+| 089 | monetization/m5-1b-rerun                             | hivesurge-monetization | `70c45bb` | claimed                                                                                                                 | 089-monetization-m5-1b-rerun.md                                   |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **089**.
+Next free number: **090**.
