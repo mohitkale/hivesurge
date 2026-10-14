@@ -15,8 +15,9 @@ fi
 # Refuse anything but the pinned version (exit 2), including a GLTFPACK= override. The binary only
 # prints major.minor, so the exact version is read from the npm package that ships it.
 exact_version() {
-  local d; d=$(dirname "$(readlink -f "$1")")
-  while [ "$d" != / ]; do
+  local p; p=$(command -v "$1" 2>/dev/null) || return 0
+  local d; d=$(dirname "$(readlink -f "$p")")
+  while [ "$d" != / ] && [ "$d" != . ]; do
     if [ -f "$d/package.json" ] && grep -q '"name": *"gltfpack"' "$d/package.json"; then
       sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$d/package.json" | head -1; return
     fi

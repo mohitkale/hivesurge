@@ -28,16 +28,19 @@ export const SKINS: BeeSkin[] = [
     stripe: ART.beeStripe,
   },
   {
-    // Starter Pack skin (QA M2-19a). PROCEDURAL PLACEHOLDER until art ships a final
-    // look: a deeper amber body with a honey-drop badge on the head (see the PR doc).
+    // Starter Pack skin (QA M2-19a; final art, PR 069). Warm amber worker with a team-teal
+    // satchel and honey-jar lid on its back plus a honey-drop badge on the head. It still reads
+    // as a bee at 16-24 px: same body, stripes and wings as Classic, with the extras on top.
     id: 'starter',
     name: 'Starter Gold',
     season: 'core',
     body: '#ffc93c',
     stripe: '#3a1c06',
     accessory: () => [
-      { geo: at(new THREE.OctahedronGeometry(0.11, 0), 0, 0.42, 0.5), color: '#e8890c' },
-      { geo: at(new THREE.OctahedronGeometry(0.05, 0), 0, 0.53, 0.5), color: '#fff3c4' },
+      { geo: at(new THREE.BoxGeometry(0.3, 0.22, 0.26), 0, 0.42, -0.12), color: ART.beeTeam },
+      { geo: at(new THREE.CylinderGeometry(0.1, 0.12, 0.1, 6), 0, 0.58, -0.12), color: '#e8890c' },
+      { geo: at(new THREE.OctahedronGeometry(0.08, 0), 0, 0.4, 0.5), color: '#e8890c' },
+      { geo: at(new THREE.OctahedronGeometry(0.04, 0), 0, 0.47, 0.52), color: '#fff3c4' },
     ],
   },
   {

@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+  <body style="margin: 0; background: #fff1dc">
+    <canvas id="c" width="900" height="320"></canvas>
+    <script type="module">
+      // Skin sheet: ?id=<skin> large 3/4 + back view, next to classic, plus in-game-angle sizes 24/16 px.
+      import * as THREE from 'three';
+      import { SKINS, skinGeometry } from '/src/art/skins.ts';
+      const id = new URLSearchParams(location.search).get('id') ?? 'starter';
+      const skin = SKINS.find((s) => s.id === id);
+      const classic = SKINS.find((s) => s.id === 'classic');
+      const r = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+      r.outputColorSpace = THREE.SRGBColorSpace;
+      r.setScissorTest(true);
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+      const scene = new THREE.Scene();
+      scene.add(new THREE.HemisphereLight('#fff6e0', '#7a5aa0', 1.6));
+      const sun = new THREE.DirectionalLight('#fff', 1.6);
+      sun.position.set(-6, 14, 6);
+      scene.add(sun);
+      const cell = (g, x, y, w, h, dist, yaw, pitch, bg) => {
+        const m = new THREE.Mesh(g, mat);
+        m.rotation.y = yaw;
+        scene.add(m);
+        const cam = new THREE.PerspectiveCamera(35, w / h, 0.1, 100);
+        g.computeBoundingSphere();
+        const c = g.boundingSphere.center;
+        cam.position.set(c.x, c.y + dist * Math.sin(pitch), c.z + dist * Math.cos(pitch));
+        cam.lookAt(c);
+        r.setViewport(x, 320 - y - h, w, h);
+        r.setScissor(x, 320 - y - h, w, h);
+        scene.background = new THREE.Color(bg);
+        r.render(scene, cam);
+        scene.remove(m);
+      };
+      cell(skinGeometry(skin), 0, 0, 260, 260, 3, 0.7, 0.5, '#ffd9a8');
+      cell(skinGeometry(skin), 260, 0, 260, 260, 3, Math.PI + 0.5, 0.6, '#ffd9a8');
+      cell(skinGeometry(classic), 520, 0, 260, 260, 3, 0.7, 0.5, '#fff1dc');
+      for (let i = 0; i < 6; i++)
+        cell(
+          skinGeometry(i % 2 ? classic : skin),
+          790 + (i % 3) * 36,
+          20 + Math.floor(i / 3) * 40,
+          24,
+          24,
+          3.2,
+          0,
+          1.0,
+          '#7cc46a',
+        );
+      for (let i = 0; i < 6; i++)
+        cell(
+          skinGeometry(i % 2 ? classic : skin),
+          790 + (i % 3) * 36,
+          120 + Math.floor(i / 3) * 30,
+          16,
+          16,
+          3.2,
+          0,
+          1.0,
+          '#7cc46a',
+        );
+      document.title = 'ready';
+    </script>
+  </body>
+</html>

@@ -28,3 +28,9 @@ export function cycleSkin(s: SkinState, known: readonly string[]): string {
   s.equippedSkin = next === CLASSIC ? '' : next;
   return next;
 }
+
+/** Skin picker (PR 069): equip `id` if it is selectable; returns the skin now rendered. */
+export function equipSkin(s: SkinState, id: string, known: readonly string[]): string {
+  if (selectableSkins(s, known).includes(id)) s.equippedSkin = id === CLASSIC ? '' : id;
+  return equippedSkinId(s, known);
+}
