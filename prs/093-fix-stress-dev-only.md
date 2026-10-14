@@ -1,4 +1,4 @@
-# PR (number pending from review): fix/stress-dev-only
+# PR 093: fix/stress-dev-only
 
 Review follow-up: `?stress=N` was documented as dev-only, but `game.ts` didn't gate it, so it
 worked in production builds. It is now gated the same way 187a1e8 gated the perf overlay and F3.
