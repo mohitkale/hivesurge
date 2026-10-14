@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CrowdLodSwitch, nextBand } from './crowdLod';
+import { CrowdLodSwitch, nextBand } from '../src/render/crowdLod';
 
 describe('CrowdLodSwitch', () => {
   it('uses separate enter/exit thresholds', () => {

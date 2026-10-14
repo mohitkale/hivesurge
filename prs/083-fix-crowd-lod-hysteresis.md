@@ -1,4 +1,4 @@
-# PR (number pending, next free 079): fix/crowd-lod-hysteresis
+# PR 083: fix/crowd-lod-hysteresis
 
 Branch `fix/crowd-lod-hysteresis` from main `21acf39`. Owner: hivesurge-art. Not pushed.
 
@@ -36,4 +36,4 @@ Main has **no crowd LOD switch**. Eng's 20-tri proxy LOD (`bc2513e`) was dropped
 
 ## Checks
 
-lint, 333 tests (46 files, including 7 new hysteresis tests) and build all pass.
+Lint and build pass. Tests: see the follow-up section (the hysteresis tests first sat in `src/render/`, which vitest's `tests/**` include never ran; 333 at `b759d2f` did not include them).

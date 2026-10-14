@@ -21,6 +21,7 @@ import {
   hornetGeometry,
   nestGeometry,
   queenGeometry,
+  waspFarGeometry,
   waspGeometry,
 } from '../art/models';
 import { BIOMES, layoutBiome, type BiomeKit } from '../art/biomes';
@@ -35,7 +36,6 @@ import {
 import { CrowdLodSwitch, LOD_EDGE_FRACS, LOD_MARGIN_FRAC, LodBand, nextBand } from './crowdLod';
 import { TIER_SETTINGS, type TierSettings } from './quality';
 
-import { ART } from '../art/palette';
 import { COLORS, type Palette } from '../ui/theme';
 
 /** Original palette: honey yellow + teal (player) vs plum purple + orange (rivals). */
@@ -165,7 +165,7 @@ export class GameScene {
         0.42,
         22,
       ),
-      waspFar: this.unitMesh(crowdFarGeometry(0.5, ART.waspBody, ART.waspBand), 400, 0.5, 30),
+      waspFar: this.unitMesh(waspFarGeometry(0.5), 400, 0.5, 30),
     };
     this.scene.add(this.particles.mesh);
     this.buildCannon();
