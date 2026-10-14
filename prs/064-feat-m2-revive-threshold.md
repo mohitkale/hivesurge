@@ -40,9 +40,9 @@ The casual bot rarely loses on Dandelion, so this sample still can't show the 30
 
 The threshold only gates whether an offer opens (`shouldOfferRevive`, plus 047's dev-only `?revive=force`). The gem option, caps and the early-close rule are unchanged, and all gem revive tests pass.
 
-## Pending
+## Not in this PR
 
-`revive.gemPrice` default 10 -> 5 (monetization PR 063). 063 isn't merged: INDEX says "changes", because price 5 breaks T-G19a and G19 still says 10. It'll be a tiny follow-up once it merges.
+`revive.gemPrice` stays at 10. A change to 5 is on hold: monetization keeps 10 in PR 063, and lowering it needs CEO approval first.
 
 ## Checks
 
