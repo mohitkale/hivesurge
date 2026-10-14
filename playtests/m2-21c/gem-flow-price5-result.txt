@@ -1,0 +1,9 @@
+M2-21c headless gem flow at revive.gemPrice 5 · 2026-10-14 · Vite dev server, branch feat/m2-21c-gem-price-5 on main 5329e56 · ?level=dandelion-drift&revive=force · 390x844 Chrome headless
+PASS gems=7: offer has gem button (enabled)
+PASS gems=7: after close 1: ad button still enabled
+PASS gems=7: after close 2: "Ad limit reached" disabled
+PASS gems=7: after close 2: offer open, gem button enabled, No thanks shown
+PASS gems=7: gem revive: battle resumed, balance 2
+PASS gems=4: offer has gem button (disabled)
+PASS gems=4: after close 1: ad button still enabled
+PASS gems=4: after close 2 with gems not valid: offer closed (defeat screen, Retry/Home)
