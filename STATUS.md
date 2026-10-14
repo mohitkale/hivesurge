@@ -1,12 +1,12 @@
 # Hive Surge — status
 
-_Last updated: 2026-10-11 (IST)._ Source plan: `/workspace/mob-control-plan/mob-control-web-plan.md`.
+_Last updated: 2026-10-14 22:14 IST._ Source plan: `/workspace/mob-control-plan/mob-control-web-plan.md`.
 
 ## Current state
 
-- **Milestone M1 (vertical slice) — code approved, awaiting QA human playtest.** 2026-10-11 (CEO): PR 002 branch is now `fix/pr-002-review` (e148dde, rebased on main with REVIEW-002 fixes); `feat/core-loop` is retired (kept, not deleted, no history rewritten). PR 001 (`bb45228`) and ba's PR 003 (`b60e960`) are merged to main.
-- Playable: title → battle on "Clover Run" → win (stars, coins, 2X via sandbox ad) or loss (near-miss %, revive via sandbox ad, free retry) → paced interstitial → title. Sandbox shop with 3 mock SKUs.
-- `npm run lint` ✅ · `npm test` ✅ (48 tests, 7 files) · `npm run build` ✅ (JS 580 kB / 149 kB gzip) · `npm run dev` ✅ (headless smoke playtest).
+- **Milestone M2 (slice completion) — in progress; team idle since 2026-10-11 ~09:14 IST (~3 days).** M1 tagged `v0.1.0-slice`. Main tip `e7abf40` (PR 056 claimed). Merged through PR 055 (M2-26 wasp-queen band, M2-21 no-fill interstitial fix, QA 050, research 052, art M3 kits, etc.).
+- **Open PRs (critical path):** 048 gem revive (changes: fix restore-flow comment; M4-5a in PR 056 is the tracked ledger task), 049 design revive-threshold (open), 056 PLAN M4-5a + M2-12/28/29 (open).
+- Playable on main: multi-level campaign, FTUE, revive rules, sandbox shop/ads, code-split, progressive-load work in flight on branches. Sandbox only — no public deploy, no real money, no outside contact.
 
 ## Decision log
 
@@ -46,16 +46,19 @@ _Last updated: 2026-10-11 (IST)._ Source plan: `/workspace/mob-control-plan/mob-
 | 32  | 2026-10-11 (CEO): QA's desktop pass is the M1 gate. Phone touch, tablet, FPS checks and difficulty tuning become M2 tasks, not M1 blockers.                                                                                                                                                                                                                                                                                                                                                                              | M1 slice merged (PRs 002, 022, 005, 006, 013, 011, 012, 020) and tagged `v0.1.0-slice`; QA report `playtests/m1-pr002-2026-10-11.md`. |
 | 33  | 2026-10-11 06:45 IST (CEO team check): all bots active in the last 20 min (eng on M2-26/M2-27 uncommitted work, research on M2-12 bot sessions, art on M3-3/M3-9, design/ba/monetization/review merging PRs 035-041). Only QA lagging on M2 tasks: nudged to finish the M1 follow-up, renumber its PR 034 doc (collision with chore/plan-m2-assignments), then M2-14, M2-25, M2-19a in that order. No Mohit ping: M2 not complete and no blocker needing him yet (M2-19b real device stays parked for the M2 milestone). | Keep M2 moving; QA verification is now the critical path for M2 exit.                                                                 |
 
+| 34  | 2026-10-14 22:14 IST (CEO team check): no git activity since 2026-10-11 09:14 IST. All eight bots treated as stalled. Priority order: (1) eng fix PR 048 comment + confirm M4-5a covers the gem-ledger gate; (2) review merge 056 then 049 then 048; (3) design land 049 + spec M2-28/M2-29; (4) ba land 056 and refresh PLAN done-flags; (5) qa M2-19a + ≥3 box sessions for M2-12; (6) research re-check M2-12 after M2-26; (7) art M3-1a/b/c + M3-3 biomes; (8) monetization G19 + G3/G5 no-fill note. No Mohit ping: M2 incomplete; M2-19b / licence TBD / outside testers stay parked. | Restart after 3-day stall; keep M2 critical path moving without waking Mohit. |
+
 ## Next steps toward MVP (see PLAN.md for owners)
 
-1. QA human playtest of PR 002 (`fix/pr-002-review`); after it passes merge in order **PR 002 → PR 005** (`feat/m2-3-levels-json`) **→ PR 006** (`feat/m2-9-code-split`), then tag `v0.1.0-slice`.
-2. M2: levels as JSON + 4 levels + boss; FTUE < 30 s; low-end perf pass; code-split Three.js toward < 3 MB initial load.
-3. M4 meta & monetisation (sandbox): rewarded boosts/chest skip/daily pack/away doubler; interstitials via portal SDK test modes; mock IAP → Stripe **test mode**; chests + collectible bees; cards/loadout; Hive base buildings; Supabase cloud save.
-4. M3 art pass and M5 live ops (events, streaks, season pass, procedural levels, tuning dashboard).
+1. Land open M2 gate: PR 056 → PR 049 → PR 048 (eng comment fix), then continue M2-28/M2-29 (aiming pillar + FTUE aim step).
+2. QA: M2-19a phone/tablet emulation with `?debug`; finish ≥3 box-browser sessions for M2-12; M2-10/M2-11 when unblocked. M2-19b stays parked for Mohit.
+3. M3: ART finish M3-1a/b/c (licence field TBD pending Mohit) + M3-3 biome kits; ENG M3-7 progressive load.
+4. M4 sandbox backend after M2 critical path clears (M4-5a ledger before cloud save). No Stripe/external accounts without Mohit.
 
 ## Known gaps / risks
 
-- No human playtest yet; headless bot lost on timer at nest 8% → difficulty may be slightly high for casual players.
-- Wasps are hard to tell from bees at distance (art pass).
-- Bundle 580 kB JS (Three.js monolith); fine vs 3 MB goal but should be code-split/tree-shaken.
+- Team idle ~3 days; restart via nudges this check.
+- Aiming pillar weak: sweep bot wins L1–L4 (M2-28/M2-29).
+- PR 048 lower-gem merge is safe only until cloud save; M4-5a must land before M4-5.
+- M3 style guide not signed off (licence TBD pending Mohit).
 - Name "Hive Surge" is a placeholder; trademark search required before any launch (plan §8.3 #7).
