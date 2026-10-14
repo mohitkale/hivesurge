@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ART } from './palette';
 
 /**
@@ -49,9 +49,35 @@ export function bake(parts: Part[], scale = 1): THREE.BufferGeometry {
   }
   const merged = mergeGeometries(out)!;
   merged.scale(scale, scale, scale);
-  merged.computeVertexNormals(); // non-indexed => faceted normals
-  merged.computeBoundingSphere();
-  return merged;
+  if (!compactBakes) {
+    merged.computeVertexNormals(); // non-indexed => faceted normals
+    merged.computeBoundingSphere();
+    return merged;
+  }
+  return gpuCompact(merged);
+}
+
+let compactBakes = true;
+/**
+ * art/tools/export-assets.ts turns compaction off so GLBs are exported from the exact same
+ * non-indexed, normal-carrying geometry as before (byte-identical rebuilds, M3-1c).
+ */
+export function setBakeCompaction(on: boolean): void {
+  compactBakes = on;
+}
+
+/**
+ * PERF-AUDIT #1: share identical vertices (same position + colour + wing tag) through an index
+ * and drop the normal attribute. Every material that draws these models is `flatShading: true`,
+ * which derives face normals in the fragment shader, so the picture is unchanged while the GPU
+ * runs the (wing-flap) vertex shader ~2-3x fewer times per unit. Triangles stay the same.
+ */
+export function gpuCompact(g: THREE.BufferGeometry): THREE.BufferGeometry {
+  if (g.getAttribute('normal')) g.deleteAttribute('normal');
+  // Tiny tolerance: only exact duplicates merge, so no vertex moves.
+  const out = mergeVertices(g, 1e-9);
+  out.computeBoundingSphere();
+  return out;
 }
 
 const sphere = (r: number, w: number, h: number) => new THREE.SphereGeometry(r, w, h);
