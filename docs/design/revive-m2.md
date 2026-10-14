@@ -29,7 +29,7 @@ Fixes PR 002 QA bug 1: closing the revive ad early burns the battle's only reviv
 
 Early closes never grant anything, so the limit only stops ad-spam loops and protects portal metrics.
 
-**Worked example** (10 s countdown, 14 gems, price 10):
+**Worked example** (10 s countdown, 14 gems, price 5):
 
 | Time | Action                                   | `closes` | Ad button                       | Gem button | Offer                 |
 | ---- | ---------------------------------------- | -------- | ------------------------------- | ---------- | --------------------- |
@@ -59,18 +59,18 @@ Pricing, caps and guardrails come from MON (`monetization/revive-m2-21a.md`, `mo
 ```
 +------------------------------------------+
 |        Revive the hive?   (10 s ring)    |
-| [ Watch ad ] [ Revive 10 gems ] [No thanks] |
+| [ Watch ad ] [ Revive 5 gems  ] [No thanks] |
 +------------------------------------------+
 ```
 
-- Three buttons in one row (stacked on viewports under 340 px): **"Revive (watch ad)"**, **"Revive (10 gems)"** with the gem icon, **"No thanks"**.
+- Three buttons in one row (stacked on viewports under 340 px): **"Revive (watch ad)"**, **"Revive (5 gems)"** with the gem icon, **"No thanks"**.
 - All the same size, shape, font and contrast (G9). There is **no default or pre-highlighted choice**: no focus ring on open, no glow, pulse or "recommended" tag, and no button pre-selected for Enter or Space. Keyboard focus starts on the panel title. Order is fixed (ad, gems, no thanks) and is never shuffled.
-- **Price: 5 gems flat** (MON-defined, `revive.gemPrice` in remote config, default 5 since CEO decision 36; was 10. Examples below still use 10). The label always shows the live config price. No escalation.
-- Tapping the gem button opens a small confirm sheet: price, current balance and balance after, with two equal buttons, "Spend 10 gems" and "Back". The 10 s countdown pauses while the sheet is open. "Back" returns to the offer with the countdown resumed. The gem debit is atomic (`takeGems()`), and the revive is granted only after the debit commits.
+- **Price: 5 gems flat** (MON-defined, `revive.gemPrice` in remote config, **default 5**; was 10, lowered by MON PR 063). The label always shows the live config price. No escalation.
+- Tapping the gem button opens a small confirm sheet: price, current balance and balance after, with two equal buttons, "Spend 5 gems" and "Back". The 10 s countdown pauses while the sheet is open. "Back" returns to the offer with the countdown resumed. The gem debit is atomic (`takeGems()`), and the revive is granted only after the debit commits.
 
 ### Not enough gems
 
-- The gem button stays visible but is **disabled**, still showing the price (for example "Revive (10 gems)" greyed at 40% opacity with a lock icon), plus a caption under it: "You have 4". Screen readers get "Revive for 10 gems, unavailable, you have 4".
+- The gem button stays visible but is **disabled**, still showing the price (for example "Revive (5 gems)" greyed at 40% opacity with a lock icon), plus a caption under it: "You have 4". Screen readers get "Revive for 5 gems, unavailable, you have 4".
 - **No buy-gems link, no shop redirect, no store pop-up** from the offer or from the defeat screen that follows (G13, G19). Tapping the disabled button does nothing (no tooltip that sells).
 
 ### Fit with the other rules
@@ -129,7 +129,7 @@ Funnel in admin (M6-1): offered, requested, completed, granted, by level.
 6. Interstitial is blocked after any revive ad on that transition.
 7. In FTUE (first 3 battles) no revive offer appears.
 8. Mock adapter: add `noFill` and `error` modes to `MockPlatform.showRewarded` to test these cases.
-9. Gem revive: enough gems, confirm, then debit 10, revive granted, `revive_granted{source:'gems'}`. A second offer never appears.
+9. Gem revive: enough gems, confirm, then debit 5 (the configured price), revive granted, `revive_granted{source:'gems'}`. A second offer never appears.
 10. Not enough gems: button disabled, shows price and balance, tap does nothing, no store navigation is ever triggered.
 11. Free revive shown: gem button hidden. After the free revive is used and the ad still fails: gem button shown.
 12. Confirm sheet open pauses the countdown; "Back" resumes it.
