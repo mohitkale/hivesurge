@@ -34,3 +34,27 @@ export function equipSkin(s: SkinState, id: string, known: readonly string[]): s
   if (selectableSkins(s, known).includes(id)) s.equippedSkin = id === CLASSIC ? '' : id;
   return equippedSkinId(s, known);
 }
+
+export interface PickerEntry {
+  id: string;
+  owned: boolean;
+  /** Where a locked skin comes from (e.g. 'Starter Pack'); null when owned. */
+  unlock: string | null;
+}
+
+/**
+ * Picker rows (PR 069): classic + owned skins (equippable), then skins that a shop SKU grants
+ * but the player does not own yet (shown locked). `sources` maps skin id -> SKU title.
+ */
+export function pickerEntries(
+  s: SkinState,
+  known: readonly string[],
+  sources: Readonly<Record<string, string>>,
+): PickerEntry[] {
+  const owned = selectableSkins(s, known);
+  const locked = Object.keys(sources).filter((id) => known.includes(id) && !owned.includes(id));
+  return [
+    ...owned.map((id) => ({ id, owned: true, unlock: null })),
+    ...locked.map((id) => ({ id, owned: false, unlock: sources[id] })),
+  ];
+}

@@ -390,3 +390,23 @@ body {
 .btn.gem-locked:disabled {
   opacity: 0.4;
 }
+
+/* PR 069 skin picker: preview thumbnails; locked skins greyed with their unlock source. */
+.btn.skin-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.btn.skin-row small {
+  display: block;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+.skin-preview {
+  flex: none;
+}
+.btn.skin-locked:disabled {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
