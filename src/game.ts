@@ -29,6 +29,8 @@ import { applyTheme, palette } from './ui/theme';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
 import { biomeFor } from './art/biomes';
+import { SKINS, skinById } from './art/skins';
+import { cycleSkin, equippedSkinId, selectableSkins } from './platform/skinSelect';
 import { nextLevelIndex } from './levels/progress';
 import { debugParamsFromUrl, NO_DEBUG, type DebugParams } from './debug/debugParams';
 import { autoTriggers } from './sim/triggers';
@@ -139,11 +141,19 @@ export class Game {
       palette(this.save.settings.colorBlind),
       this.models,
       biomeFor(this.world.level.id, location.search),
+      skinById(this.equippedSkin()) ?? null,
     );
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
     sc.setPixelRatio(this.quality.pixelRatio);
     return sc;
+  }
+
+  private equippedSkin(): string {
+    return equippedSkinId(
+      this.save,
+      SKINS.map((s) => s.id),
+    );
   }
 
   private persist(): void {
@@ -201,6 +211,12 @@ export class Game {
     const level = this.currentLevel();
     const levelNo = LEVELS.indexOf(level) + 1;
     const best = this.save.bestStars[level.id] ?? 0;
+    const known = SKINS.map((s) => s.id);
+    // QA M2-19a: skin toggle, shown only once the player owns a skin (e.g. Starter Pack).
+    const skinRow =
+      selectableSkins(this.save, known).length > 1
+        ? `<div class="row"><button class="btn" data-a="skin">Bee skin: ${skinById(this.equippedSkin())?.name ?? 'Classic'}</button></div>`
+        : '';
     this.overlay.innerHTML = `
       <div class="modal"><div class="card">
         <div class="title-logo">HIVE<br/>SURGE</div>
@@ -209,6 +225,7 @@ export class Game {
         <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
         <div class="row"><button class="btn primary" data-a="play">PLAY</button></div>
         <div class="row"><button class="btn" data-a="shop">Shop (sandbox)</button></div>
+        ${skinRow}
         <div class="row"><button class="btn" data-a="cb">Colour-blind: ${this.save.settings.colorBlind ? 'on' : 'off'}</button>
         <button class="btn" data-a="hap">Haptics: ${this.save.settings.haptics ? 'on' : 'off'}</button></div>
         <p class="small">Mouse/touch: hold &amp; drag · Keys: ←/→ or A/D, Space fires, Q = Queen</p>
@@ -219,11 +236,11 @@ export class Game {
       cb: () => {
         this.save.settings.colorBlind = !this.save.settings.colorBlind;
         applyTheme(document.documentElement, this.save.settings.colorBlind);
-        this.scene.dispose();
-        this.scene = this.makeScene();
-        this.resize();
-        this.persist();
-        this.showTitle();
+        this.rebuildScene();
+      },
+      skin: () => {
+        cycleSkin(this.save, known);
+        this.rebuildScene();
       },
       hap: () => {
         this.save.settings.haptics = !this.save.settings.haptics;
@@ -231,6 +248,14 @@ export class Game {
         this.showTitle();
       },
     });
+  }
+
+  private rebuildScene(): void {
+    this.scene.dispose();
+    this.scene = this.makeScene();
+    this.resize();
+    this.persist();
+    this.showTitle();
   }
 
   private showShop(): void {
@@ -249,7 +274,10 @@ export class Game {
       handlers[`buy:${k}`] = async () => {
         if (await this.platform.purchase(k)) {
           this.analytics.track('purchase', { sku: k, price: CATALOG[k].price, sandbox: true });
+          const skinBefore = this.equippedSkin();
           applyPurchase(this.save, k, this.platform.name === 'sandbox'); // G6: any purchase removes forced ads
+          // Auto-equipped skin (Starter Pack): show it on the title-screen bees right away.
+          if (this.equippedSkin() !== skinBefore) return this.rebuildScene();
           this.persist();
         }
         this.showTitle();

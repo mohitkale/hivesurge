@@ -57,6 +57,7 @@ Date = first commit of the file. sha256 = first 16 hex chars.
 | `art/models/skin-bee-frost.glb`             | 6616  | `8228196e75818103` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/skin-bee-lantern.glb`           | 6192  | `aabd4753f24001a5` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/skin-bee-maple.glb`             | 6208  | `08a8fc3eceb74a2c` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
+| `art/models/skin-bee-starter.glb`           | 6340  | `ac32ed7481662947` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `art/models/skin-bee-sunny.glb`             | 6208  | `e5c29c9ad9a832cc` | `art/tools/export-assets.ts` (via `rebuild-glbs.sh`) | 2026-10-10 |
 | `public/assets/audio/fire.ogg`              | 677   | `32c94ec7bc5ce468` | `art/tools/make-audio.sh`                            | 2026-10-10 |
 | `public/assets/audio/hum.ogg`               | 14096 | `aca92268c82cb2cd` | `art/tools/make-audio.sh`                            | 2026-10-10 |

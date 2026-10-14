@@ -23,6 +23,7 @@ import {
 } from '../art/models';
 import { BIOMES, layoutBiome, type BiomeKit } from '../art/biomes';
 import { scaledModel, type ModelLibrary } from '../art/glbLoader';
+import { DEFAULT_SKIN, skinGeometry, type BeeSkin } from '../art/skins';
 
 import { COLORS, type Palette } from '../ui/theme';
 
@@ -84,6 +85,8 @@ export class GameScene {
   private readonly models: ModelLibrary | null;
   /** Which models came from GLB this build (for tests / the debug overlay). */
   readonly glbUsed: string[] = [];
+  /** Equipped non-classic bee skin, or null for the classic (GLB or procedural) bee. */
+  readonly beeSkin: BeeSkin | null;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -91,8 +94,11 @@ export class GameScene {
     pal: Palette = COLORS,
     models: ModelLibrary | null = null,
     biome: BiomeKit = BIOMES.clover,
+    skin: BeeSkin | null = null,
   ) {
     this.models = models;
+    // QA M2-19a: a non-classic skin uses the procedural skinned bee (no GLB variants yet).
+    this.beeSkin = skin && skin.id !== DEFAULT_SKIN ? skin : null;
     this.biome = biome;
     PALETTE = { ...pal, trap: pal.gateTrap, add: pal.gateAdd };
     GATE_COLOR = { mul: pal.gateMul, add: pal.gateAdd, sub: pal.gateTrap };
@@ -114,7 +120,12 @@ export class GameScene {
 
     this.buildLane();
     this.bees = {
-      worker: this.unitMesh(this.model('unit-bee', 0.42, beeGeometry), 600, 0.42, 22),
+      worker: this.unitMesh(
+        this.beeSkin ? skinGeometry(this.beeSkin, 0.42) : this.model('unit-bee', 0.42, beeGeometry),
+        600,
+        0.42,
+        22,
+      ),
       queen: this.unitMesh(this.model('unit-queen', 0.95, queenGeometry), 200, 0.95, 16),
     };
     this.wasps = {
@@ -225,7 +236,7 @@ export class GameScene {
       mesh.geometry = g;
       if (!this.glbUsed.includes(name)) this.glbUsed.push(name);
     };
-    swap(this.bees.worker, 'unit-bee', 0.42);
+    if (!this.beeSkin) swap(this.bees.worker, 'unit-bee', 0.42); // keep the skinned bee
     swap(this.bees.queen, 'unit-queen', 0.95);
     swap(this.wasps.wasp, 'unit-wasp', 0.5);
     swap(this.wasps.hornet, 'unit-hornet', 0.85);

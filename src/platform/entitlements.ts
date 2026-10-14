@@ -6,6 +6,8 @@ export interface Wallet {
   noAds: boolean;
   /** Owned bee skin ids. */
   skins: string[];
+  /** Equipped skin id ('' = classic); a newly granted skin is auto-equipped. */
+  equippedSkin?: string;
 }
 
 /**
@@ -18,7 +20,10 @@ export interface Wallet {
  */
 export function applyPurchase(w: Wallet, sku: Sku, sandbox = true): void {
   const g = CATALOG[sku].grants;
-  if (g.skin && sandbox && !w.skins.includes(g.skin)) w.skins.push(g.skin);
+  if (g.skin && sandbox && !w.skins.includes(g.skin)) {
+    w.skins.push(g.skin);
+    w.equippedSkin = g.skin; // auto-equip on purchase (QA M2-19a)
+  }
   w.coins += g.coins ?? 0;
   w.gems += g.gems ?? 0;
   w.noAds = true;

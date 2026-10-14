@@ -28,6 +28,19 @@ export const SKINS: BeeSkin[] = [
     stripe: ART.beeStripe,
   },
   {
+    // Starter Pack skin (QA M2-19a). PROCEDURAL PLACEHOLDER until art ships a final
+    // look: a deeper amber body with a honey-drop badge on the head (see the PR doc).
+    id: 'starter',
+    name: 'Starter Gold',
+    season: 'core',
+    body: '#ffc93c',
+    stripe: '#3a1c06',
+    accessory: () => [
+      { geo: at(new THREE.OctahedronGeometry(0.11, 0), 0, 0.42, 0.5), color: '#e8890c' },
+      { geo: at(new THREE.OctahedronGeometry(0.05, 0), 0, 0.53, 0.5), color: '#fff3c4' },
+    ],
+  },
+  {
     id: 'blossom',
     name: 'Blossom Crown',
     season: 'spring',
@@ -94,6 +107,13 @@ export const SKINS: BeeSkin[] = [
     ],
   },
 ];
+
+/** Default skin id (no skin equipped). */
+export const DEFAULT_SKIN = 'classic';
+
+export function skinById(id: string): BeeSkin | undefined {
+  return SKINS.find((s) => s.id === id);
+}
 
 export function skinGeometry(skin: BeeSkin, scale = 1): THREE.BufferGeometry {
   const base = beeGeometry(1, skin.body, skin.stripe);
