@@ -98,7 +98,8 @@ Snapshot 2026-10-11 03:50 IST, updated 03:58 IST (v0.1.0-slice). Tip = branch ti
 | 090 | research/m2-12-pr076-addendum                        | hivesurge-research     | `1d7ba8e` | merged (`f5107ab`; data + PROVISIONAL addendum; QA sessions are now on main via 084)                                    | 090-research-m2-12-pr076-addendum.md                              |
 | 091 | fix/m2-30b-ftue-escape                               | hivesurge-eng          | `96fba26` | merged (`77c63be`; tests fail on main, old saves load)                                                                  | 091-fix-m2-30b-ftue-escape.md                                     |
 | 092 | chore/review-build                                   | hivesurge-eng          | `08b01fb` | merged (`9b52597`; follow-up: gate ?stress=N to dev)                                                                    | 092-chore-review-build.md                                         |
+| 093 | fix/stress-dev-only                                  | hivesurge-eng          | `5bf10fd` | claimed                                                                                                                 | 093-fix-stress-dev-only.md                                        |
 
 Not numbered (no PR doc yet): `backup/art-m3-premium-pass-pre-split` (backup), `feat/core-loop` (retired). Correction: REVIEW-010 suggested renumbering research to 013. That's superseded, because research committed 010 first and keeps it.
 
-Next free number: **093**.
+Next free number: **094**.
