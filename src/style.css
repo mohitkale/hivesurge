@@ -187,6 +187,39 @@ body {
   pointer-events: none;
   animation: up 0.7s forwards;
 }
+/* M2-31c: "Missed!" is larger, bold and outlined so it reads over yellow bees. It is centred on
+   the gate row and drawn above other HUD items, but below #overlay (modals). */
+.floater.miss {
+  z-index: 3;
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #fff;
+  -webkit-text-stroke: 5px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0 3px 4px rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  animation: miss-up 1s forwards;
+}
+@keyframes miss-up {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 1;
+  }
+  70% {
+    transform: translate(-50%, -60%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -80%);
+    opacity: 0;
+  }
+}
 @keyframes up {
   to {
     transform: translateY(-40px);

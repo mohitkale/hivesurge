@@ -81,13 +81,13 @@ export class Hud {
     this.queenBtn.classList.toggle('ready', w.queenReady);
   }
 
-  floater(text: string, x: number, y: number): void {
+  floater(text: string, x: number, y: number, variant: '' | 'miss' = ''): void {
     const el = document.createElement('div');
-    el.className = 'floater';
+    el.className = variant ? `floater ${variant}` : 'floater';
     el.textContent = text;
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
     this.root.appendChild(el);
-    setTimeout(() => el.remove(), 700);
+    setTimeout(() => el.remove(), variant === 'miss' ? 1000 : 700);
   }
 }

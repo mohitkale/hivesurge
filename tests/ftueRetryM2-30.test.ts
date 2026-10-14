@@ -52,7 +52,7 @@ describe('M2-30 FTUE retry (stuck "Drag to the x2 gate")', () => {
 
   it('game.ts passes the saved progress and records each completed step', () => {
     const g = readFileSync('src/game.ts', 'utf8');
-    expect(g).toMatch(/new Ftue\(0, 1, this\.save\.ftueStep[,)]/);
+    expect(g).toMatch(/ftueForLevel\(this\.world\.level\.id, this\.save\.ftueStep[,)]/);
     expect(g).toMatch(/this\.save\.ftueStep = e\.step/);
   });
 });
