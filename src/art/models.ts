@@ -155,7 +155,7 @@ export function beeGeometry(
 /**
  * PROPOSED (needs DES sign-off): crowd LOD for the worker bee, <=150 tris. Same silhouette and
  * palette as `beeGeometry` (striped amber abdomen, dark head, pale wings, team-teal antenna tips)
- * with fewer segments and without the cheek dabs, so it still reads as a bee at 16-24 px. Eng
+ * with fewer segments, single-segment antenna stalks and no cheek dabs, so it still reads as a bee at 16-24 px. Eng
  * owns the switch (when to use it); nothing references it yet.
  */
 export function beeCrowdGeometry(scale = 1): THREE.BufferGeometry {
@@ -167,11 +167,22 @@ export function beeCrowdGeometry(scale = 1): THREE.BufferGeometry {
     { geo: at(sphere(0.3, 5, 3), 0, 0.06, 0.55), color: ART.beeHead },
     ...wingPair(0.8, 0.32, 0.42, -0.35, ART.beeWing, false),
   ];
-  for (const side of [-1, 1])
+  for (const side of [-1, 1]) {
+    // One stalk per side (same placement as the full bee) so the teal tips sit on the head.
+    const ant = new THREE.CylinderGeometry(0.03, 0.03, 0.34, 3);
+    ant.rotateX(-0.5);
+    ant.rotateZ(side * -0.4); // splay outwards so the tips sit wide, like the full bee
+    parts.push({ geo: at(ant, side * 0.1, 0.36, 0.7), color: ART.beeStripe });
+    // Tip exactly on the stalk's upper end (same rotations as the stalk).
+    const top = new THREE.Vector3(0, 0.17, 0)
+      .applyAxisAngle(new THREE.Vector3(1, 0, 0), -0.5)
+      .applyAxisAngle(new THREE.Vector3(0, 0, 1), side * -0.4)
+      .add(new THREE.Vector3(side * 0.1, 0.36, 0.7));
     parts.push({
-      geo: at(new THREE.TetrahedronGeometry(0.08), side * 0.17, 0.5, 0.8),
+      geo: at(new THREE.TetrahedronGeometry(0.08), top.x, top.y, top.z),
       color: ART.beeTeam,
     });
+  }
   return bake(parts, scale);
 }
 
