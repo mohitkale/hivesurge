@@ -8,7 +8,7 @@ import {
 import * as THREE from 'three';
 import { haptic, Sfx } from './audio/sfx';
 import { GemReviveCaps, isEventFinalLevel, reviveGemConfig } from './platform/reviveGems';
-import { canOfferRewarded, canShowInterstitial, isLevelTransition } from './platform/adPolicy';
+import { canOfferRewarded, shouldShowInterstitialOnClaim } from './platform/adPolicy';
 import { AdPacer } from './platform/adPacer';
 import { applyPurchase } from './platform/entitlements';
 import { ResultSession } from './platform/resultSession';
@@ -30,7 +30,12 @@ import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
 import { biomeFor } from './art/biomes';
 import { nextLevelIndex } from './levels/progress';
-import { debugParamsFromUrl, NO_DEBUG, type DebugParams } from './debug/debugParams';
+import {
+  debugParamsFromUrl,
+  NO_DEBUG,
+  seedSaveForBattle,
+  type DebugParams,
+} from './debug/debugParams';
 import { autoTriggers } from './sim/triggers';
 import { Ftue, FtueStep, shouldRunFtue } from './ftue/ftue';
 import type { LevelDef } from './sim/types';
@@ -74,7 +79,7 @@ export class Game {
   private ftue: Ftue | null = null;
   /** revive-m2.md: per app session, never saved. */
   private readonly reviveSession = new ReviveSession();
-  /** Dev-only QA params (?level, ?revive=force); production ignores them. */
+  /** Dev-only QA params (?level, ?revive=force, ?battle=N); production ignores them. */
   private readonly debug: DebugParams = import.meta.env.DEV
     ? debugParamsFromUrl(
         location.search,
@@ -96,6 +101,13 @@ export class Game {
   constructor(store: SaveStore) {
     this.store = store;
     this.save = store.data;
+    // Dev-only ?battle=N (QA M2-19a): jump to battle N; this.debug is NO_DEBUG in production.
+    if (import.meta.env.DEV && this.debug.battle)
+      seedSaveForBattle(
+        this.save,
+        this.debug.battle,
+        LEVELS.map((l) => l.id),
+      );
     // ftue-m2.md: FTUE counts as done on a later launch once a battle was played.
     if (!this.save.ftueDone && this.save.battlesCompleted > 0) this.save.ftueDone = true;
     this.world = new World(this.currentLevel());
@@ -608,11 +620,7 @@ export class Game {
     if (this.ftue && this.world.outcome === 'won') this.save.ftueDone = true;
     const now = Date.now();
     // G3: interstitials only at level transitions. Retry replays the same level, so it is not one.
-    if (
-      isLevelTransition(replay) &&
-      canShowInterstitial(this.save, now, rewardedShown) &&
-      this.pacer.canInterstitial()
-    ) {
+    if (shouldShowInterstitialOnClaim(this.save, now, rewardedShown, replay, this.pacer)) {
       this.save.lastInterstitialAt = now;
       this.pacer.recordInterstitial();
       this.persist();
