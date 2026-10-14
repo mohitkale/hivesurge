@@ -1,4 +1,4 @@
-# PR (number pending from review): fix/m2-30-33-ftue-retry
+# PR 086: fix/m2-30-33-ftue-retry
 
 Fixes QA M2-12 box-session bugs M2-30 (major) and M2-33 (minor), logged in
 `playtests/m2-12/qa/2026-10-15-box-sessions.md` (branch `qa/m2-12-box-sessions` @ 03e76fe).
