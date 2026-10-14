@@ -11,7 +11,7 @@ import random, re, subprocess, sys, statistics as st
 
 A = sys.argv
 arg = lambda k, d: type(d)(A[A.index(k) + 1]) if k in A else d
-SEED, RUNS, REF, DAYS = arg('--seed', 42), arg('--runs', 200), arg('--design-ref', '91fed5c'), 30
+SEED, RUNS, REF, DAYS = arg('--seed', 42), arg('--runs', 200), arg('--design-ref', '126a7bc'), 30
 
 def design(path):
     return subprocess.run(['git', 'show', f'{REF}:{path}'], capture_output=True, text=True, check=True).stdout
@@ -57,7 +57,7 @@ def enemy_scale(P, n, losses=0):
     sc = max(LO, min(HI, 1 + K * (P - expectedP(n))))
     la = next((mm for need, mm in reversed(LOSS_ASSIST) if losses >= need), 1.0)
     return max(FLOOR, sc * la)
-BASE_WIN, WIN_SENS = 0.70, arg('--win-sens', 2.0)  # ASSUMPTION: 70% at scale 1.0; -WIN_SENS pts per +1% enemies
+BASE_WIN, WIN_SENS = 0.70, arg('--win-sens', 1.3)  # validation-m5.md bot data: ~1.2-1.4 win pts per 1% enemy change (was 2.0)
 POWER_K = arg('--power-k', 0.5)  # DES proposal (meta-m5.md 91fed5c): win + k*(P/expectedP - 1); ASSUMPTION value
 def power_ratio(P, n):
     e = expectedP(n)
@@ -94,8 +94,21 @@ CHEST = {'wood': (3, (30, 60), (80, 18, 2, 0)), 'silver': (6, (80, 150), (70, 24
 UNLOCK_MIN = {'wood': 15, 'silver': 60, 'gold': 240, 'royal': 480}  # META
 WIN_CHEST = (('wood', .70), ('silver', .25), ('gold', .05))  # META
 LOGIN = [('coins', 100), ('chest', 'wood'), ('gems', 5), ('coins', 300), ('chest', 'silver'), ('gems', 10), ('chest', 'royal')]  # LIVE
-DAILY_TARGET_COINS = 260  # LIVE pool, ASSUMPTION mix of 3 coin targets
-DAILY_XP = 3 * 20 + 50    # LIVE: 20/target + 50 daily bonus
+# LIVE daily pool @ design ref (126a7bc): (name, reward kind, amount, min stage, completion prob ASSUMPTION)
+DAILY_POOL = [('win3', 'coins', 100, 1, 0.90), ('queens15', 'coins', 80, 1, 0.95), ('x3gate3', 'coins', 80, 3, 0.90),
+              ('hornets30', 'coins', 100, 3, 0.90), ('stars2plus2', 'gems', 5, 1, 0.70), ('chests2', 'coins', 60, 1, 0.95)]
+DAY1_BONUS_P = 0.20  # validation-m5.md: full daily set ~20% likely on day 1
+TARGET_XP, BONUS_XP = 20, 50  # LIVE
+BOSS_EVERY = 5; BOSS_WIN_DELTA = arg('--boss-win-delta', -0.15); BOSS_GOLD = '--no-boss-gold' not in A; USE_ROOMS = '--no-rooms' not in A  # META boss every 5th stage; ASSUMPTION boss win -15 pts (bots: casual boss 54.5% vs ~70%)
+# META hive rooms: (L1 cost, L1 min, L5 cost, L5 min, max). ASSUMPTION geometric interpolation/extrapolation between L1 and L5
+ROOMS = {'pollen_lab': (800, 60, 12000, 1440, 6), 'honey_store': (200, 5, 4000, 360, 10),
+         'wax_walls': (300, 10, 5000, 480, 10), 'brood_cell': (500, 30, 8000, 720, 5)}
+def room_cost(r, lvl):  # cost/time to go lvl -> lvl+1 (lvl 0 -> 1 = L1 row)
+    c1, t1, c5, t5, _ = ROOMS[r]; k = lvl / 4
+    return int(c1 * (c5 / c1) ** k), t1 * (t5 / t1) ** k
+ACCOUNT_XP_PER_LEVEL = 100  # ASSUMPTION (validation-m5.md proposal; M5-1b TODO): level L -> L+1 needs 100 x L XP
+SESSION_HOURS = (0, 6, 12)  # ASSUMPTION session start times; 12 h overnight gap
+HONEY_PER_H, HONEY_CAP_H = 20, 8  # META
 WEEKLY_XP = 3 * 100       # ASSUMPTION: 3 of 5 weekly targets completed
 WEEKLY_GEMS = arg('--weekly-gems', 20 + 15)  # LIVE weekly boss (20) + event points (15) targets; ASSUMPTION both completed (--weekly-gems 0 = none)
 REVIVE_ELIG_SHARE = arg('--revive-elig', 0.95)  # ASSUMPTION share of losses with nest damage >= revive.minNestDamage 0.25 (PR 049; bot check in revive-m2.md: 416/421 = 99% at 25%, 204/421 = 48% at 50%), rounded down
@@ -109,8 +122,9 @@ PERSONAS = {  # ASSUMPTION persona definitions
 
 def run(persona, seed):
     rng, p = random.Random(seed), PERSONAS[persona]
-    s = dict(coins=0, gems=0, pity=0, n=1, xp=0, tier=0, cards_chest=0, cards_prem=0, cards_free_track=0, gin=0, rev_elig=0, battles=0)
+    s = dict(coins=0, gems=0, pity=0, pity_hits=0, acc_xp=0, acc_lvl=1, builder_free=0.0, last_collect=0.0, n=1, xp=0, tier=0, cards_chest=0, cards_prem=0, cards_free_track=0, gin=0, rev_elig=0, battles=0)
     bees = {b: [0, 0] for b in BEE}; bees['worker'][0] = 1
+    rooms = {r: 0 for r in ROOMS}
     if p['starter']: s['coins'] += 500; s['gems'] += 50  # CODE CATALOG starter_pack
     slots, out = [], []
     def add_card(b, kind):
@@ -121,11 +135,15 @@ def run(persona, seed):
         s[kind] += 1
     def open_chest(t, kind='cards_chest'):
         n, (lo, hi), odds = CHEST[t]; s['coins'] += rng.randint(lo, hi)
-        for _ in range(n):
-            s['pity'] += 1
-            r = 'L' if s['pity'] >= PITY else rng.choices('CREL', weights=odds)[0]
-            if r == 'L': s['pity'] = 0
+        n += rooms['pollen_lab'] // 2  # META Pollen Lab: +1 card per chest every 2 levels
+        s['pity'] += 1; force = s['pity'] >= PITY  # META: pity per CHEST (40 chests without a Legendary)
+        got_l = False
+        for i in range(n):
+            r = 'L' if (force and i == 0) else rng.choices('CREL', weights=odds)[0]
+            if r == 'L': got_l = True
             add_card(rng.choice(BYRAR[r]), kind)
+        if force: s['pity_hits'] += 1
+        if got_l: s['pity'] = 0
         if t == 'royal': add_card(rng.choice(BYRAR['E']), kind)
     def grant(txt, kind):
         g = parse_reward(txt); s['coins'] += g['coins']; s['gems'] += g['gems']; s['gin'] += g['gems'] if kind == 'cards_free_track' else 0
@@ -135,7 +153,9 @@ def run(persona, seed):
         for r, k in g['random_cards']:
             for _ in range(k): add_card(rng.choice(BYRAR[r]), kind)
     def add_xp(x):
-        s['xp'] += x
+        s['xp'] += x; s['acc_xp'] += x
+        while s['acc_xp'] >= ACCOUNT_XP_PER_LEVEL * s['acc_lvl']:
+            s['acc_xp'] -= ACCOUNT_XP_PER_LEVEL * s['acc_lvl']; s['acc_lvl'] += 1
         while s['xp'] >= (s['tier'] + 1) * XP_TIER:
             s['tier'] += 1; t = s['tier']
             if t > 30:
@@ -161,6 +181,14 @@ def run(persona, seed):
                 need, cost = POLLEN[L - 1]['CREL'.index(r)], COINS_UP[L - 1]
                 if lv[1] >= need and s['coins'] >= cost:
                     lv[1] -= need; s['coins'] -= cost; lv[0] += 1; ch = True
+    def build(now_h):  # ASSUMPTION priority after bee upgrades: Pollen Lab, Honey Store, Wax Walls, Brood Cell; one builder
+        if not USE_ROOMS or now_h < s['builder_free']: return
+        for r in ROOMS:
+            L = rooms[r]
+            if L >= ROOMS[r][4] or L >= s['acc_lvl'] // 2: continue  # META room cap = player level / 2
+            c, mins = room_cost(r, L)
+            if s['coins'] >= c:
+                s['coins'] -= c; rooms[r] += 1; s['builder_free'] = now_h + mins / 60; return
     for d in range(DAYS):
         kind, val = LOGIN[d % 7]
         if kind == 'coins': s['coins'] += val
@@ -168,21 +196,33 @@ def run(persona, seed):
         else: open_chest(val)
         if d % 7 == 6: s['gems'] += WEEKLY_GEMS; s['gin'] += WEEKLY_GEMS
         open_chest('wood')                      # META free daily Wood
-        s['coins'] += DAILY_TARGET_COINS; open_chest('wood')  # LIVE daily bonus Wood chest
+        pool = [t for t in DAILY_POOL if s['n'] >= t[3]]  # stage-gated pool (LIVE @ 126a7bc)
+        drawn = rng.sample(pool, 3); done = 0
+        for name, kind_, amt, _, pc in drawn:
+            if rng.random() < pc:
+                done += 1; add_xp(TARGET_XP)
+                if kind_ == 'coins': s['coins'] += amt
+                else: s['gems'] += amt; s['gin'] += amt
+        bonus = (rng.random() < DAY1_BONUS_P) if d == 0 else (done == 3)
+        if bonus: open_chest('wood'); add_xp(BONUS_XP)  # LIVE daily bonus: Wood chest + 50 pass XP
         if p['ads']: open_chest('wood')         # META/M5-5 rewarded daily pack (ASSUMPTION: = Wood)
-        add_xp(DAILY_XP + (WEEKLY_XP if d % 7 == 6 else 0))
+        if d % 7 == 6: add_xp(WEEKLY_XP)
         ads_today = chest_ads = 0
         gaps = []
         for sess in range(SESSIONS):
+            now_h = d * 24 + SESSION_HOURS[sess]
+            s['coins'] += int(HONEY_PER_H * rooms['honey_store'] * min(HONEY_CAP_H, now_h - s['last_collect'])); s['last_collect'] = now_h
+            build(now_h)
             if slots: open_chest(slots.pop(0))  # ASSUMPTION: 1 chest unlocks per gap between sessions
             for _ in range(BATTLES // SESSIONS):
                 s['battles'] += 1
-                P = power(); wr = win_rate(P, s['n'], s.get('ls', 0))
+                P = power(); boss = s['n'] % BOSS_EVERY == 0
+                wr = win_rate(P, s['n'], s.get('ls', 0)) + (BOSS_WIN_DELTA if boss else 0)
                 if rng.random() < wr:
                     s['n'] += 1; add_xp(30); s['ls'] = 0
                     c = rng.randint(*WIN_COINS)
                     if p['ads'] and ads_today < 20: c *= 2; ads_today += 1
-                    t = rng.choices([x for x, _ in WIN_CHEST], [w for _, w in WIN_CHEST])[0]
+                    t = 'gold' if (boss and BOSS_GOLD) else rng.choices([x for x, _ in WIN_CHEST], [w for _, w in WIN_CHEST])[0]  # META boss win = Gold
                     if len(slots) < SLOTS: slots.append(t)
                     else: c = int(c * 1.5)  # META slots-full bonus
                     s['coins'] += c
@@ -191,10 +231,10 @@ def run(persona, seed):
                     if s['battles'] > FTUE_BATTLES and rng.random() < REVIVE_ELIG_SHARE: s['rev_elig'] += 1
             if slots and p['ads'] and chest_ads < 3 and UNLOCK_MIN[slots[0]] <= 60:  # M5-5: ad halves timer, 3/day
                 open_chest(slots.pop(0)); chest_ads += 1
-            upgrade()
+            upgrade(); build(now_h + 0.5)
         P = power()
         out.append(dict(day=d + 1, n=s['n'], P=P, exp=expectedP(s['n']), scale=enemy_scale(P, s['n']), epic_lvl=sum(bees[b][0] for b in BYRAR['E']) / len(BYRAR['E']), epic_max=max(bees[b][0] for b in BYRAR['E']),
-                        epic_prem=s.get('epic_cards_prem', 0), epic_all=sum(v for k, v in s.items() if k.startswith('epic_')), gin=s['gin'], rev_elig=s['rev_elig'], tier=s['tier'], prem=s['cards_prem'], chest=s['cards_chest'], free_track=s['cards_free_track']))
+                        epic_prem=s.get('epic_cards_prem', 0), epic_all=sum(v for k, v in s.items() if k.startswith('epic_')), gin=s['gin'], rev_elig=s['rev_elig'], pity_hits=s['pity_hits'], rooms=dict(rooms), acc_lvl=s['acc_lvl'], tier=s['tier'], prem=s['cards_prem'], chest=s['cards_chest'], free_track=s['cards_free_track']))
     return out
 
 def main():
@@ -237,6 +277,19 @@ def main():
         gi, re_ = med(k, DAYS - 1, 'gin'), med(k, DAYS - 1, 'rev_elig')
         print(f"{k}: free gems earned {gi:g} ({gi/DAYS:.1f}/day); revive-eligible defeats {re_:g} ({re_/DAYS:.2f}/day); "
               f"gems to gem-revive all {re_*REV_PRICE:g}; free income covers {min(1, gi/max(1, re_*REV_PRICE)):.0%}")
+    print(f"\nPity Legendaries per 30 days (median): " + ", ".join(f"{k} {med(k, DAYS-1, 'pity_hits'):g}" for k in PERSONAS))
+    for k in PERSONAS:
+        rl = {r: st.median(x[-1]['rooms'][r] for x in res[k]) for r in ROOMS}
+        print(f"{k}: day-30 rooms {rl}, account level {med(k, DAYS-1, 'acc_lvl'):g}")
+    # Suggested expectedP refit: median f2p_ads P on the first day each run reaches stage >= n
+    print("\nSuggested expectedP refit (median f2p_ads P at first day reaching stage n) vs current:")
+    print("| Stage n | current expectedP | refit (ads median P) | ratio |\n|---|---|---|---|")
+    for n_, cur in EXP_PTS:
+        if n_ < 3: continue
+        vals = [next((r[d]['P'] for d in range(DAYS) if r[d]['n'] >= n_), None) for r in res['f2p_ads']]
+        vals = [v for v in vals if v is not None]
+        if len(vals) < len(res['f2p_ads']) // 2: print(f"| {n_} | {cur} | not reached by median run | |"); continue
+        m_ = st.median(vals); print(f"| {n_} | {cur} | {m_:g} | {m_/cur:.0%} |")
     print(f"Day-30 level n: no-ads {med('f2p_no_ads',29,'n'):g}, ads {med('f2p_ads',29,'n'):g}, payer {med('payer_pass',29,'n'):g}")
 
 if __name__ == '__main__':
