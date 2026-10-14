@@ -31,11 +31,9 @@ const click = async (a) => {
   await wait(300);
 };
 const acts = () => p.$$eval('[data-a]', (e) => e.map((x) => x.dataset.a));
-console.log('title', await acts(), (await p.$eval('body', (e) => e.innerText)).slice(0, 300));
-await click('skins');
-await p.screenshot({ path: `${out}/e2e-1-picker-before.png` });
-console.log('picker before', await acts());
-await click('back');
+// The title shows the skin button only once a skin is owned (eng, QA M2-19a).
+console.log('title before', await acts());
+await p.screenshot({ path: `${out}/e2e-1-title-before.png` });
 await click('shop');
 await click('buy:starter_pack');
 console.log('after buy', await acts());
@@ -47,9 +45,11 @@ for (const a of ['ok', 'confirm'])
 await wait(300);
 console.log('after confirm', await acts());
 if ((await acts()).includes('back')) await click('back');
-await click('skins');
+await click('skin');
 await p.screenshot({ path: `${out}/e2e-2-picker-owned.png` });
-console.log('picker owned', await acts());
+console.log('picker owned (purchase auto-equips starter)', await acts());
+await click('skin:classic');
+await p.screenshot({ path: `${out}/e2e-3a-picker-classic.png` });
 await click('skin:starter');
 await p.screenshot({ path: `${out}/e2e-3-picker-selected.png` });
 await click('back');
@@ -58,8 +58,8 @@ console.log(
   'saved',
   await p.evaluate(() =>
     Object.values(localStorage)
-      .filter((v) => v.includes('selectedSkin'))
-      .map((v) => JSON.parse(v).selectedSkin),
+      .filter((v) => v.includes('equippedSkin'))
+      .map((v) => JSON.parse(v).equippedSkin),
   ),
 );
 await click('play');

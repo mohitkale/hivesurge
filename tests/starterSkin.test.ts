@@ -3,7 +3,7 @@ import { SKINS, skinById, skinGeometry } from '../src/art/skins';
 import { applyPurchase } from '../src/platform/entitlements';
 import { CATALOG } from '../src/platform/platform';
 import { defaultSave, mergeSaves, parseSave } from '../src/platform/save';
-import { cycleSkin, equippedSkinId, selectableSkins } from '../src/platform/skinSelect';
+import { cycleSkin, equipSkin, equippedSkinId, selectableSkins } from '../src/platform/skinSelect';
 
 const KNOWN = SKINS.map((s) => s.id);
 
@@ -87,5 +87,21 @@ describe('Starter Gold art (PR 069)', () => {
     let n = 0;
     for (let i = 0; i < w.count; i++) if (w.getX(i) !== 0) n++;
     expect(n).toBeGreaterThan(0);
+  });
+});
+
+describe('skin picker (PR 069)', () => {
+  it('equips an owned skin, saves it as equippedSkin, and ignores unowned ids', () => {
+    const save = defaultSave();
+    expect(equipSkin(save, 'starter', KNOWN)).toBe('classic');
+    expect(save.equippedSkin).toBe('');
+    applyPurchase(save, 'starter_pack');
+    save.equippedSkin = '';
+    expect(selectableSkins(save, KNOWN)).toEqual(['classic', 'starter']);
+    expect(equipSkin(save, 'starter', KNOWN)).toBe('starter');
+    expect(save.equippedSkin).toBe('starter');
+    expect(equipSkin(save, 'ghost', KNOWN)).toBe('starter');
+    expect(equipSkin(save, 'classic', KNOWN)).toBe('classic');
+    expect(save.equippedSkin).toBe('');
   });
 });

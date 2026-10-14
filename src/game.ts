@@ -32,7 +32,7 @@ import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
 import { biomeFor } from './art/biomes';
 import { SKINS, skinById } from './art/skins';
-import { cycleSkin, equippedSkinId, selectableSkins } from './platform/skinSelect';
+import { equipSkin, equippedSkinId, selectableSkins } from './platform/skinSelect';
 import { nextLevelIndex } from './levels/progress';
 import {
   debugParamsFromUrl,
@@ -278,16 +278,41 @@ export class Game {
         applyTheme(document.documentElement, this.save.settings.colorBlind);
         this.rebuildScene();
       },
-      skin: () => {
-        cycleSkin(this.save, known);
-        this.rebuildScene();
-      },
+      skin: () => this.showSkins(),
       hap: () => {
         this.save.settings.haptics = !this.save.settings.haptics;
         this.persist();
         this.showTitle();
       },
     });
+  }
+
+  /** Skin picker (PR 069): owned skins, tap to equip (saved; the battle scene is rebuilt). */
+  private showSkins(): void {
+    const known = SKINS.map((s) => s.id);
+    const current = this.equippedSkin();
+    const rows = selectableSkins(this.save, known)
+      .map((id) => {
+        const on = id === current;
+        const name = skinById(id)?.name ?? 'Classic';
+        return `<div class="row"><button class="btn${on ? ' primary' : ''}" data-a="skin:${id}" aria-pressed="${on}">${on ? '✓ ' : ''}${name}</button></div>`;
+      })
+      .join('');
+    this.overlay.innerHTML = `<div class="modal"><div class="card"><h2>Bee skins</h2>${rows}
+      <p class="small">Your bees wear the selected skin in battle.</p>
+      <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
+    const handlers: Record<string, () => void> = { back: () => this.showTitle() };
+    for (const id of selectableSkins(this.save, known))
+      handlers[`skin:${id}`] = () => {
+        if (equipSkin(this.save, id, known) !== current) {
+          this.scene.dispose();
+          this.scene = this.makeScene();
+          this.resize();
+        }
+        this.persist();
+        this.showSkins();
+      };
+    this.bind(handlers);
   }
 
   private rebuildScene(): void {
