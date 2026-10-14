@@ -9,6 +9,7 @@
  * are not in the initial or game chunk.
  */
 import * as THREE from 'three';
+import { gpuCompact } from './models';
 import { ART } from './palette';
 
 /** Models the battle scene can take from GLB (others stay procedural). */
@@ -99,8 +100,8 @@ export function geometryFromGltfScene(root: THREE.Object3D): THREE.BufferGeometr
     if (isWing) wing[i] = Math.sign(pos.getX(i)) || 1;
   }
   g.setAttribute('aWing', new THREE.BufferAttribute(wing, 1));
-  g.computeBoundingSphere();
-  return g;
+  // Same GPU layout as the procedural models (PERF-AUDIT #1): indexed, no normal attribute.
+  return gpuCompact(g);
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {

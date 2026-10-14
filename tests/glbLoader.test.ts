@@ -34,7 +34,9 @@ function bounds(g: THREE.BufferGeometry): THREE.Box3 {
   return g.boundingBox!;
 }
 
-function wingShare(g: THREE.BufferGeometry): number {
+function wingShare(geo: THREE.BufferGeometry): number {
+  // Per triangle corner, so indexed (compacted) and non-indexed geometry compare alike.
+  const g = geo.index ? geo.toNonIndexed() : geo;
   const w = g.getAttribute('aWing');
   let n = 0;
   for (let i = 0; i < w.count; i++) if (w.getX(i) !== 0) n++;
@@ -52,8 +54,11 @@ describe('runtime GLB loading (M3-5)', () => {
     expect(Object.keys(lib).sort()).toEqual([...RUNTIME_MODELS].sort());
     for (const name of RUNTIME_MODELS) {
       const g = lib[name]!;
-      expect(g.index).toBeNull();
-      for (const a of ['position', 'normal', 'color', 'aWing']) {
+      // PERF-AUDIT #1: same GPU layout as the procedural models (indexed, no normals:
+      // the flat-shaded materials derive face normals).
+      expect(g.index).not.toBeNull();
+      expect(g.getAttribute('normal')).toBeUndefined();
+      for (const a of ['position', 'color', 'aWing']) {
         expect(g.getAttribute(a).array).toBeInstanceOf(Float32Array);
       }
       expect(g.getAttribute('color').itemSize).toBe(3);
