@@ -28,6 +28,7 @@ import { applyTheme, palette } from './ui/theme';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
 import { biomeFor } from './art/biomes';
+import { ownedSkins, resolveSkin } from './art/skinSelect';
 import { nextLevelIndex } from './levels/progress';
 import { debugParamsFromUrl, NO_DEBUG, type DebugParams } from './debug/debugParams';
 import { autoTriggers } from './sim/triggers';
@@ -132,6 +133,7 @@ export class Game {
       palette(this.save.settings.colorBlind),
       this.models,
       biomeFor(this.world.level.id, location.search),
+      resolveSkin(this.save.selectedSkin, this.save.skins),
     );
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
@@ -201,7 +203,8 @@ export class Game {
         <p>Level ${levelNo}/${LEVELS.length} · <b>${level.name}</b> · best <span role="img" aria-label="${starsLabel(best)}">${'★'.repeat(best)}${'☆'.repeat(3 - best)}</span></p>
         <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
         <div class="row"><button class="btn primary" data-a="play">PLAY</button></div>
-        <div class="row"><button class="btn" data-a="shop">Shop (sandbox)</button></div>
+        <div class="row"><button class="btn" data-a="shop">Shop (sandbox)</button>
+        <button class="btn" data-a="skins">Bee skin: ${resolveSkin(this.save.selectedSkin, this.save.skins).name}</button></div>
         <div class="row"><button class="btn" data-a="cb">Colour-blind: ${this.save.settings.colorBlind ? 'on' : 'off'}</button>
         <button class="btn" data-a="hap">Haptics: ${this.save.settings.haptics ? 'on' : 'off'}</button></div>
         <p class="small">Mouse/touch: hold &amp; drag · Keys: ←/→ or A/D, Space fires, Q = Queen</p>
@@ -209,6 +212,7 @@ export class Game {
     this.bind({
       play: () => this.startBattle(),
       shop: () => this.showShop(),
+      skins: () => this.showSkins(),
       cb: () => {
         this.save.settings.colorBlind = !this.save.settings.colorBlind;
         applyTheme(document.documentElement, this.save.settings.colorBlind);
@@ -224,6 +228,29 @@ export class Game {
         this.showTitle();
       },
     });
+  }
+
+  /** Minimal skin picker: owned skins (classic + purchases), tap to select, saved. */
+  private showSkins(): void {
+    const current = resolveSkin(this.save.selectedSkin, this.save.skins).id;
+    const list = ownedSkins(this.save.skins);
+    const rows = list
+      .map(
+        (sk) =>
+          `<div class="row"><button class="btn${sk.id === current ? ' primary' : ''}" data-a="skin:${sk.id}" aria-pressed="${sk.id === current}">${sk.id === current ? '✓ ' : ''}${sk.name}</button></div>`,
+      )
+      .join('');
+    this.overlay.innerHTML = `<div class="modal"><div class="card"><h2>Bee skins</h2>${rows}
+      <p class="small">${list.length === 1 ? 'Get more skins in the shop (e.g. Starter Pack).' : 'Your bees wear the selected skin in battle.'}</p>
+      <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
+    const handlers: Record<string, () => void> = { back: () => this.showTitle() };
+    for (const sk of list)
+      handlers[`skin:${sk.id}`] = () => {
+        this.save.selectedSkin = sk.id;
+        this.persist();
+        this.showSkins();
+      };
+    this.bind(handlers);
   }
 
   private showShop(): void {

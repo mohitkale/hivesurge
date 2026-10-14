@@ -15,6 +15,8 @@ export interface SaveData {
   noAds: boolean;
   /** Owned bee skins (e.g. 'starter' from the Starter Pack). */
   skins: string[];
+  /** Bee skin shown in battle ('classic' unless the player picked an owned skin). */
+  selectedSkin: string;
   battlesCompleted: number;
   lastInterstitialAt: number;
   /** FTUE finished (first win, or a later launch). Gates ads/offers (G1, G2). */
@@ -48,6 +50,7 @@ export const defaultSave = (): SaveData => ({
   bestStars: {},
   noAds: false,
   skins: [],
+  selectedSkin: 'classic',
   battlesCompleted: 0,
   lastInterstitialAt: 0,
   ftueDone: false,
@@ -76,6 +79,7 @@ export function parseSave(raw: string | null): SaveData {
       skins: Array.isArray(d.skins)
         ? [...new Set(d.skins.filter((x): x is string => typeof x === 'string'))]
         : [],
+      selectedSkin: typeof d.selectedSkin === 'string' ? d.selectedSkin : 'classic',
       battlesCompleted: num(d.battlesCompleted),
       lastInterstitialAt: num(d.lastInterstitialAt),
       ftueDone: d.ftueDone === true,
