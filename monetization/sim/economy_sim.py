@@ -11,7 +11,7 @@ import random, re, subprocess, sys, statistics as st
 
 A = sys.argv
 arg = lambda k, d: type(d)(A[A.index(k) + 1]) if k in A else d
-SEED, RUNS, REF, DAYS = arg('--seed', 42), arg('--runs', 200), arg('--design-ref', '126a7bc'), 30
+SEED, RUNS, REF, DAYS = arg('--seed', 42), arg('--runs', 200), arg('--design-ref', '101047a'), 30
 
 def design(path):
     return subprocess.run(['git', 'show', f'{REF}:{path}'], capture_output=True, text=True, check=True).stdout
@@ -62,8 +62,9 @@ POWER_K = arg('--power-k', 0.5)  # DES proposal (meta-m5.md 91fed5c): win + k*(P
 def power_ratio(P, n):
     e = expectedP(n)
     return 1.0 if e <= 0 else P / e  # stages with expectedP 0 (no slots): neutral
-def win_rate(P, n, losses=0):
-    return max(0.05, min(0.95, BASE_WIN - WIN_SENS * (enemy_scale(P, n, losses) - 1) + POWER_K * (power_ratio(P, n) - 1)))
+def win_rate(P, n, losses=0, room_p=0.0):
+    # META 101047a (c): rooms add to P_eff in the win term only, not in the easing clamp or expectedP
+    return max(0.05, min(0.95, BASE_WIN - WIN_SENS * (enemy_scale(P, n, losses) - 1) + POWER_K * (power_ratio(P + room_p, n) - 1)))
 
 # ---- LIVE: season pass ------------------------------------------------------
 XP_TIER = int(re.search(r'XP per tier: (\d+)', LIVE).group(1))
@@ -106,7 +107,15 @@ ROOMS = {'pollen_lab': (800, 60, 12000, 1440, 6), 'honey_store': (200, 5, 4000, 
 def room_cost(r, lvl):  # cost/time to go lvl -> lvl+1 (lvl 0 -> 1 = L1 row)
     c1, t1, c5, t5, _ = ROOMS[r]; k = lvl / 4
     return int(c1 * (c5 / c1) ** k), t1 * (t5 / t1) ** k
-ACCOUNT_XP_PER_LEVEL = 100  # ASSUMPTION (validation-m5.md proposal; M5-1b TODO): level L -> L+1 needs 100 x L XP
+_xp = re.search(r'XP to go from level L to L\+1 = `(\d+) \+ (\d+) x L`', META)
+XP_A, XP_B = (int(_xp.group(1)), int(_xp.group(2))) if _xp else (0, 100)  # META 101047a: 150 + 20L (fallback: old 100L assumption)
+def xp_to_next(L): return XP_A + XP_B * L
+_lg = re.search(r'multiple of 10 .*?grants \*\*(\d+) Nectar Gems', META)
+LEVEL10_GEMS = int(_lg.group(1)) if _lg else 0  # META 101047a (b)
+ROOM_P = {}  # META 101047a (c): room -> (P per level, cap)
+for r in rows(META.split('### (c)', 1)[1] if '### (c)' in META else ''):
+    if len(r) >= 5 and r[0] in ('Wax Walls', 'Brood Cell'):
+        ROOM_P[r[0].lower().replace(' ', '_')] = (float(re.search(r'[\d.]+', r[2]).group()), float(re.search(r'[\d.]+', r[4]).group()))
 SESSION_HOURS = (0, 6, 12)  # ASSUMPTION session start times; 12 h overnight gap
 HONEY_PER_H, HONEY_CAP_H = 20, 8  # META
 WEEKLY_XP = 3 * 100       # ASSUMPTION: 3 of 5 weekly targets completed
@@ -154,8 +163,9 @@ def run(persona, seed):
             for _ in range(k): add_card(rng.choice(BYRAR[r]), kind)
     def add_xp(x):
         s['xp'] += x; s['acc_xp'] += x
-        while s['acc_xp'] >= ACCOUNT_XP_PER_LEVEL * s['acc_lvl']:
-            s['acc_xp'] -= ACCOUNT_XP_PER_LEVEL * s['acc_lvl']; s['acc_lvl'] += 1
+        while s['acc_xp'] >= xp_to_next(s['acc_lvl']):
+            s['acc_xp'] -= xp_to_next(s['acc_lvl']); s['acc_lvl'] += 1
+            if s['acc_lvl'] % 10 == 0: s['gems'] += LEVEL10_GEMS; s['gin'] += LEVEL10_GEMS
         while s['xp'] >= (s['tier'] + 1) * XP_TIER:
             s['tier'] += 1; t = s['tier']
             if t > 30:
@@ -217,7 +227,8 @@ def run(persona, seed):
             for _ in range(BATTLES // SESSIONS):
                 s['battles'] += 1
                 P = power(); boss = s['n'] % BOSS_EVERY == 0
-                wr = win_rate(P, s['n'], s.get('ls', 0)) + (BOSS_WIN_DELTA if boss else 0)
+                room_p = sum(min(cap, per * rooms[r]) for r, (per, cap) in ROOM_P.items()) if USE_ROOMS else 0.0
+                wr = win_rate(P, s['n'], s.get('ls', 0), room_p) + (BOSS_WIN_DELTA if boss else 0)
                 if rng.random() < wr:
                     s['n'] += 1; add_xp(30); s['ls'] = 0
                     c = rng.randint(*WIN_COINS)
@@ -277,6 +288,7 @@ def main():
         gi, re_ = med(k, DAYS - 1, 'gin'), med(k, DAYS - 1, 'rev_elig')
         print(f"{k}: free gems earned {gi:g} ({gi/DAYS:.1f}/day); revive-eligible defeats {re_:g} ({re_/DAYS:.2f}/day); "
               f"gems to gem-revive all {re_*REV_PRICE:g}; free income covers {min(1, gi/max(1, re_*REV_PRICE)):.0%}")
+    print("\nAccount level (median) day 7 / day 30: " + ", ".join(f"{k} {med(k, 6, 'acc_lvl'):g} / {med(k, DAYS-1, 'acc_lvl'):g}" for k in PERSONAS))
     print(f"\nPity Legendaries per 30 days (median): " + ", ".join(f"{k} {med(k, DAYS-1, 'pity_hits'):g}" for k in PERSONAS))
     for k in PERSONAS:
         rl = {r: st.median(x[-1]['rooms'][r] for x in res[k]) for r in ROOMS}
