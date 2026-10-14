@@ -15,6 +15,8 @@ export class UnitPool {
   readonly gates: Uint32Array;
   /** Small per-unit lateral wobble so crowds don't look like a single file. */
   readonly vx: Float32Array;
+  /** Render-side crowd LOD band (0 full, 1 mid, 2 far); kept here so swap-remove carries it. */
+  readonly lod: Uint8Array;
 
   constructor(capacity: number) {
     this.capacity = capacity;
@@ -24,6 +26,7 @@ export class UnitPool {
     this.kind = new Uint8Array(capacity);
     this.gates = new Uint32Array(capacity);
     this.vx = new Float32Array(capacity);
+    this.lod = new Uint8Array(capacity);
   }
 
   get full(): boolean {
@@ -40,6 +43,7 @@ export class UnitPool {
     this.kind[i] = kind;
     this.gates[i] = gates;
     this.vx[i] = 0;
+    this.lod[i] = 0;
     return i;
   }
 
@@ -52,6 +56,7 @@ export class UnitPool {
       this.kind[i] = this.kind[last];
       this.gates[i] = this.gates[last];
       this.vx[i] = this.vx[last];
+      this.lod[i] = this.lod[last];
     }
   }
 

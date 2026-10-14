@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { bake, beeGeometry, type Part } from './models';
+import { bake, beeCrowdGeometry, beeGeometry, crowdFarGeometry, type Part } from './models';
 import { ART } from './palette';
 
 /**
@@ -134,4 +134,21 @@ export function skinGeometry(skin: BeeSkin, scale = 1): THREE.BufferGeometry {
   g.scale(scale, scale, scale);
   g.computeBoundingSphere();
   return g;
+}
+
+/**
+ * Crowd-LOD variants of a skin (fix/crowd-lod-hysteresis): the 148-tri mid bee and the 20-tri
+ * far stand-in in the skin's colours. The mid bee keeps the accessory so a skin still reads in
+ * the middle of the lane; the far stand-in is colour only.
+ */
+export function skinCrowdGeometry(skin: BeeSkin, scale = 1): THREE.BufferGeometry {
+  const base = beeCrowdGeometry(1, skin.body, skin.stripe);
+  const g = skin.accessory ? mergeGeometries([base, bake(skin.accessory())])! : base;
+  g.scale(scale, scale, scale);
+  g.computeBoundingSphere();
+  return g;
+}
+
+export function skinFarGeometry(skin: BeeSkin, scale = 1): THREE.BufferGeometry {
+  return crowdFarGeometry(scale, skin.body, skin.stripe);
 }
