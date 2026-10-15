@@ -20,6 +20,7 @@ const ENEMY_UNIT: Record<EnemyKind, UnitKind> = {
   matriarch: UnitKind.Matriarch,
 };
 import { UnitPool } from './units';
+import { DOUBLE_CANNON_DX, MEGA_SWARM_MUL, MEGA_SWARM_S, type BattleBoosts } from './boosts';
 
 export const SIM_DT = 1 / 60;
 export const BEE_CAP = 600;
@@ -81,9 +82,16 @@ export class World {
   bossPhase = 0;
   private repeatTimers: number[] = [];
 
-  constructor(level: LevelDef) {
+  /** Pre-level boosts (feedback 2026-10-15); empty = none. */
+  readonly boosts: BattleBoosts;
+  /** Firing seconds of 10x Bees left. */
+  megaSwarmLeft = 0;
+
+  constructor(level: LevelDef, boosts: BattleBoosts = {}) {
     if (level.gates.length > 32) throw new Error('max 32 gates per level');
     this.level = level;
+    this.boosts = { ...boosts };
+    if (boosts.megaSwarm) this.megaSwarmLeft = MEGA_SWARM_S;
     this.nestHp = level.nestHp;
     this.hiveHp = level.hiveHp;
     this.rng = createRng(level.seed);
@@ -139,8 +147,18 @@ export class World {
     return this.level.laneWidth / 2 - 0.6;
   }
 
+  /** Seconds of firing to charge the Queen (halved by the Fast Queen boost). */
+  get queenChargeMax(): number {
+    return this.level.queenCharge * (this.boosts.fastQueen ? 0.5 : 1);
+  }
+
+  /** Seconds between shots (halved by the 2x Fire speed boost). */
+  get fireInterval(): number {
+    return this.level.fireInterval * (this.boosts.fastFire ? 0.5 : 1);
+  }
+
   get queenReady(): boolean {
-    return this.queenCharge >= this.level.queenCharge;
+    return this.queenCharge >= this.queenChargeMax;
   }
 
   /** Extra seconds granted by a revive. */
@@ -214,13 +232,19 @@ export class World {
     // Fire workers + charge queen.
     if (input.firing) {
       this.fireTimer -= dt;
-      this.queenCharge = Math.min(L.queenCharge, this.queenCharge + dt);
+      this.queenCharge = Math.min(this.queenChargeMax, this.queenCharge + dt);
+      const mega = this.megaSwarmLeft > 0;
+      if (mega) this.megaSwarmLeft = Math.max(0, this.megaSwarmLeft - dt);
+      const perBarrel = mega ? MEGA_SWARM_MUL : 1;
+      const barrels = this.boosts.doubleCannon ? [-DOUBLE_CANNON_DX, DOUBLE_CANNON_DX] : [0];
       while (this.fireTimer <= 0) {
-        this.fireTimer += L.fireInterval;
-        const jitter = (this.rng() - 0.5) * 0.3;
-        if (this.bees.spawn(UnitKind.Worker, this.cannonX + jitter, CANNON_Y) >= 0) {
-          this.stats.fired++;
-        }
+        this.fireTimer += this.fireInterval;
+        for (const dx of barrels)
+          for (let k = 0; k < perBarrel; k++) {
+            const jitter = (this.rng() - 0.5) * (k === 0 ? 0.3 : 1.2);
+            const x = clamp(this.cannonX + dx + jitter, L.laneWidth / 2 - 0.25);
+            if (this.bees.spawn(UnitKind.Worker, x, CANNON_Y) >= 0) this.stats.fired++;
+          }
       }
     } else {
       this.fireTimer = Math.min(this.fireTimer, 0);

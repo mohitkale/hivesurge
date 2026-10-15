@@ -88,6 +88,14 @@ export class Hud {
     setTimeout(() => b.classList.remove('show'), 2200);
   }
 
+  /** Active pre-level boosts, shown under the enemy meter. */
+  showBoosts(text: string): void {
+    const el = document.createElement('div');
+    el.className = 'boost-chip';
+    el.textContent = text;
+    this.root.appendChild(el);
+  }
+
   /** Level 1 tutorial: pulse both meters and show their captions (`on` = intro running). */
   setMeterIntro(on: boolean): void {
     this.root.classList.toggle('meter-intro', on);
@@ -142,7 +150,7 @@ export class Hud {
       this.lastCount = c;
       this.count.textContent = `🐝 ${c}`;
     }
-    const p = Math.round((w.queenCharge / w.level.queenCharge) * 100);
+    const p = Math.round((w.queenCharge / w.queenChargeMax) * 100);
     this.queenBtn.style.setProperty('--p', String(p));
     this.queenBtn.classList.toggle('ready', w.queenReady);
   }

@@ -9,6 +9,7 @@ export const AD_CAPS = {
   placements: {
     win_double: { session: 6, day: 20 },
     revive: { session: 3, day: 10 },
+    boost: { session: 6, day: 20 },
   } as Record<string, { session: number; day: number }>,
 };
 export type AdCaps = typeof AD_CAPS;
