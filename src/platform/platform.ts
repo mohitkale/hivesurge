@@ -1,4 +1,5 @@
-export type RewardedPlacement = 'win_double' | 'revive';
+/** `boost`: pre-level boost screen (feedback 2026-10-15). */
+export type RewardedPlacement = 'win_double' | 'revive' | 'boost';
 /**
  * Outcome of a rewarded ad request. `completed` / `closed` were impressions (an ad was shown);
  * `no_fill` / `error` (load failure or 5 s timeout) showed nothing.
