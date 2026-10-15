@@ -28,7 +28,7 @@ export class Hud {
   constructor(private readonly root: HTMLElement) {
     root.innerHTML = `
       <div class="meter enemy bar-wrap top" role="group" aria-label="Enemy nest energy">
-        <div class="meter-head"><span class="meter-label">🪺 ENEMY NEST</span>
+        <div class="meter-head"><span class="level-chip" data-lv>LV 1</span><span class="meter-label">🪺 ENEMY NEST</span>
           <span class="meter-def" data-def title="Wasps defending the nest">⚔️ 0</span>
           <span class="chip timer" data-time aria-label="Seconds left">90</span></div>
         <div class="meter-row"><div class="bar nest"><b class="ghost" style="width:100%"></b><i style="width:100%"></i></div>
@@ -38,6 +38,7 @@ export class Hud {
         <div class="meter-tip">Your energy: stop the wasps!</div>
         <div class="meter-row"><span class="meter-label">🍯 YOUR HIVE</span>
           <div class="bar hive"><i style="width:100%"></i></div><span class="meter-num" data-hive>0</span></div></div>
+      <div class="level-banner" aria-live="polite"></div>
       <div class="count">0</div>
       <div class="hint">Hold &amp; drag to launch bees</div>
       <div class="ftue-prompt" role="status" aria-live="polite"></div>
@@ -76,6 +77,15 @@ export class Hud {
 
   hideHint(): void {
     this.hint.style.display = 'none';
+  }
+
+  /** Feedback 2026-10-15: prominent level number (chip + 2 s start banner). */
+  showLevel(no: number, name: string, world: string, boss: boolean): void {
+    this.root.querySelector('[data-lv]')!.textContent = `LV ${no}`;
+    const b = this.root.querySelector<HTMLElement>('.level-banner')!;
+    b.innerHTML = `<small>${world}</small><b>LEVEL ${no}</b><span>${boss ? '👑 BOSS · ' : ''}${name}</span>`;
+    b.classList.add('show');
+    setTimeout(() => b.classList.remove('show'), 2200);
   }
 
   /** Level 1 tutorial: pulse both meters and show their captions (`on` = intro running). */
