@@ -94,6 +94,8 @@ export class GameScene {
   private readonly ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private shake = 0;
   private nestPulse = 0;
+  /** Extra nest size for stronger levels (feedback 2026-10-15; 1 = base). */
+  nestSize = 1;
   private cannonKick = 0;
   private t = 0;
 
@@ -606,7 +608,10 @@ export class GameScene {
     const z = won ? -this.level.laneLength - 1 : 1;
     for (let i = 0; i < 6; i++)
       this.particles.burst((i - 2.5) * 1.5, 2, z, won ? PALETTE.honey : PALETTE.plum, 12, 7, 1.4);
-    if (won) this.nest.scale.set(NEST_SCALE, 0.25 * NEST_SCALE, NEST_SCALE);
+    if (won) {
+      const k = NEST_SCALE * this.nestSize;
+      this.nest.scale.set(k, 0.25 * k, k);
+    }
     this.addShake(0.5);
   }
 
@@ -677,7 +682,7 @@ export class GameScene {
     if (world.outcome !== 'won') {
       const hpShare = world.nestHp / L.nestHp;
       // Feedback 2026-10-15: bigger nest (NEST_SCALE) so the enemy reads at the far end.
-      const base = NEST_SCALE * (0.6 + 0.4 * hpShare);
+      const base = NEST_SCALE * this.nestSize * (0.6 + 0.4 * hpShare);
       this.nest.scale.set(
         base * (1 + this.nestPulse * 0.08),
         base * (1 - this.nestPulse * 0.1),

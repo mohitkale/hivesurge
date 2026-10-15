@@ -294,3 +294,70 @@ export function layoutBiome(kit: BiomeKit, laneWidth: number, laneLength: number
       }
   return out;
 }
+
+/**
+ * Feedback 2026-10-15: one environment theme per world band of 5 levels. Band 0 is the authored
+ * Meadow world (LEVEL_BIOME as before); later bands recolour an existing prop kit (same kit id,
+ * so the GLB props and budgets stay valid) with their own sky, fog, ground and light.
+ */
+export interface BandTheme {
+  name: string;
+  base: 'clover' | 'orchard';
+  sky: string;
+  fog: string;
+  lane: string;
+  laneAlt: string;
+  soil: string;
+  rail: string;
+  light: [string, string];
+}
+
+export const BAND_THEMES: BandTheme[] = [
+  {
+    name: 'Lavender Dusk',
+    base: 'clover',
+    sky: '#c7a8e8',
+    fog: '#b896de',
+    lane: '#6fae7a',
+    laneAlt: '#79b884',
+    soil: '#9a74b8',
+    rail: '#f3e6ff',
+    light: ['#f0e2ff', '#4a3a78'],
+  },
+  {
+    name: 'Frost Garden',
+    base: 'orchard',
+    sky: '#bfe4f5',
+    fog: '#d6eef8',
+    lane: '#a9d8c8',
+    laneAlt: '#b8e2d4',
+    soil: '#8fb3c9',
+    rail: '#ffffff',
+    light: ['#ffffff', '#5a7a9a'],
+  },
+  {
+    name: 'Ember Canyon',
+    base: 'orchard',
+    sky: '#f2a07a',
+    fog: '#e88a66',
+    lane: '#c4a24e',
+    laneAlt: '#b8953f',
+    soil: '#a8553a',
+    rail: '#5a2e20',
+    light: ['#ffd6b0', '#7a2a2a'],
+  },
+];
+
+/** Theme for a world band, or null for band 0 (authored kits unchanged). Bands cycle. */
+export function bandTheme(band: number): BandTheme | null {
+  return band <= 0 ? null : BAND_THEMES[(band - 1) % BAND_THEMES.length];
+}
+
+/** Biome for 1-based campaign level `levelNo`; `?biome=` still overrides. */
+export function biomeForLevel(levelNo: number, levelId: string, search = ''): BiomeKit {
+  if (new URLSearchParams(search).get('biome')) return biomeFor(levelId, search);
+  const t = bandTheme(Math.floor((Math.max(1, levelNo) - 1) / 5));
+  if (!t) return biomeFor(levelId);
+  const { base, ...colours } = t;
+  return { ...BIOMES[base], ...colours };
+}

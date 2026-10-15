@@ -31,10 +31,16 @@ import { FloaterLimiter } from './ui/floaterLimiter';
 import { applyTheme, palette } from './ui/theme';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
-import { biomeFor } from './art/biomes';
+import { biomeForLevel, bandTheme } from './art/biomes';
 import { SKINS, skinById } from './art/skins';
 import { equipSkin, equippedSkinId, pickerEntries } from './platform/skinSelect';
-import { nextLevelIndex } from './levels/progress';
+import {
+  campaignIndexOf,
+  campaignLevel,
+  campaignNextIndex,
+  levelStrength,
+  worldBand,
+} from './levels/campaign';
 import {
   debugParamsFromUrl,
   NO_DEBUG,
@@ -209,7 +215,7 @@ export class Game {
       this.world.level,
       palette(this.save.settings.colorBlind),
       this.models,
-      biomeFor(this.world.level.id, location.search),
+      biomeForLevel(this.levelNo(this.world.level), this.world.level.id, location.search),
       skinById(this.equippedSkin()) ?? null,
       {
         // MSAA only for the high tier on a hardware renderer; fixed per GL context.
@@ -217,6 +223,10 @@ export class Game {
         settings: this.quality.settings,
       },
     );
+    // Feedback 2026-10-15: stronger nests (later bands, boss) are drawn bigger.
+    const no = this.levelNo(this.world.level);
+    sc.nestSize = Math.min(1.35, levelStrength(no) * (1 + 0.05 * Math.min(4, worldBand(no))));
+    if (this.world.level.bossPhases) sc.nestSize = Math.max(sc.nestSize, 1.25);
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
     sc.setPixelRatio(this.quality.pixelRatio);
@@ -262,16 +272,21 @@ export class Game {
   }
 
   private currentLevel(): LevelDef {
-    const dbg = this.debug.level && LEVELS.find((l) => l.id === this.debug.level);
-    if (dbg) return dbg;
-    return LEVELS[nextLevelIndex(LEVELS, this.save.bestStars)];
+    const dbgIndex = this.debug.level ? campaignIndexOf(this.debug.level) : -1;
+    if (dbgIndex >= 0) return campaignLevel(dbgIndex);
+    return campaignLevel(campaignNextIndex(this.save.bestStars));
+  }
+
+  /** 1-based campaign level number (authored + generated levels). */
+  private levelNo(level: LevelDef): number {
+    return campaignIndexOf(level.id) + 1;
   }
 
   // ---------- screens ----------
   private showTitle(): void {
     this.phase = 'title';
     const level = this.currentLevel();
-    const levelNo = LEVELS.indexOf(level) + 1;
+    const levelNo = this.levelNo(level);
     const best = this.save.bestStars[level.id] ?? 0;
     // PR 069 (QA round 2): always shown, so players can see what the Starter Pack unlocks.
     const skinRow = `<div class="row"><button class="btn" data-a="skin">Bee skin: ${skinById(this.equippedSkin())?.name ?? 'Classic'}</button></div>`;
@@ -279,7 +294,7 @@ export class Game {
       <div class="modal"><div class="card">
         <div class="title-logo">HIVE<br/>SURGE</div>
         <p>Aim the honey cannon. Fly bees through flower gates to multiply the swarm. Break the wasp nest!</p>
-        <p>Level ${levelNo}/${LEVELS.length} · <b>${level.name}</b> · best <span role="img" aria-label="${starsLabel(best)}">${'★'.repeat(best)}${'☆'.repeat(3 - best)}</span></p>
+        <p>Level ${levelNo} · <b>${level.name}</b> · best <span role="img" aria-label="${starsLabel(best)}">${'★'.repeat(best)}${'☆'.repeat(3 - best)}</span></p>
         <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
         <div class="row"><button class="btn primary" data-a="play">PLAY</button></div>
         <div class="row"><button class="btn" data-a="shop">Shop (sandbox)</button></div>
@@ -393,6 +408,11 @@ export class Game {
     this.overlay.innerHTML = '';
     this.analytics.track('level_start', { level: this.world.level.id });
     this.hud = new Hud(this.hudRoot);
+    {
+      const no = this.levelNo(this.world.level);
+      const world = bandTheme(worldBand(no))?.name ?? 'Meadow';
+      this.hud.showLevel(no, this.world.level.name, world, !!this.world.level.bossPhases);
+    }
     // FTUE shows a single prompt: hide the generic launch hint from the first frame.
     if (this.ftue || this.save.holdUsed) this.hud.hideHint();
     this.hud.queenBtn.addEventListener('pointerdown', (e) => {
