@@ -50,6 +50,7 @@ import type { LevelDef } from './sim/types';
 import { applyMultiplier, computeRewards, type Rewards } from './sim/rewards';
 import { SIM_DT, World } from './sim/world';
 import { Hud } from './ui/hud';
+import { METER_INTRO_S } from './ui/meters';
 import { Input } from './ui/input';
 import { starRowHtml, starsLabel } from './ui/stars';
 import { defeatHeadline } from './ui/defeatCopy';
@@ -953,6 +954,7 @@ export class Game {
           break;
         case 'nestHit':
           nestDmg += e.damage;
+          this.hud?.nestDamaged(e.damage);
           this.scene.onNestHit(e.x, e.damage);
           break;
         case 'hiveHit':
@@ -974,6 +976,8 @@ export class Game {
         this.haptic(15);
       }
     }
+    // Feedback 2026-10-15: level 1 introduces the two energy meters with a short pulse.
+    this.hud?.setMeterIntro(LEVELS.indexOf(w.level) === 0 && w.time < METER_INTRO_S);
     this.hud?.update(w);
     if (w.outcome !== 'playing') this.endBattle();
   }

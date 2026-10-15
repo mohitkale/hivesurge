@@ -1,4 +1,5 @@
 import type { World } from '../sim/world';
+import { DamagePops, enemyMeter, fmtInt, hiveMeter } from './meters';
 
 /** DOM overlay for in-battle info. Updates are diffed to avoid layout churn. */
 export class Hud {
@@ -6,6 +7,15 @@ export class Hud {
   private readonly hiveBar: HTMLElement;
   private readonly timer: HTMLElement;
   private readonly nestPct: HTMLElement;
+  private readonly nestGhost: HTMLElement;
+  private readonly nestWrap: HTMLElement;
+  private readonly defenders: HTMLElement;
+  private readonly hivePct: HTMLElement;
+  private readonly hiveWrap: HTMLElement;
+  private readonly pops = new DamagePops();
+  private lastNest = -1;
+  private lastHive = -1;
+  private lastDefenders = -1;
   private readonly count: HTMLElement;
   readonly queenBtn: HTMLButtonElement;
   readonly muteBtn: HTMLButtonElement;
@@ -17,14 +27,27 @@ export class Hud {
 
   constructor(private readonly root: HTMLElement) {
     root.innerHTML = `
-      <div class="bar-wrap top"><span class="chip" data-nest>100%</span>
-        <div class="bar nest"><i style="width:100%"></i></div><span class="chip" data-time>90</span></div>
-      <div class="bar-wrap bottom"><span class="chip">🏠</span><div class="bar hive"><i style="width:100%"></i></div></div>
+      <div class="meter enemy bar-wrap top" role="group" aria-label="Enemy nest energy">
+        <div class="meter-head"><span class="meter-label">🪺 ENEMY NEST</span>
+          <span class="meter-def" data-def title="Wasps defending the nest">⚔️ 0</span>
+          <span class="chip timer" data-time aria-label="Seconds left">90</span></div>
+        <div class="meter-row"><div class="bar nest"><b class="ghost" style="width:100%"></b><i style="width:100%"></i></div>
+          <span class="meter-num" data-nest aria-live="off">0</span></div>
+        <div class="meter-tip">Enemy energy: hit it with bees!</div></div>
+      <div class="meter mine bar-wrap bottom" role="group" aria-label="Your hive energy">
+        <div class="meter-tip">Your energy: stop the wasps!</div>
+        <div class="meter-row"><span class="meter-label">🍯 YOUR HIVE</span>
+          <div class="bar hive"><i style="width:100%"></i></div><span class="meter-num" data-hive>0</span></div></div>
       <div class="count">0</div>
       <div class="hint">Hold &amp; drag to launch bees</div>
       <div class="ftue-prompt" role="status" aria-live="polite"></div>
       <button class="hud-btn queen-btn" aria-label="Launch Queen" style="--p:0">👑</button>
       <button class="hud-btn mute-btn" aria-label="Toggle sound">🔊</button>`;
+    this.nestGhost = root.querySelector('.bar.nest > .ghost')!;
+    this.nestWrap = root.querySelector('.meter.enemy')!;
+    this.hiveWrap = root.querySelector('.meter.mine')!;
+    this.defenders = root.querySelector('[data-def]')!;
+    this.hivePct = root.querySelector('[data-hive]')!;
     this.nestBar = root.querySelector('.bar.nest > i')!;
     this.hiveBar = root.querySelector('.bar.hive > i')!;
     this.timer = root.querySelector('[data-time]')!;
@@ -55,11 +78,44 @@ export class Hud {
     this.hint.style.display = 'none';
   }
 
+  /** Level 1 tutorial: pulse both meters and show their captions (`on` = intro running). */
+  setMeterIntro(on: boolean): void {
+    this.root.classList.toggle('meter-intro', on);
+  }
+
+  /** Nest damage this tick: drives the "-N" pop, the bar drain ghost and a short shake. */
+  nestDamaged(damage: number): void {
+    this.pops.add(damage);
+  }
+
   update(w: World): void {
-    const nest = Math.max(0, w.nestHp / w.level.nestHp);
-    this.nestBar.style.width = `${nest * 100}%`;
-    this.nestPct.textContent = `${Math.ceil(nest * 100)}%`;
-    this.hiveBar.style.width = `${Math.max(0, (w.hiveHp / w.level.hiveHp) * 100)}%`;
+    const nest = enemyMeter(w);
+    if (nest.value !== this.lastNest) {
+      const drop = this.lastNest >= 0 && nest.value < this.lastNest;
+      this.lastNest = nest.value;
+      this.nestBar.style.width = `${nest.frac * 100}%`;
+      this.nestPct.textContent = fmtInt(nest.value);
+      this.nestWrap.setAttribute('aria-label', `Enemy nest energy ${nest.value} of ${nest.max}`);
+      if (drop) {
+        // The white ghost bar lags behind (CSS transition delay), so hits visibly "drain" it.
+        this.nestGhost.style.width = this.nestBar.style.width;
+        this.restartAnim(this.nestWrap, 'hit');
+      }
+    }
+    const d = this.pops.take(performance.now());
+    if (d > 0) this.pop(`-${fmtInt(d)}`);
+    if (nest.defenders !== this.lastDefenders) {
+      this.lastDefenders = nest.defenders;
+      this.defenders.textContent = `⚔️ ${fmtInt(nest.defenders)}`;
+    }
+    const hive = hiveMeter(w);
+    if (hive.value !== this.lastHive) {
+      const drop = this.lastHive >= 0 && hive.value < this.lastHive;
+      this.lastHive = hive.value;
+      this.hiveBar.style.width = `${hive.frac * 100}%`;
+      this.hivePct.textContent = fmtInt(hive.value);
+      if (drop) this.restartAnim(this.hiveWrap, 'hit');
+    }
     const t = Math.ceil(w.timeLeft);
     if (t !== this.lastTime) {
       this.lastTime = t;
@@ -79,6 +135,21 @@ export class Hud {
     const p = Math.round((w.queenCharge / w.level.queenCharge) * 100);
     this.queenBtn.style.setProperty('--p', String(p));
     this.queenBtn.classList.toggle('ready', w.queenReady);
+  }
+
+  private restartAnim(el: HTMLElement, cls: string): void {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  private pop(text: string): void {
+    const el = document.createElement('div');
+    el.className = 'meter-pop';
+    el.textContent = text;
+    el.style.left = `${30 + Math.random() * 40}%`;
+    this.nestWrap.appendChild(el);
+    setTimeout(() => el.remove(), 800);
   }
 
   floater(text: string, x: number, y: number, variant: '' | 'miss' = ''): void {
