@@ -172,6 +172,18 @@ export class World {
     return true;
   }
 
+  /** Wasps in timed waves that have not spawned yet (trigger / boss waves are not counted). */
+  get pendingWaveWasps(): number {
+    let n = 0;
+    for (let i = this.nextWave; i < this.timedWaves.length; i++) n += this.timedWaves[i].count;
+    return n;
+  }
+
+  /** Feedback 2026-10-15: enemy defenders shown on the HUD = wasps alive + still to come. */
+  get enemyDefenders(): number {
+    return this.wasps.count + this.pendingWaveWasps;
+  }
+
   /** Remaining traps per gate (sub gates absorb `value` bees, then break). */
   trapRemaining(i: number): number {
     return this.trapLeft[i];
