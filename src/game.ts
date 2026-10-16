@@ -608,7 +608,7 @@ export class Game {
       <div class="row">${
         offerDouble
           ? `<button class="btn primary ad" data-a="double">2X 🪙 ${r.coins * 2}</button>
-      <button class="btn" data-a="claim">No thanks</button>`
+      <button class="btn" data-a="decline">No thanks</button>`
           : '<button class="btn primary" data-a="claim">Collect</button>'
       }</div></div></div>`;
     if (offerDouble)
@@ -621,6 +621,12 @@ export class Game {
         this.claim(ok ? applyMultiplier(r, 2) : r);
       },
       claim: () => this.claim(r),
+      // Decision 43: declining the 2X offer blocks the interstitial on this transition.
+      decline: () => {
+        if (this.result.isClaimed) return;
+        this.result.markRewardedDeclined();
+        this.claim(r);
+      },
     });
   }
 
@@ -692,6 +698,8 @@ export class Game {
           gemBalance: this.save.gems,
           gemButtonState: o2.gemState,
         });
+        // Decision 43: a declined revive offer blocks the interstitial on this transition.
+        this.result.markRewardedDeclined();
         this.applyReviveStep(o2.decline(), r);
       },
       reviveGems: () => {
@@ -848,7 +856,8 @@ export class Game {
     this.stopReviveCountdown();
     this.reviveOffer = null;
     this.disableResultButtons();
-    const rewardedShown = this.result.rewardedShown;
+    // G4 + decision 43: a rewarded ad shown, or a rewarded offer declined, blocks it.
+    const rewardedShown = this.result.blocksInterstitial;
     this.save.coins += r.coins;
     const id = this.world.level.id;
     // Feedback 2026-10-15: new-best stars also pay gems; the map shows what was earned.

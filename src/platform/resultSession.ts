@@ -8,6 +8,7 @@ export class ResultSession {
   private claimed = false;
   private rewarded = false;
   private revived = false;
+  private declined = false;
 
   /** Returns true only on the first call. */
   tryClaim(): boolean {
@@ -38,6 +39,24 @@ export class ResultSession {
 
   get rewardedShown(): boolean {
     return this.rewarded;
+  }
+
+  /**
+   * STATUS decision 43 (QA BUG-05): the player pressed "No thanks" on a rewarded offer
+   * (2X, revive) on this result screen. No interstitial follows on this transition; the next
+   * one follows normal pacing on a later level end (a fresh ResultSession starts clean).
+   */
+  markRewardedDeclined(): void {
+    this.declined = true;
+  }
+
+  get rewardedDeclined(): boolean {
+    return this.declined;
+  }
+
+  /** G4 + decision 43: true when the claim on this result must not show an interstitial. */
+  get blocksInterstitial(): boolean {
+    return this.rewarded || this.declined;
   }
 
   /**

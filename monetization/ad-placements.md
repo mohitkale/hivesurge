@@ -1,11 +1,11 @@
 # Ad placements — 21 reference placements → Hive Surge decisions
 
-Existing code: rewarded `win_double`, `revive`; interstitial at transitions (3-min gap, 2 ad-free battles, none after rewarded, none if noAds). Portal caps also apply (CrazyGames: midgame ≤ 1 / 3 min, auto; Poki/Google decide timing). Caps below are ASSUMPTIONS to tune via remote config.
+Existing code: rewarded `win_double`, `revive`; interstitial at transitions (3-min gap, 2 ad-free battles, none after rewarded or after a declined rewarded offer (decision 43), none if noAds). Portal caps also apply (CrazyGames: midgame ≤ 1 / 3 min, auto; Poki/Google decide timing). Caps below are ASSUMPTIONS to tune via remote config.
 
 | #     | Placement                              | Decision           | Per-session cap                  | Daily cap | Cooldown           | Notes                                                                  |
 | ----- | -------------------------------------- | ------------------ | -------------------------------- | --------- | ------------------ | ---------------------------------------------------------------------- |
 | 1     | Rewarded win multiplier (`win_double`) | v1                 | 6                                | 20        | none (per win)     | equal-size "No thanks" (G9)                                            |
-| 2     | Rewarded pre-battle boost              | v1 (M5-5)          | 3                                | 10        | 1 per battle       | never required (G7)                                                    |
+| 2     | Rewarded pre-battle boost              | v1 (M5-5)          | 6                                | 20        | 1 per battle       | never required (G7); caps = code `AD_CAPS` (decision 43)               |
 | 3     | Rewarded revive (`revive`)             | v1                 | 3                                | 10        | 1 per battle       | hidden in FTUE                                                         |
 | 4     | Rewarded upgrade contribution          | v2                 | 2                                | 5         | 10 min             |                                                                        |
 | 5     | Rewarded chest timer skip              | v1 (M5-5)          | 3                                | 8         | 1 per chest        | never on first chest                                                   |
