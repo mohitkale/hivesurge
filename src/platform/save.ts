@@ -42,7 +42,8 @@ export interface SaveData {
   adDay: AdDayCounters;
   /** M2-21c (C2): gem revives today; the per-session count is not saved. */
   reviveGemDay: GemReviveDay;
-  settings: { muted: boolean; colorBlind: boolean; haptics: boolean };
+  /** `shake`: camera screen shake (round 3, default off). */
+  settings: { muted: boolean; colorBlind: boolean; haptics: boolean; shake: boolean };
 }
 
 export interface AdDayCounters {
@@ -79,7 +80,7 @@ export const defaultSave = (): SaveData => ({
   ftueStep2Fails: 0,
   adDay: emptyAdDay(),
   reviveGemDay: emptyGemReviveDay(),
-  settings: { muted: false, colorBlind: false, haptics: true },
+  settings: { muted: false, colorBlind: false, haptics: true, shake: false },
 });
 
 /** Parse a stored save defensively; unknown or corrupt data falls back to defaults. */
@@ -120,6 +121,7 @@ export function parseSave(raw: string | null): SaveData {
         muted: d.settings?.muted === true,
         colorBlind: d.settings?.colorBlind === true,
         haptics: d.settings?.haptics !== false,
+        shake: d.settings?.shake === true,
       },
     };
   } catch {

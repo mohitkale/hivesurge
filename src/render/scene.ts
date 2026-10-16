@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Shake } from './shake';
 import { gateLabel } from '../sim/gates';
 import { trapFill, trapLabelText } from '../ui/trapTelegraph';
 import { UnitKind, type GateDef, type LevelDef } from '../sim/types';
@@ -92,7 +93,8 @@ export class GameScene {
   private readonly s = new THREE.Vector3();
   private readonly raycaster = new THREE.Raycaster();
   private readonly ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  private shake = 0;
+  /** Round 3: capped, decaying, opt-in camera shake (see shake.ts). */
+  readonly shake = new Shake();
   private nestPulse = 0;
   /** Extra nest size for stronger levels (feedback 2026-10-15; 1 = base). */
   nestSize = 1;
@@ -577,10 +579,6 @@ export class GameScene {
     return hit ? hit.x : null;
   }
 
-  addShake(a: number): void {
-    this.shake = Math.min(0.6, this.shake + a);
-  }
-
   onGate(i: number, x: number, y: number, spawned: number): void {
     this.gates[i].pulse = 1;
     this.particles.burst(x, 1, -y, PALETTE.honey, Math.min(6, 1 + spawned), 3, 0.8);
@@ -595,11 +593,11 @@ export class GameScene {
   onNestHit(x: number, dmg: number): void {
     this.nestPulse = 1;
     this.particles.burst(x, 1, -this.level.laneLength, PALETTE.orange, Math.min(8, 2 + dmg), 5);
-    this.addShake(0.02 + Math.min(0.15, dmg * 0.01));
+    this.shake.kick('nestHit'); // no-op: continuous hits must not jitter the camera
   }
   onHiveHit(x: number): void {
     this.particles.burst(x, 0.6, 0.6, PALETTE.plum, 6, 4);
-    this.addShake(0.25);
+    this.shake.kick('hiveHit');
   }
   onFire(): void {
     this.cannonKick = 1;
@@ -612,7 +610,7 @@ export class GameScene {
       const k = NEST_SCALE * this.nestSize;
       this.nest.scale.set(k, 0.25 * k, k);
     }
-    this.addShake(0.5);
+    this.shake.kick('end');
   }
 
   render(world: World, dt: number): void {
@@ -693,10 +691,10 @@ export class GameScene {
     this.particles.update(dt);
 
     // Camera with decaying shake
-    this.shake = Math.max(0, this.shake - dt * 1.8);
+    const off = this.shake.update(dt);
     frameCamera(this.camera, L.laneLength);
-    this.camera.position.x += (Math.random() - 0.5) * this.shake;
-    this.camera.position.y += (Math.random() - 0.5) * this.shake;
+    this.camera.position.x += off.x;
+    this.camera.position.y += off.y;
     this.renderer.render(this.scene, this.camera);
   }
 

@@ -27,7 +27,7 @@ export const labelScale = (aspect: number): number =>
 
 /** Places the camera exactly as GameScene does (without shake). */
 /** Nest model scale (feedback 2026-10-15: the enemy hive was hard to see). */
-export const NEST_SCALE = 1.5;
+export const NEST_SCALE = 1.9;
 
 export function frameCamera(cam: THREE.PerspectiveCamera, laneLength: number): void {
   const f = cameraFraming(cam.aspect, laneLength);
@@ -48,9 +48,13 @@ export function cameraFraming(
   laneLength: number,
 ): { fov: number; height: number; back: number; lookAt: number } {
   const portrait = aspect < 1;
+  // Round 3 (2026-10-16, Mohit: "zoom in much closer, more top-down"): narrower FOV, steeper
+  // tilt (~41 deg vs ~32 deg) and a frame that uses the full screen height, nest at the top edge
+  // and cannon at the bottom edge, so the whole lane is still in view but much larger.
+  const k = Math.max(0.9, laneLength / 40);
   return portrait
-    ? { fov: 56, height: 20, back: 12.5, lookAt: laneLength * 0.5 }
-    : { fov: 44, height: 16.5, back: 10.5, lookAt: laneLength * 0.5 };
+    ? { fov: 50, height: 25 * k, back: 14 * k, lookAt: laneLength * 0.43 }
+    : { fov: 42, height: 22 * k, back: 12 * k, lookAt: laneLength * 0.45 };
 }
 
 /** On-screen plate height (CSS px) of a gate label at lane position (x, y). */

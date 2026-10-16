@@ -63,6 +63,10 @@ import { Input } from './ui/input';
 import { starRowHtml } from './ui/stars';
 import { defeatHeadline } from './ui/defeatCopy';
 import { PerfOverlay } from './ui/perfOverlay';
+import { shakeEnabled } from './render/shake';
+
+const prefersReducedMotion = (): boolean =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 import { PerfStats, perfEnabledFromUrl, spawnStress, stressCountFromUrl } from './ui/perfStats';
 import { gemConfirmHtml, reviveRowHtml } from './ui/reviveOffer';
 
@@ -231,6 +235,7 @@ export class Game {
     if (this.world.level.bossPhases) sc.nestSize = Math.max(sc.nestSize, 1.25);
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
+    sc.shake.enabled = shakeEnabled(this.save.settings.shake, prefersReducedMotion());
     sc.setPixelRatio(this.quality.pixelRatio);
     return sc;
   }
@@ -315,7 +320,9 @@ export class Game {
     this.overlay.innerHTML = `
       <div class="modal"><div class="card"><h2>Settings</h2>
         <div class="row"><button class="btn" data-a="cb">Colour-blind: ${this.save.settings.colorBlind ? 'on' : 'off'}</button>
-        <button class="btn" data-a="hap">Haptics: ${this.save.settings.haptics ? 'on' : 'off'}</button></div>
+        <button class="btn" data-a="hap">Haptics: ${this.save.settings.haptics ? 'on' : 'off'}</button>
+        <button class="btn" data-a="shake">Screen shake: ${this.save.settings.shake ? 'low' : 'off'}</button></div>
+        ${prefersReducedMotion() ? '<p class="small">Reduced motion is on: no screen shake.</p>' : ''}
         <p class="small">Mouse/touch: hold &amp; drag · Keys: ←/→ or A/D, Space fires, Q = Queen</p>
         <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
         <div class="row"><button class="btn primary" data-a="back">Back</button></div>
@@ -326,6 +333,12 @@ export class Game {
         this.save.settings.colorBlind = !this.save.settings.colorBlind;
         applyTheme(document.documentElement, this.save.settings.colorBlind);
         this.rebuildScene();
+      },
+      shake: () => {
+        this.save.settings.shake = !this.save.settings.shake;
+        this.scene.shake.enabled = shakeEnabled(this.save.settings.shake, prefersReducedMotion());
+        this.persist();
+        this.showSettings();
       },
       hap: () => {
         this.save.settings.haptics = !this.save.settings.haptics;
