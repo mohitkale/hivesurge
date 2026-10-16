@@ -349,6 +349,8 @@ export class GameScene {
     swap(this.wasps.hornet, 'unit-hornet', 0.85);
     const barrel = this.cannon.getObjectByName('barrel') as THREE.Mesh | undefined;
     if (barrel) swap(barrel, 'prop-cannon', 1);
+    const twin = this.cannon.getObjectByName('barrel-2') as THREE.Mesh | undefined;
+    if (twin && barrel) twin.geometry = barrel.geometry; // 2x Cannon: same model
   }
 
   /** GLB model if loaded, else the procedural fallback (M3-5). */
@@ -360,6 +362,34 @@ export class GameScene {
     const g = scaledModel(this.models, name, scale);
     if (g) this.glbUsed.push(name);
     return g ?? procedural(scale);
+  }
+
+  /**
+   * Round 3: the 2x Cannon boost draws TWO barrels side by side (at the sim's +-dx spawn
+   * points), both kicking on each shot. Off: the single centred barrel.
+   */
+  setTwinBarrels(on: boolean, dx: number): void {
+    const barrel = this.cannon.getObjectByName('barrel') as THREE.Mesh | undefined;
+    if (!barrel) return;
+    const old = this.cannon.getObjectByName('barrel-2');
+    if (old) this.cannon.remove(old);
+    if (!on) {
+      barrel.position.x = 0;
+      barrel.scale.setScalar(1);
+      return;
+    }
+    const twin = barrel.clone();
+    twin.name = 'barrel-2';
+    barrel.position.x = -dx;
+    twin.position.x = dx;
+    barrel.scale.setScalar(0.8);
+    twin.scale.setScalar(0.8);
+    this.cannon.add(twin);
+  }
+
+  /** Barrels currently drawn (1, or 2 with the 2x Cannon boost). */
+  get barrelCount(): number {
+    return this.cannon.children.filter((c) => c.name.startsWith('barrel')).length;
   }
 
   private buildCannon(): void {

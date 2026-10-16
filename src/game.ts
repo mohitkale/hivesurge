@@ -56,7 +56,7 @@ import type { LevelDef } from './sim/types';
 import { applyMultiplier, computeRewards, type Rewards } from './sim/rewards';
 import { SIM_DT, World } from './sim/world';
 import { Hud } from './ui/hud';
-import { BOOSTS, boostById, type BattleBoosts, type BoostId } from './sim/boosts';
+import { BOOSTS, boostById, DOUBLE_CANNON_DX, type BattleBoosts, type BoostId } from './sim/boosts';
 import { mapHtml, mapNodes, starGain, totalStars, type EarnedRewards } from './ui/homeMap';
 import { METER_INTRO_S } from './ui/meters';
 import { Input } from './ui/input';
@@ -235,6 +235,7 @@ export class Game {
     if (this.world.level.bossPhases) sc.nestSize = Math.max(sc.nestSize, 1.25);
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
+    sc.setTwinBarrels(!!this.world.boosts.doubleCannon, DOUBLE_CANNON_DX);
     sc.shake.enabled = shakeEnabled(this.save.settings.shake, prefersReducedMotion());
     sc.setPixelRatio(this.quality.pixelRatio);
     return sc;
@@ -486,7 +487,9 @@ export class Game {
       this.hud.showLevel(no, this.world.level.name, world, !!this.world.level.bossPhases);
       const active = Object.keys(boosts).map((id) => boostById(id));
       if (active.length)
-        this.hud.showBoosts(active.map((b) => `${b!.icon} ${b!.title}`).join(' · '));
+        this.hud.showBoosts(
+          `BOOST · ${active.map((b) => `${b!.icon} ${b!.title}`).join(' · ')} · whole level`,
+        );
     }
     // FTUE shows a single prompt: hide the generic launch hint from the first frame.
     if (this.ftue || this.save.holdUsed) this.hud.hideHint();

@@ -91,7 +91,9 @@ export class Hud {
   /** Active pre-level boosts, shown under the enemy meter. */
   showBoosts(text: string): void {
     const el = document.createElement('div');
+    // Round 3: an always-on badge for the whole battle (boosts no longer expire).
     el.className = 'boost-chip';
+    el.setAttribute('role', 'status');
     el.textContent = text;
     this.root.appendChild(el);
   }
