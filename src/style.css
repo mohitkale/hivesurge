@@ -4,6 +4,11 @@
   --plum: #6b2d8c;
   --orange: #ff8a3d;
   --ink: #2a1838;
+  /* HUD text backplate (tests/hudContrast.test.ts: >= 4.5:1 for white text on any backdrop). */
+  --hud-plate: rgba(42, 24, 56, 0.85);
+  --hud-outline:
+    -1px -1px 0 var(--ink), 1px -1px 0 var(--ink), -1px 1px 0 var(--ink), 1px 1px 0 var(--ink),
+    0 2px 0 var(--ink);
   font-family:
     system-ui,
     -apple-system,
@@ -87,11 +92,16 @@ body {
   font-size: 13px;
   letter-spacing: 0.04em;
   color: #fff;
-  text-shadow: 0 2px 0 var(--ink);
+  text-shadow: var(--hud-outline);
   white-space: nowrap;
+  /* QA BUG-01 (decision 43): ink backplate + dark outline keeps WCAG AA on any sky/lane. */
+  background: var(--hud-plate);
+  border-radius: 10px;
+  padding: 2px 8px;
 }
 .meter-head .meter-label {
-  flex: 1;
+  flex: 0 1 auto;
+  margin-right: auto;
 }
 .meter-def {
   background: var(--plum);
@@ -115,7 +125,8 @@ body {
   color: var(--plum);
 }
 .meter.mine .meter-num {
-  color: #b86e00;
+  /* QA BUG-01: was #b86e00 (3.99:1 on white); AA needs 4.5:1 for 18px text. */
+  color: #8a4f00;
 }
 .meter-tip {
   display: none;
@@ -284,12 +295,21 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 30%;
+  /* QA BUG-02: was bottom 30%, over the trap gate labels on generated levels (L6+). Now below
+     the gate rows and above the Queen button, on its own backplate. */
+  bottom: calc(132px + env(safe-area-inset-bottom));
+  width: fit-content;
+  max-width: 92%;
+  margin: 0 auto;
   text-align: center;
   color: #fff;
   font-weight: 900;
-  font-size: 20px;
-  text-shadow: 0 2px 0 var(--ink);
+  font-size: 18px;
+  text-shadow: var(--hud-outline);
+  background: var(--hud-plate);
+  border-radius: 12px;
+  padding: 4px 12px;
+  pointer-events: none;
   animation: float 1.2s infinite alternate;
 }
 @keyframes float {
@@ -482,7 +502,14 @@ body {
   color: #fff;
   font-weight: 900;
   font-size: 24px;
-  text-shadow: 0 2px 0 var(--ink);
+  text-shadow: var(--hud-outline);
+  width: fit-content;
+  max-width: 92%;
+  margin: 0 auto;
+  /* QA BUG-01 (decision 43): ink backplate + dark outline keeps WCAG AA on any sky/lane. */
+  background: var(--hud-plate);
+  border-radius: 14px;
+  padding: 6px 14px;
   opacity: 0;
   transition: opacity 150ms;
   pointer-events: none;
@@ -582,7 +609,11 @@ body {
   flex-direction: column;
   align-items: center;
   color: #fff;
-  text-shadow: 0 3px 0 var(--ink);
+  text-shadow: var(--hud-outline);
+  /* QA BUG-01 (decision 43): ink backplate + dark outline keeps WCAG AA on any sky/lane. */
+  background: var(--hud-plate);
+  border-radius: 18px;
+  padding: 8px 22px;
   opacity: 0;
   transition:
     opacity 0.3s,
@@ -607,12 +638,15 @@ body {
 
 /* Feedback 2026-10-15: home / map screen. */
 .modal.home {
+  overflow: hidden;
   background: linear-gradient(180deg, rgba(255, 200, 61, 0.35), rgba(42, 24, 56, 0.7));
 }
 .home-card {
   width: min(94%, 380px);
   max-height: 100%;
-  overflow: auto;
+  /* QA BUG-03: the zig-zag map nodes overflowed sideways at 390 px (horizontal scrollbar). */
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
   color: #fff;
   text-align: center;
@@ -667,8 +701,9 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  transform: translateX(calc(var(--o) * 34px));
+  transform: translateX(calc(var(--o) * min(34px, 6vw)));
   justify-content: center;
+  max-width: 100%;
 }
 .map-dot {
   width: 46px;
@@ -706,7 +741,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  min-width: 120px;
+  min-width: 0;
+  width: 120px;
   text-shadow: 0 2px 0 var(--ink);
 }
 .map-meta i {
