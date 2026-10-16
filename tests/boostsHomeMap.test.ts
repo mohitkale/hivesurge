@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { getLevel } from '../src/levels';
 import { World } from '../src/sim/world';
-import { BOOSTS, MEGA_SWARM_MUL, MEGA_SWARM_S, type BattleBoosts } from '../src/sim/boosts';
+import {
+  BOOSTS,
+  boostEnemyScale,
+  MEGA_SWARM_INTERVAL_MUL,
+  MEGA_SWARM_MUL,
+  type BattleBoosts,
+} from '../src/sim/boosts';
 import { campaignLevel } from '../src/levels/campaign';
 import { mapHtml, mapNodes, starGain, totalStars } from '../src/ui/homeMap';
 import { AdPacer } from '../src/platform/adPacer';
 import { emptyAdDay } from '../src/platform/save';
-import { aimBot, run } from './bots';
+import { aimBot, centreBot, run } from './bots';
 
 const fire = { aimX: 0, firing: true, queen: false };
 
@@ -20,6 +26,27 @@ describe('feedback 2026-10-15: pre-level boosts (sim)', () => {
   it('offers exactly the four requested boosts', () => {
     expect(BOOSTS.map((b) => b.id)).toEqual(['doubleCannon', 'fastFire', 'fastQueen', 'megaSwarm']);
   });
+
+  it('round 3: boosted battles face a scaled nest, unboosted ones are unchanged', () => {
+    const L = getLevel('clover-run');
+    expect(new World(L, {}).nestHp).toBe(L.nestHp);
+    for (const b of BOOSTS) {
+      const w = new World(L, { [b.id]: true });
+      const k = boostEnemyScale({ [b.id]: true });
+      expect(k.nestHp).toBeGreaterThan(1);
+      expect(w.nestHp).toBe(Math.round(L.nestHp * k.nestHp));
+      expect(w.level.nestHp).toBe(w.nestHp); // HUD/scene read the scaled max
+    }
+  });
+
+  it('round 3: a whole-level boost is not a free win (no-aim centre bot still loses L8)', () => {
+    const L = campaignLevel(7);
+    for (const b of ['megaSwarm', 'fastFire'] as const) {
+      const w = new World(L, { [b]: true });
+      while (w.outcome === 'playing') w.step(centreBot(w));
+      expect(w.outcome, b).toBe('lost');
+    }
+  }, 60000);
 
   it('2x Cannon fires two bees per shot', () => {
     const a = firedAfter({}, 1).stats.fired;
@@ -43,15 +70,19 @@ describe('feedback 2026-10-15: pre-level boosts (sim)', () => {
     expect(firedAfter({}, L.queenCharge / 2).queenReady).toBe(false);
   });
 
-  it('10x Bees fires 10 bees per shot for the first MEGA_SWARM_S seconds of firing only', () => {
-    const a = firedAfter({}, 1).stats.fired;
-    const b = firedAfter({ megaSwarm: true }, 1).stats.fired;
-    expect(b).toBe(a * MEGA_SWARM_MUL);
-    const w = firedAfter({ megaSwarm: true }, MEGA_SWARM_S + 0.1);
-    expect(w.megaSwarmLeft).toBe(0);
-    const before = w.stats.fired;
-    for (let i = 0; i < 60; i++) w.step(fire);
-    expect(w.stats.fired - before).toBeLessThanOrEqual(a + 1);
+  it('round 3: 10x Bees lasts the whole level at 10 bees per (5x slower) shot', () => {
+    const L = getLevel('clover-run');
+    const w = new World(L, { megaSwarm: true });
+    expect(w.fireInterval).toBeCloseTo(L.fireInterval * MEGA_SWARM_INTERVAL_MUL);
+    let prev = 0;
+    for (let s = 1; s <= 30; s++) {
+      for (let i = 0; i < 60; i++) w.step(fire);
+      if (w.outcome !== 'playing') break;
+      if (s > 2 && s % 10 === 0) expect(w.stats.fired - prev).toBeGreaterThan(0);
+      prev = w.stats.fired;
+    }
+    // still 10 per shot at the end: fired count is a multiple of 10
+    expect(w.stats.fired % MEGA_SWARM_MUL).toBe(0);
   });
 
   it('no boost = same battle as before (deterministic)', () => {

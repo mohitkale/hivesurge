@@ -20,7 +20,13 @@ const ENEMY_UNIT: Record<EnemyKind, UnitKind> = {
   matriarch: UnitKind.Matriarch,
 };
 import { UnitPool } from './units';
-import { DOUBLE_CANNON_DX, MEGA_SWARM_MUL, MEGA_SWARM_S, type BattleBoosts } from './boosts';
+import {
+  DOUBLE_CANNON_DX,
+  MEGA_SWARM_INTERVAL_MUL,
+  MEGA_SWARM_MUL,
+  boostEnemyScale,
+  type BattleBoosts,
+} from './boosts';
 
 export const SIM_DT = 1 / 60;
 export const BEE_CAP = 600;
@@ -84,14 +90,18 @@ export class World {
 
   /** Pre-level boosts (feedback 2026-10-15); empty = none. */
   readonly boosts: BattleBoosts;
-  /** Firing seconds of 10x Bees left. */
-  megaSwarmLeft = 0;
 
   constructor(level: LevelDef, boosts: BattleBoosts = {}) {
     if (level.gates.length > 32) throw new Error('max 32 gates per level');
-    this.level = level;
     this.boosts = { ...boosts };
-    if (boosts.megaSwarm) this.megaSwarmLeft = MEGA_SWARM_S;
+    const k = boostEnemyScale(this.boosts);
+    if (k.nestHp !== 1 || k.waves !== 1)
+      level = {
+        ...level,
+        nestHp: Math.round(level.nestHp * k.nestHp),
+        waves: level.waves.map((w) => ({ ...w, count: Math.round(w.count * k.waves) })),
+      };
+    this.level = level;
     this.nestHp = level.nestHp;
     this.hiveHp = level.hiveHp;
     this.rng = createRng(level.seed);
@@ -154,7 +164,11 @@ export class World {
 
   /** Seconds between shots (halved by the 2x Fire speed boost). */
   get fireInterval(): number {
-    return this.level.fireInterval * (this.boosts.fastFire ? 0.5 : 1);
+    return (
+      this.level.fireInterval *
+      (this.boosts.fastFire ? 0.5 : 1) *
+      (this.boosts.megaSwarm ? MEGA_SWARM_INTERVAL_MUL : 1)
+    );
   }
 
   get queenReady(): boolean {
@@ -233,9 +247,8 @@ export class World {
     if (input.firing) {
       this.fireTimer -= dt;
       this.queenCharge = Math.min(this.queenChargeMax, this.queenCharge + dt);
-      const mega = this.megaSwarmLeft > 0;
-      if (mega) this.megaSwarmLeft = Math.max(0, this.megaSwarmLeft - dt);
-      const perBarrel = mega ? MEGA_SWARM_MUL : 1;
+      // Round 3: boosts hold for the whole level (no timer).
+      const perBarrel = this.boosts.megaSwarm ? MEGA_SWARM_MUL : 1;
       const barrels = this.boosts.doubleCannon ? [-DOUBLE_CANNON_DX, DOUBLE_CANNON_DX] : [0];
       while (this.fireTimer <= 0) {
         this.fireTimer += this.fireInterval;
