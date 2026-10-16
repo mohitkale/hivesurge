@@ -63,6 +63,11 @@ import { Input } from './ui/input';
 import { starRowHtml } from './ui/stars';
 import { defeatHeadline } from './ui/defeatCopy';
 import { PerfOverlay } from './ui/perfOverlay';
+import { collection, dailyChallenges, homeHtml, mockLeaderboard } from './ui/home';
+
+/** Local calendar day YYYY-MM-DD (daily challenge rotation). */
+const localDay = (d = new Date()): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 import { shakeEnabled } from './render/shake';
 
 const prefersReducedMotion = (): boolean =>
@@ -184,9 +189,8 @@ export class Game {
       if (document.hidden) this.input.firing = false;
     });
     this.resize();
-    // First launch: no menu, straight into the FTUE battle.
-    if (shouldRunFtue(this.save.ftueDone, this.currentLevel().id)) this.startBattle();
-    else this.showTitle();
+    // Round 3 (Mohit): the home screen ALWAYS comes first, first launch / FTUE included.
+    this.showTitle();
     this.rafId = requestAnimationFrame(this.frame);
     // Keeps the sim (and input) moving even when frames take longer than a sim step.
     this.stopSimTimer = startSimTimer(this.pumpSim, SIM_DT);
@@ -294,10 +298,47 @@ export class Game {
   /** Feedback 2026-10-15: what the last battle paid (shown once on the home map). */
   private lastEarned: EarnedRewards | null = null;
 
-  /** Home / map screen (feedback 2026-10-15): progress path, rewards earned, Play. */
+  /**
+   * Round 3 home screen (Mohit playtest 2026-10-16): logo, progress, mode tiles, collection,
+   * daily challenges and a mock leaderboard. Shown on EVERY launch (FTUE included) and after
+   * every level; Story opens the level map, PLAY goes straight to the boost pick / battle.
+   */
   private showTitle(): void {
     this.phase = 'title';
     this.hudRoot.innerHTML = '';
+    const no = this.levelNo(this.currentLevel());
+    const stars = totalStars(this.save.bestStars);
+    const known = SKINS.map((s) => s.id);
+    const sources: Record<string, string> = {};
+    for (const sku of Object.values(CATALOG))
+      if (sku.grants.skin) sources[sku.grants.skin] = sku.title;
+    const bees = pickerEntries(this.save, known, sources).map((e) => ({
+      ...e,
+      name: skinById(e.id)?.name ?? 'Classic',
+    }));
+    this.overlay.innerHTML = homeHtml({
+      levelNo: no,
+      stars,
+      coins: this.save.coins,
+      gems: this.save.gems,
+      earned: this.lastEarned,
+      collection: collection(no, bees),
+      challenges: dailyChallenges(localDay(), this.save.battlesCompleted),
+      ranks: mockLeaderboard(stars, no),
+    });
+    this.lastEarned = null;
+    this.bind({
+      play: () => this.showBoosts(),
+      'mode:story': () => this.showMap(),
+      shop: () => this.showShop(),
+      skin: () => this.showSkins(),
+      settings: () => this.showSettings(),
+    });
+  }
+
+  /** Story mode level map (feedback 2026-10-15): progress path, Play, back to Home. */
+  private showMap(): void {
+    this.phase = 'title';
     const idx = campaignIndexOf(this.currentLevel().id);
     const nodes = mapNodes(idx, this.save.bestStars);
     this.overlay.innerHTML = mapHtml({
@@ -305,12 +346,12 @@ export class Game {
       coins: this.save.coins,
       gems: this.save.gems,
       stars: totalStars(this.save.bestStars),
-      earned: this.lastEarned,
+      earned: null,
       current: nodes.find((n) => n.state === 'current')!,
     });
-    this.lastEarned = null;
     this.bind({
       play: () => this.showBoosts(),
+      home: () => this.showTitle(),
       shop: () => this.showShop(),
       skin: () => this.showSkins(),
       settings: () => this.showSettings(),
@@ -914,11 +955,9 @@ export class Game {
         this.analytics.track('ad_failed', { placement: 'level_transition', reason: 'no_fill' });
     }
     this.persist();
-    if (replay) this.startBattle();
-    else {
-      this.hudRoot.innerHTML = '';
-      this.showTitle();
-    }
+    // Round 3 (Mohit): Home after EVERY level, retries included; PLAY there replays it.
+    this.hudRoot.innerHTML = '';
+    this.showTitle();
   }
 
   /** Rewarded ad via the platform; only real impressions count toward caps (G5). */
