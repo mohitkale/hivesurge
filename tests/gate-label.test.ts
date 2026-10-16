@@ -33,10 +33,11 @@ describe('gate label legibility at 360 px', () => {
       }
     });
   }
+  // Feedback 2026-10-15 tighter camera: was 18.5 px in the browser, now ~20.6 px (bigger).
   it('matches the in-browser measurement (clover-run, 360x780)', () => {
     const L = LEVELS.find((l) => l.laneLength === 40 && l.gates.some((g) => g.y === 25))!;
     const cam = new THREE.PerspectiveCamera(48, 360 / 780, 0.1, 200);
     frameCamera(cam, L.laneLength);
-    expect(labelPlatePx(cam, 780, 2.7, 25, L.laneLength) * GLYPH_SHARE).toBeCloseTo(18.5, 0);
+    expect(labelPlatePx(cam, 780, 2.7, 25, L.laneLength) * GLYPH_SHARE).toBeCloseTo(20.6, 0);
   });
 });

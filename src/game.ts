@@ -31,10 +31,16 @@ import { FloaterLimiter } from './ui/floaterLimiter';
 import { applyTheme, palette } from './ui/theme';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
-import { biomeFor } from './art/biomes';
+import { biomeForLevel, bandTheme } from './art/biomes';
 import { SKINS, skinById } from './art/skins';
 import { equipSkin, equippedSkinId, pickerEntries } from './platform/skinSelect';
-import { nextLevelIndex } from './levels/progress';
+import {
+  campaignIndexOf,
+  campaignLevel,
+  campaignNextIndex,
+  levelStrength,
+  worldBand,
+} from './levels/campaign';
 import {
   debugParamsFromUrl,
   NO_DEBUG,
@@ -50,8 +56,11 @@ import type { LevelDef } from './sim/types';
 import { applyMultiplier, computeRewards, type Rewards } from './sim/rewards';
 import { SIM_DT, World } from './sim/world';
 import { Hud } from './ui/hud';
+import { BOOSTS, boostById, type BattleBoosts, type BoostId } from './sim/boosts';
+import { mapHtml, mapNodes, starGain, totalStars, type EarnedRewards } from './ui/homeMap';
+import { METER_INTRO_S } from './ui/meters';
 import { Input } from './ui/input';
-import { starRowHtml, starsLabel } from './ui/stars';
+import { starRowHtml } from './ui/stars';
 import { defeatHeadline } from './ui/defeatCopy';
 import { PerfOverlay } from './ui/perfOverlay';
 import { PerfStats, perfEnabledFromUrl, spawnStress, stressCountFromUrl } from './ui/perfStats';
@@ -208,7 +217,7 @@ export class Game {
       this.world.level,
       palette(this.save.settings.colorBlind),
       this.models,
-      biomeFor(this.world.level.id, location.search),
+      biomeForLevel(this.levelNo(this.world.level), this.world.level.id, location.search),
       skinById(this.equippedSkin()) ?? null,
       {
         // MSAA only for the high tier on a hardware renderer; fixed per GL context.
@@ -216,6 +225,10 @@ export class Game {
         settings: this.quality.settings,
       },
     );
+    // Feedback 2026-10-15: stronger nests (later bands, boss) are drawn bigger.
+    const no = this.levelNo(this.world.level);
+    sc.nestSize = Math.min(1.35, levelStrength(no) * (1 + 0.05 * Math.min(4, worldBand(no))));
+    if (this.world.level.bossPhases) sc.nestSize = Math.max(sc.nestSize, 1.25);
     // Dev-only hook for art/QA measurement scripts (stripped from production builds).
     if (import.meta.env.DEV) (window as unknown as { __hsScene: GameScene }).__hsScene = sc;
     sc.setPixelRatio(this.quality.pixelRatio);
@@ -261,47 +274,109 @@ export class Game {
   }
 
   private currentLevel(): LevelDef {
-    const dbg = this.debug.level && LEVELS.find((l) => l.id === this.debug.level);
-    if (dbg) return dbg;
-    return LEVELS[nextLevelIndex(LEVELS, this.save.bestStars)];
+    const dbgIndex = this.debug.level ? campaignIndexOf(this.debug.level) : -1;
+    if (dbgIndex >= 0) return campaignLevel(dbgIndex);
+    return campaignLevel(campaignNextIndex(this.save.bestStars));
+  }
+
+  /** 1-based campaign level number (authored + generated levels). */
+  private levelNo(level: LevelDef): number {
+    return campaignIndexOf(level.id) + 1;
   }
 
   // ---------- screens ----------
+  /** Feedback 2026-10-15: what the last battle paid (shown once on the home map). */
+  private lastEarned: EarnedRewards | null = null;
+
+  /** Home / map screen (feedback 2026-10-15): progress path, rewards earned, Play. */
   private showTitle(): void {
     this.phase = 'title';
-    const level = this.currentLevel();
-    const levelNo = LEVELS.indexOf(level) + 1;
-    const best = this.save.bestStars[level.id] ?? 0;
-    // PR 069 (QA round 2): always shown, so players can see what the Starter Pack unlocks.
-    const skinRow = `<div class="row"><button class="btn" data-a="skin">Bee skin: ${skinById(this.equippedSkin())?.name ?? 'Classic'}</button></div>`;
+    this.hudRoot.innerHTML = '';
+    const idx = campaignIndexOf(this.currentLevel().id);
+    const nodes = mapNodes(idx, this.save.bestStars);
+    this.overlay.innerHTML = mapHtml({
+      nodes,
+      coins: this.save.coins,
+      gems: this.save.gems,
+      stars: totalStars(this.save.bestStars),
+      earned: this.lastEarned,
+      current: nodes.find((n) => n.state === 'current')!,
+    });
+    this.lastEarned = null;
+    this.bind({
+      play: () => this.showBoosts(),
+      shop: () => this.showShop(),
+      skin: () => this.showSkins(),
+      settings: () => this.showSettings(),
+    });
+  }
+
+  private showSettings(): void {
     this.overlay.innerHTML = `
-      <div class="modal"><div class="card">
-        <div class="title-logo">HIVE<br/>SURGE</div>
-        <p>Aim the honey cannon. Fly bees through flower gates to multiply the swarm. Break the wasp nest!</p>
-        <p>Level ${levelNo}/${LEVELS.length} · <b>${level.name}</b> · best <span role="img" aria-label="${starsLabel(best)}">${'★'.repeat(best)}${'☆'.repeat(3 - best)}</span></p>
-        <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
-        <div class="row"><button class="btn primary" data-a="play">PLAY</button></div>
-        <div class="row"><button class="btn" data-a="shop">Shop (sandbox)</button></div>
-        ${skinRow}
+      <div class="modal"><div class="card"><h2>Settings</h2>
         <div class="row"><button class="btn" data-a="cb">Colour-blind: ${this.save.settings.colorBlind ? 'on' : 'off'}</button>
         <button class="btn" data-a="hap">Haptics: ${this.save.settings.haptics ? 'on' : 'off'}</button></div>
         <p class="small">Mouse/touch: hold &amp; drag · Keys: ←/→ or A/D, Space fires, Q = Queen</p>
+        <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
+        <div class="row"><button class="btn primary" data-a="back">Back</button></div>
       </div></div>`;
     this.bind({
-      play: () => this.startBattle(),
-      shop: () => this.showShop(),
+      back: () => this.showTitle(),
       cb: () => {
         this.save.settings.colorBlind = !this.save.settings.colorBlind;
         applyTheme(document.documentElement, this.save.settings.colorBlind);
         this.rebuildScene();
       },
-      skin: () => this.showSkins(),
       hap: () => {
         this.save.settings.haptics = !this.save.settings.haptics;
         this.persist();
-        this.showTitle();
+        this.showSettings();
       },
     });
+  }
+
+  /**
+   * Feedback 2026-10-15: pre-level boost screen. Each boost costs one mock rewarded ad through
+   * the platform interface (placement `boost`); one boost per battle. Never offered where
+   * rewarded ads are not allowed (G2: FTUE) or over the caps (G5); then Play starts directly.
+   */
+  private showBoosts(note = '', picked: BoostId | null = null): void {
+    if (!canOfferRewarded(this.save) || !this.pacer.canRewarded('boost')) {
+      this.startBattle();
+      return;
+    }
+    const no = this.levelNo(this.currentLevel());
+    const cards = BOOSTS.map(
+      (
+        b,
+      ) => `<button class="boost${picked === b.id ? ' on' : ''}" data-a="boost:${b.id}" ${picked ? 'disabled' : ''}>
+        <span class="bi">${b.icon}</span><b>${b.title}</b><small>${b.desc}</small>
+        <span class="watch">${picked === b.id ? '✓ Ready' : '▶ Watch ad'}</span></button>`,
+    ).join('');
+    this.overlay.innerHTML = `<div class="modal"><div class="card">
+      <h2>Level ${no} boosts</h2><p class="small">Watch a short ad to start with one boost.</p>
+      <div class="boost-grid">${cards}</div><p class="boost-note" role="status">${note}</p>
+      <div class="row"><button class="btn primary" data-a="go">${picked ? 'Start with boost' : 'Start'}</button>
+      <button class="btn" data-a="back">Back</button></div></div></div>`;
+    const h: Record<string, () => void> = {
+      go: () => this.startBattle(picked ? { [picked]: true } : {}),
+      back: () => this.showTitle(),
+    };
+    for (const b of BOOSTS)
+      h[`boost:${b.id}`] = async () => {
+        if (picked) return;
+        this.disableResultButtons();
+        this.analytics.track('ad_offered', { placement: 'boost', type: 'rewarded', boost: b.id });
+        const res = await this.watchRewarded('boost');
+        if (res === 'completed') {
+          this.analytics.track('boost_granted', { boost: b.id, level: this.currentLevel().id });
+          this.showBoosts(`${b.icon} ${b.title} unlocked!`, b.id);
+        } else
+          this.showBoosts(
+            res === 'closed' ? 'Ad closed early: no boost.' : 'No ad available right now.',
+          );
+      };
+    this.bind(h);
   }
 
   /** Skin picker (PR 069): owned skins, tap to equip (saved; the battle scene is rebuilt). */
@@ -376,10 +451,10 @@ export class Game {
     this.bind(handlers);
   }
 
-  private startBattle(): void {
+  private startBattle(boosts: BattleBoosts = {}): void {
     this.sfx.unlock();
     this.scene.dispose();
-    this.world = new World(this.currentLevel());
+    this.world = new World(this.currentLevel(), boosts);
     this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id)
       ? ftueForLevel(this.world.level.id, this.save.ftueStep, this.save.ftueStep2Fails + 1)
       : null;
@@ -392,6 +467,14 @@ export class Game {
     this.overlay.innerHTML = '';
     this.analytics.track('level_start', { level: this.world.level.id });
     this.hud = new Hud(this.hudRoot);
+    {
+      const no = this.levelNo(this.world.level);
+      const world = bandTheme(worldBand(no))?.name ?? 'Meadow';
+      this.hud.showLevel(no, this.world.level.name, world, !!this.world.level.bossPhases);
+      const active = Object.keys(boosts).map((id) => boostById(id));
+      if (active.length)
+        this.hud.showBoosts(active.map((b) => `${b!.icon} ${b!.title}`).join(' · '));
+    }
     // FTUE shows a single prompt: hide the generic launch hint from the first frame.
     if (this.ftue || this.save.holdUsed) this.hud.hideHint();
     this.hud.queenBtn.addEventListener('pointerdown', (e) => {
@@ -768,6 +851,16 @@ export class Game {
     const rewardedShown = this.result.rewardedShown;
     this.save.coins += r.coins;
     const id = this.world.level.id;
+    // Feedback 2026-10-15: new-best stars also pay gems; the map shows what was earned.
+    const gain = starGain(this.save.bestStars[id] ?? 0, r.stars);
+    this.save.gems += gain.gems;
+    this.lastEarned = {
+      levelNo: this.levelNo(this.world.level),
+      won: this.world.outcome === 'won',
+      coins: r.coins,
+      stars: r.stars,
+      ...gain,
+    };
     this.save.bestStars[id] = Math.max(this.save.bestStars[id] ?? 0, r.stars);
     this.save.battlesCompleted++;
     // FTUE is done after its first win (replays of level 1 run without prompts).
@@ -953,6 +1046,7 @@ export class Game {
           break;
         case 'nestHit':
           nestDmg += e.damage;
+          this.hud?.nestDamaged(e.damage);
           this.scene.onNestHit(e.x, e.damage);
           break;
         case 'hiveHit':
@@ -974,6 +1068,8 @@ export class Game {
         this.haptic(15);
       }
     }
+    // Feedback 2026-10-15: level 1 introduces the two energy meters with a short pulse.
+    this.hud?.setMeterIntro(LEVELS.indexOf(w.level) === 0 && w.time < METER_INTRO_S);
     this.hud?.update(w);
     if (w.outcome !== 'playing') this.endBattle();
   }
