@@ -27,7 +27,10 @@ describe('round 3: no horizontal overflow on overlay screens', () => {
     expect(block('.row')).toMatch(/flex-wrap:\s*wrap/);
   });
   it('juicy buttons calm down under prefers-reduced-motion', () => {
-    const rm = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
+    const rm = css
+      .split('@media (prefers-reduced-motion: reduce)')
+      .slice(1)
+      .find((b) => b.includes('.btn.primary'))!;
     expect(rm).toMatch(/\.btn\.primary/);
     expect(rm).toMatch(/animation:\s*none/);
   });

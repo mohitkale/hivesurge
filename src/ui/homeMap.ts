@@ -101,6 +101,6 @@ export function mapHtml(o: {
     ${earned}
     <ol class="map-path">${path}</ol>
     <div class="row"><button class="btn primary play-big" data-a="play">▶ PLAY · LEVEL ${o.current.no}</button></div>
-    <div class="row"><button class="btn" data-a="shop">Shop</button><button class="btn" data-a="skin">Skins</button><button class="btn" data-a="settings">Settings</button></div>
+    <div class="row"><button class="btn" data-a="home">🏠 Home</button><button class="btn" data-a="shop">Shop</button><button class="btn" data-a="skin">Skins</button></div>
   </div></div>`;
 }
