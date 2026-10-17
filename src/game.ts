@@ -733,6 +733,7 @@ export class Game {
             price: o.gemPrice,
             balance: this.save.gems,
             countdown: o.countdown,
+            gemCapNote: o.gemCapNote,
           });
     this.overlay.innerHTML = `<div class="modal"><div class="card">
       <h1 tabindex="-1">${defeatHeadline(r.nestDamage)}</h1><p class="reward">Nest at ${pct}% health</p>

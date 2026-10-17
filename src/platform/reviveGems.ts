@@ -57,6 +57,11 @@ export class GemReviveCaps {
     return this.session < this.caps.session && this.day.count < this.caps.day;
   }
 
+  /** The per-session cap is the one reached (OBS-04 note wording). */
+  get sessionReached(): boolean {
+    return this.session >= this.caps.session;
+  }
+
   record(): void {
     this.roll();
     this.session++;

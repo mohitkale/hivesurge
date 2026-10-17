@@ -6,6 +6,8 @@ export interface ReviveRowView {
   price: number;
   balance: number;
   countdown: number;
+  /** OBS-04: gem cap reached; a short disabled line replaces the hidden gem button. */
+  gemCapNote?: string | null;
 }
 
 /**
@@ -31,7 +33,12 @@ export function reviveRowHtml(v: ReviveRowView): string {
     const label = `Revive for ${v.price} gems, unavailable, you have ${v.balance}`;
     gem = `<span class="gem-slot"><button class="btn gem-locked" data-a="reviveGems" disabled aria-label="${label}">🔒 Revive (💎 ${v.price} gems)</button><span class="small">You have ${v.balance}</span></span>`;
   }
-  return `<div class="row revive-row">${ad}${gem}<button class="btn" data-a="noThanks">No thanks</button></div>`;
+  // OBS-04: not a button (nothing to tap, no buy link), just a short greyed explanation.
+  const note =
+    v.gemState === 'hidden' && v.gemCapNote
+      ? `<p class="small gem-cap-note" aria-disabled="true">💎 ${v.gemCapNote}</p>`
+      : '';
+  return `<div class="row revive-row">${ad}${gem}<button class="btn" data-a="noThanks">No thanks</button>${note}</div>`;
 }
 
 /** Gem confirm sheet: price, balance before/after, two equal buttons (no default). */
