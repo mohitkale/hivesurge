@@ -89,7 +89,7 @@ describe('M2-21c gem revive: takeGems (C1)', () => {
 
 describe('M2-21c early-close / ad-failure rule (PR 039 final)', () => {
   it(`after ${MAX_EARLY_CLOSES} early closes with gems valid: open, ad disabled "limit", gems + No thanks`, () => {
-    const o = new ReviveOffer(loaded(), gems(10));
+    const o = new ReviveOffer(loaded(), gems(10), 0);
     o.tick(3);
     expect(closeTwice(o)).toEqual({ kind: 'offer' });
     expect(o.open).toBe(true);
@@ -154,7 +154,7 @@ describe('M2-21c early-close / ad-failure rule (PR 039 final)', () => {
   });
 
   it('12 / C5: confirm sheet pauses the countdown; Back resumes it', () => {
-    const o = new ReviveOffer(loaded(), gems(10));
+    const o = new ReviveOffer(loaded(), gems(10), 0);
     o.tick(2);
     o.openGemConfirm();
     o.tick(5);

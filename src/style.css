@@ -632,6 +632,33 @@ body {
   opacity: 0.4;
 }
 
+/* BUG-07: the confirm sheet's caption took the row width and squeezed "Spend 5 gems" into a
+   vertical letter stack (flex: 1 1 0 + min-width: 0 + the card's overflow-wrap: anywhere).
+   Revive buttons never break inside a label: they keep a min width, stay on one line and take
+   their content width (auto basis), so a long label moves to its own row instead of spilling. */
+.revive-row .btn {
+  /* Not inline-flex: that trims the space before the countdown span ("·10"). */
+  display: inline-block;
+  text-align: center;
+  flex: 1 1 auto;
+  min-width: 120px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+/* The caption gets its own line; Spend / Back share the next one at equal width. */
+.gem-confirm > p {
+  flex: 1 0 100%;
+}
+.gem-confirm .btn {
+  flex: 1 1 120px;
+}
+/* OBS-04: gem cap reached; a short greyed line instead of a silently missing button. */
+.gem-cap-note {
+  flex: 1 0 100%;
+  margin: 0;
+  opacity: 0.6;
+}
+
 /* PR 069 skin picker: preview thumbnails; locked skins greyed with their unlock source. */
 .btn.skin-row {
   display: flex;

@@ -41,6 +41,7 @@ export const DOUBLE_CANNON_DX = 0.45;
  * Round 3 rebalance: whole-level boosts made every level a free win even with no aiming
  * (bot sweep). A boosted battle therefore faces a tougher nest: nest HP and wasp wave counts
  * scale by this factor (none = 1, so unboosted battles are unchanged).
+ * Decision 45 (OBS-02): 2x Cannon doubling nest HP (e.g. L6 1,620 -> 3,240) is intended.
  */
 export const BOOST_ENEMY_SCALE: Record<BoostId, { nestHp: number; waves: number }> = {
   doubleCannon: { nestHp: 2, waves: 1.4 },

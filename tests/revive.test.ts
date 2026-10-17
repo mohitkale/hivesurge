@@ -39,7 +39,7 @@ function loadedSession(): ReviveSession {
 describe('revive-m2.md test cases (M2-21)', () => {
   it('1. close early -> back to the offer, countdown resumes, revives === 0, no reward', () => {
     const w = lostWorld();
-    const o = new ReviveOffer(loadedSession());
+    const o = new ReviveOffer(loadedSession(), null, 0); // no start grace: countdown maths only
     o.tick(3);
     expect(o.request()).toBe(1);
     expect(o.tick(5)).toBe(false); // paused while the ad is on screen
@@ -190,7 +190,7 @@ describe('revive-m2.md test cases (M2-21)', () => {
   });
 
   it('countdown running out closes the offer', () => {
-    const o = new ReviveOffer(loadedSession());
+    const o = new ReviveOffer(loadedSession(), null, 0);
     expect(o.tick(OFFER_COUNTDOWN_S)).toBe(true);
     expect(o.open).toBe(false);
     expect(o.request()).toBe(0);

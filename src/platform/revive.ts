@@ -17,6 +17,12 @@ import { debitGems, type GemReviveCaps, type GemWallet } from './reviveGems';
 
 export const MAX_EARLY_CLOSES = 2;
 export const OFFER_COUNTDOWN_S = 10;
+/** Defeat card pop-in length (style.css `.card` `pop-in 0.32s`): the panel has finished appearing. */
+export const OFFER_APPEAR_S = 0.32;
+/** CEO decision 45 (OBS-01): grace after the panel has appeared, before the countdown runs. */
+export const OFFER_GRACE_S = 1.5;
+/** The 10 s countdown starts only after the panel appears plus the grace (decision 45). */
+export const OFFER_START_DELAY_S = OFFER_APPEAR_S + OFFER_GRACE_S;
 export const UNAVAILABLE_MS = 3000;
 /**
  * Default `revive.minNestDamage` (revive-m2.md, PR 049): the offer needs at least this much
@@ -74,6 +80,10 @@ export type ReviveButton = 'ad' | 'free' | 'unavailable' | 'limit' | 'none';
 
 export type GemButtonState = 'enabled' | 'disabled' | 'hidden';
 
+/** OBS-04: disabled line shown in place of the gem button once a cap is reached. */
+export const GEM_CAP_SESSION_NOTE = 'Gem revive used up this session';
+export const GEM_CAP_DAY_NOTE = 'Gem revive used up today';
+
 /** Gem option context for one offer (absent = no gem option, PR 030 behaviour). */
 export interface GemOption {
   wallet: GemWallet;
@@ -96,6 +106,8 @@ export class ReviveOffer {
   closed = false;
   button: ReviveButton = 'ad';
   countdown = OFFER_COUNTDOWN_S;
+  /** Seconds left before the countdown starts (panel appearing + grace, decision 45). */
+  startDelay: number;
   /** True while an ad is on screen: the countdown pauses. */
   adOnScreen = false;
   /** Gem confirm sheet open: the countdown pauses (C5). */
@@ -106,7 +118,10 @@ export class ReviveOffer {
   constructor(
     private readonly session: ReviveSession,
     private readonly gems: GemOption | null = null,
-  ) {}
+    startDelayS: number = OFFER_START_DELAY_S,
+  ) {
+    this.startDelay = Math.max(0, startDelayS);
+  }
 
   /** Gem button: hidden while the free revive is shown (C3), when caps are reached, on an event final level (C6). */
   get gemState(): GemButtonState {
@@ -114,6 +129,17 @@ export class ReviveOffer {
     if (!g || this.button === 'free' || !g.caps.ok || g.eventFinalLevel) return 'hidden';
     if (g.wallet.gems < g.price) return 'disabled'; // C4: shown with price, no buy link
     return this.noticeActive ? 'disabled' : 'enabled';
+  }
+
+  /**
+   * OBS-04: why the gem button is hidden because a cap was reached (shown as a short disabled
+   * line instead of hiding silently). Null when there is no gem option, the cap is not the
+   * reason, or the free revive is on show (C3 hides gems for a different reason).
+   */
+  get gemCapNote(): string | null {
+    const g = this.gems;
+    if (!g || this.button === 'free' || g.eventFinalLevel || g.caps.ok) return null;
+    return g.caps.sessionReached ? GEM_CAP_SESSION_NOTE : GEM_CAP_DAY_NOTE;
   }
 
   /** Gems are valid: affordable, within caps and not hidden. */
@@ -136,9 +162,19 @@ export class ReviveOffer {
     return !this.granted && !this.closed && this.countdown > 0;
   }
 
-  /** Advance the countdown (paused while an ad is on screen). Returns true when it ran out now. */
+  /**
+   * Advance the countdown (paused while an ad is on screen or the confirm sheet is open).
+   * The first `startDelay` seconds (panel appearing + grace) do not count down.
+   * Returns true when it ran out now.
+   */
   tick(dt: number): boolean {
     if (!this.open || this.adOnScreen || this.confirmOpen) return false;
+    if (this.startDelay > 0) {
+      const used = Math.min(this.startDelay, dt);
+      this.startDelay -= used;
+      dt -= used;
+      if (dt <= 0) return false;
+    }
     this.countdown = Math.max(0, this.countdown - dt);
     if (this.countdown === 0) {
       this.closed = true;
