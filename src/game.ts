@@ -11,6 +11,38 @@ import { GemReviveCaps, isEventFinalLevel, reviveGemConfig } from './platform/re
 import { canOfferRewarded, shouldShowInterstitialOnClaim } from './platform/adPolicy';
 import { AdPacer } from './platform/adPacer';
 import { starterOfferEligible } from './platform/offers';
+import { gameClock } from './platform/clock';
+import { CHESTS, XP } from './meta/defs';
+import {
+  addXp,
+  awardChest,
+  claimFreeChest,
+  collectHoney,
+  equip,
+  openChest,
+  recordResult,
+  rollLossChest,
+  rollWinChest,
+  rushBuild,
+  settleBuilds,
+  skipChestWithGems,
+  startBuild,
+  startUnlock,
+  unlockedSlots,
+  upgradeBee,
+} from './meta/economy';
+import { metaMods } from './meta/mods';
+import type { RoomId } from './meta/defs';
+import {
+  beesHtml,
+  chestInfoHtml,
+  chestOpenHtml,
+  chestRowHtml,
+  fmtDuration,
+  goalBarHtml,
+  hiveHtml,
+  nextGoal,
+} from './ui/meta';
 import { checkoutReturn, purchaseMode } from './purchases/config';
 import { recordGems } from './platform/gemLedger';
 import { ResultSession } from './platform/resultSession';
@@ -205,6 +237,7 @@ export class Game {
     });
     this.resize();
     // Round 3 (Mohit): the home screen ALWAYS comes first, first launch / FTUE included.
+    this.startMetaTicker();
     this.showTitle();
     this.rafId = requestAnimationFrame(this.frame);
     // Keeps the sim (and input) moving even when frames take longer than a sim step.
@@ -219,6 +252,7 @@ export class Game {
   /** Teardown (HMR / tests): stop the frame loop and the 60 Hz sim timer, free the GL context. */
   dispose(): void {
     this.disposed = true;
+    clearInterval(this.metaTimer);
     cancelAnimationFrame(this.rafId);
     this.stopSimTimer();
     this.scene.dispose();
@@ -340,15 +374,165 @@ export class Game {
       collection: collection(no, bees),
       challenges: dailyChallenges(localDay(), this.save.battlesCompleted),
       ranks: mockLeaderboard(stars, no),
+      meta: this.homeMetaHtml(),
     });
     this.lastEarned = null;
+    this.metaScreen = () => this.showTitle();
     this.bind({
+      ...this.metaHandlers(),
       play: () => this.showBoosts(),
       'mode:story': () => this.showMap(),
       shop: () => this.showShop(),
       skin: () => this.showSkins(),
       settings: () => this.showSettings(),
     });
+  }
+
+  /** Campaign stage n = levels cleared in order (loadout slots, expectedP). */
+  private stage(): number {
+    return campaignNextIndex(this.save.bestStars);
+  }
+
+  /** M5-4/M5-12 home block: next-goal bar, chest row, Bees / Hive buttons. */
+  private homeMetaHtml(): string {
+    const now = gameClock().now();
+    settleBuilds(this.save, now);
+    return `${goalBarHtml(nextGoal(this.save, this.stage(), now))}${chestRowHtml(this.save, now)}
+      <div class="row"><button class="btn" data-a="bees">🐝 Bees</button><button class="btn" data-a="hive">🏠 Hive</button></div>`;
+  }
+
+  private metaHandlers(): Record<string, () => void> {
+    const h: Record<string, () => void> = {
+      bees: () => this.showBees(),
+      hive: () => this.showHive(),
+      freechest: () => {
+        if (claimFreeChest(this.save, gameClock().now(), Math.random)) this.persist();
+        this.showTitle();
+      },
+    };
+    for (const c of this.save.meta.chests) h[`chest:${c.id}`] = () => this.showChest(c.id);
+    return h;
+  }
+
+  /** Re-render the open meta screen when a timer finishes (null outside meta screens). */
+  private metaScreen: (() => void) | null = null;
+  private metaTimer = 0;
+
+  private startMetaTicker(): void {
+    if (this.metaTimer) return;
+    this.metaTimer = window.setInterval(() => {
+      if (this.phase !== 'title' || !this.metaScreen) return;
+      const now = gameClock().now();
+      let done = false;
+      this.overlay.querySelectorAll<HTMLElement>('[data-until]').forEach((el) => {
+        const left = Number(el.dataset.until) - now;
+        if (left <= 0) done = true;
+        el.textContent = fmtDuration(left);
+      });
+      if (done && !this.overlay.querySelector('.checkout-mock, .offer')) this.metaScreen();
+    }, 1000);
+  }
+
+  private showChest(id: string): void {
+    const c = this.save.meta.chests.find((x) => x.id === id);
+    if (!c) return this.showTitle();
+    this.overlay.innerHTML = chestInfoHtml(this.save, c, gameClock().now());
+    this.metaScreen = () => this.showChest(id);
+    this.bind({
+      back: () => this.showTitle(),
+      unlock: () => {
+        if (startUnlock(this.save, id, gameClock().now())) this.persist();
+        this.showChest(id);
+      },
+      skip: () => {
+        if (skipChestWithGems(this.save, id, gameClock().now())) {
+          this.analytics.track('gems_spent', { reason: `chest_skip:${c.type}` });
+          this.persist();
+        }
+        this.showChest(id);
+      },
+      open: () => {
+        const r = openChest(this.save, id, gameClock().now(), Math.random);
+        if (!r) return this.showChest(id);
+        this.persist();
+        this.metaScreen = null;
+        this.overlay.innerHTML = chestOpenHtml(r);
+        this.bind({ collect: () => this.showTitle() });
+      },
+    });
+  }
+
+  private showBees(): void {
+    const stage = this.stage();
+    this.overlay.innerHTML = beesHtml(this.save, stage);
+    this.metaScreen = null;
+    const h: Record<string, () => void> = { back: () => this.showTitle() };
+    for (const id of Object.keys(this.save.meta.bees)) {
+      h[`upgrade:${id}`] = () => {
+        if (upgradeBee(this.save, id)) this.persist();
+        this.showBees();
+      };
+      h[`equip:${id}`] = () => {
+        const slots = unlockedSlots(stage);
+        let slot = this.save.meta.loadout.findIndex((x, i) => i < slots && !x);
+        if (slot < 0) slot = slots - 1; // all full: replace the last slot
+        if (slot >= 0 && equip(this.save, slot, id, stage)) this.persist();
+        this.showBees();
+      };
+    }
+    for (let i = 0; i < 4; i++)
+      h[`unequip:${i}`] = () => {
+        if (equip(this.save, i, '', stage)) this.persist();
+        this.showBees();
+      };
+    this.bind(h);
+  }
+
+  private showHive(): void {
+    const now = gameClock().now();
+    settleBuilds(this.save, now);
+    this.overlay.innerHTML = hiveHtml(this.save, now);
+    this.metaScreen = () => this.showHive();
+    const h: Record<string, () => void> = {
+      back: () => this.showTitle(),
+      rush: () => {
+        if (rushBuild(this.save, gameClock().now())) this.persist();
+        this.showHive();
+      },
+      honey: () => {
+        collectHoney(this.save, gameClock().now());
+        this.persist();
+        this.showHive();
+      },
+    };
+    for (const id of ['honey', 'brood', 'wax', 'lab'] as RoomId[])
+      h[`build:${id}`] = () => {
+        if (startBuild(this.save, id, gameClock().now())) this.persist();
+        this.showHive();
+      };
+    this.bind(h);
+  }
+
+  /** M5-4: chest, XP and loss streak after a battle. Returns the banner note. */
+  private awardMeta(r: Rewards, won: boolean, levelId: string): string {
+    const now = gameClock().now();
+    recordResult(this.save, levelId, won);
+    const levels = addXp(this.save, won ? XP.win : XP.loss, now);
+    const boss = (this.world.level.bossPhases?.length ?? 0) > 0;
+    const type = won ? rollWinChest(Math.random, boss) : rollLossChest(Math.random, r.nestDamage);
+    const notes: string[] = [];
+    if (type) {
+      if (awardChest(this.save, type, now, Math.random, { firstWinInstant: won }))
+        notes.push(`+${CHESTS[type].name} chest`);
+      else if (won) {
+        // Flow 2: all slots full, no lost value: coins x1.5 instead of the chest.
+        const extra = Math.round(r.coins * 0.5);
+        this.save.coins += extra;
+        notes.push(`Chest slots full: +🪙 ${extra}`);
+      }
+    }
+    if (levels.length) notes.push(`Account level ${levels[levels.length - 1]}!`);
+    return notes.join(' · ');
   }
 
   /** Story mode level map (feedback 2026-10-15): progress path, Play, back to Home. */
@@ -706,7 +890,9 @@ export class Game {
   private startBattle(boosts: BattleBoosts = {}): void {
     this.sfx.unlock();
     this.scene.dispose();
-    this.world = new World(this.currentLevel(), boosts);
+    this.metaScreen = null;
+    const level = this.currentLevel();
+    this.world = new World(level, boosts, metaMods(this.save, this.stage(), level.id));
     this.ftue = shouldRunFtue(this.save.ftueDone, this.world.level.id)
       ? ftueForLevel(this.world.level.id, this.save.ftueStep, this.save.ftueStep2Fails + 1)
       : null;
@@ -1159,6 +1345,7 @@ export class Game {
       coins: r.coins,
       stars: r.stars,
       ...gain,
+      meta: this.awardMeta(r, this.world.outcome === 'won', id),
     };
     this.save.bestStars[id] = Math.max(this.save.bestStars[id] ?? 0, r.stars);
     this.save.battlesCompleted++;

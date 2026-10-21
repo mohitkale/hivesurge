@@ -46,6 +46,30 @@ export interface PlayerInput {
  * Deterministic fixed-step battle simulation. Pure logic (no DOM / Three.js),
  * so it is unit-testable and could later run in a worker or on a server.
  */
+/** M5-4: loadout bees + hive rooms as plain sim knobs (src/meta/mods.ts builds them). */
+export interface MetaMods {
+  /** Shots per second multiplier (> 1 = faster). */
+  fireRateMul: number;
+  /** Worker bee speed multiplier. */
+  beeSpeedMul: number;
+  /** Extra hive hp. */
+  hiveHpBonus: number;
+  /** Queen charge time multiplier (< 1 = faster) and flat seconds off. */
+  queenChargeMul: number;
+  queenChargeSec: number;
+  /** Enemy nest hp + wave size scale, easier-only (0.85..1). */
+  enemyScale: number;
+}
+
+export const NO_MODS: MetaMods = {
+  fireRateMul: 1,
+  beeSpeedMul: 1,
+  hiveHpBonus: 0,
+  queenChargeMul: 1,
+  queenChargeSec: 0,
+  enemyScale: 1,
+};
+
 export class World {
   readonly level: LevelDef;
   readonly bees = new UnitPool(BEE_CAP);
@@ -90,17 +114,26 @@ export class World {
 
   /** Pre-level boosts (feedback 2026-10-15); empty = none. */
   readonly boosts: BattleBoosts;
+  /** M5-4 loadout / hive-room modifiers and easier-only scaling; NO_MODS = unchanged sim. */
+  readonly mods: MetaMods;
 
-  constructor(level: LevelDef, boosts: BattleBoosts = {}) {
+  constructor(level: LevelDef, boosts: BattleBoosts = {}, mods: MetaMods = NO_MODS) {
     if (level.gates.length > 32) throw new Error('max 32 gates per level');
     this.boosts = { ...boosts };
+    this.mods = { ...mods };
     const k = boostEnemyScale(this.boosts);
-    if (k.nestHp !== 1 || k.waves !== 1)
+    const e = Math.min(1, Math.max(0.85, mods.enemyScale)); // easier-only, floor 0.85
+    if (k.nestHp !== 1 || k.waves !== 1 || e !== 1)
       level = {
         ...level,
-        nestHp: Math.round(level.nestHp * k.nestHp),
-        waves: level.waves.map((w) => ({ ...w, count: Math.round(w.count * k.waves) })),
+        nestHp: Math.round(level.nestHp * k.nestHp * e),
+        waves: level.waves.map((w) => ({
+          ...w,
+          count: Math.max(1, Math.round(w.count * k.waves * e)),
+        })),
       };
+    if (mods.hiveHpBonus > 0)
+      level = { ...level, hiveHp: level.hiveHp + Math.round(mods.hiveHpBonus) };
     this.level = level;
     this.nestHp = level.nestHp;
     this.hiveHp = level.hiveHp;
@@ -159,13 +192,14 @@ export class World {
 
   /** Seconds of firing to charge the Queen (halved by the Fast Queen boost). */
   get queenChargeMax(): number {
-    return this.level.queenCharge * (this.boosts.fastQueen ? 0.5 : 1);
+    const base = this.level.queenCharge * this.mods.queenChargeMul - this.mods.queenChargeSec;
+    return Math.max(1, base) * (this.boosts.fastQueen ? 0.5 : 1);
   }
 
   /** Seconds between shots (halved by the 2x Fire speed boost). */
   get fireInterval(): number {
     return (
-      this.level.fireInterval *
+      (this.level.fireInterval / this.mods.fireRateMul) *
       (this.boosts.fastFire ? 0.5 : 1) *
       (this.boosts.megaSwarm ? MEGA_SWARM_INTERVAL_MUL : 1)
     );
@@ -351,7 +385,7 @@ export class World {
       // Gentle lateral wobble + damping; keeps streams readable.
       b.vx[i] = b.vx[i] * 0.9 + (this.rng() - 0.5) * 0.6;
       b.x[i] = clamp(b.x[i] + b.vx[i] * dt, half);
-      b.y[i] += st.speed * dt;
+      b.y[i] += st.speed * this.mods.beeSpeedMul * dt;
 
       for (let g = 0; g < L.gates.length; g++) {
         const bit = 1 << g;

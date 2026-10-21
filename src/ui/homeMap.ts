@@ -48,6 +48,8 @@ export interface EarnedRewards {
   stars: number;
   newStars: number;
   gems: number;
+  /** M5-4: chest / account-level note for the banner. */
+  meta?: string;
 }
 
 /** Gems per newly earned star (first time a star is reached on a level). */

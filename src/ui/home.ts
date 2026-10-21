@@ -179,6 +179,8 @@ export interface HomeModel {
   collection: CollectionItem[];
   challenges: Challenge[];
   ranks: RankRow[];
+  /** M5-4 / M5-12: next-goal bar, chest row and meta buttons (prebuilt HTML). */
+  meta?: string;
 }
 
 export function homeHtml(o: HomeModel): string {
@@ -221,7 +223,7 @@ export function homeHtml(o: HomeModel): string {
   const earned = e
     ? `<div class="earned ${e.won ? 'won' : 'lost'}" role="status">
         <b>${e.won ? `Level ${e.levelNo} cleared!` : `Level ${e.levelNo}: nest survived`}</b>
-        <span>+🪙 ${e.coins}</span>${e.won ? `<span>+${e.stars} ⭐</span>` : ''}${e.gems > 0 ? `<span>+💎 ${e.gems}</span>` : ''}
+        <span>+🪙 ${e.coins}</span>${e.won ? `<span>+${e.stars} ⭐</span>` : ''}${e.gems > 0 ? `<span>+💎 ${e.gems}</span>` : ''}${e.meta ? `<span>${esc(e.meta)}</span>` : ''}
       </div>`
     : '';
   return `<div class="modal home home-r3"><div class="home-card home-main">
@@ -231,6 +233,7 @@ export function homeHtml(o: HomeModel): string {
       <span class="pchip">LV <b>${o.levelNo}</b></span><span class="pchip">${worldName(o.levelNo)}</span><span class="pchip">⭐ <b>${o.stars}</b></span>
     </div>
     ${earned}
+    ${o.meta ?? ''}
     <div class="row"><button class="btn primary play-big" data-a="play">▶ PLAY · LEVEL ${o.levelNo}</button></div>
     <section class="home-sec"><h3>Modes</h3><div class="mode-grid">${modes}</div></section>
     <section class="home-sec"><h3>Collection <small>${owned}/${o.collection.length}</small></h3>
