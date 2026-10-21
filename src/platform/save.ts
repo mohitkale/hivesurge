@@ -1,4 +1,12 @@
 import type { KeyValueStore } from '../analytics/analytics';
+import {
+  type GemEntry,
+  ledgerBalance,
+  legacyOpeningEntry,
+  mergeLedgers,
+  parseLedger,
+  reconcileGems,
+} from './gemLedger';
 
 /**
  * Save data is a single versioned document. `revision` increases on every
@@ -19,7 +27,10 @@ export interface SaveData {
   revision: number;
   updatedAt: number;
   coins: number;
+  /** Cached spendable balance, always `ledgerBalance(gemLedger)` (M4-5a). */
   gems: number;
+  /** M4-5a: append-only gem grant/spend ledger; the source of truth for `gems`. */
+  gemLedger: GemEntry[];
   bestStars: Record<string, number>;
   noAds: boolean;
   /** Owned bee skins (e.g. 'starter' from the Starter Pack). */
@@ -67,6 +78,7 @@ export const defaultSave = (): SaveData => ({
   updatedAt: 0,
   coins: 0,
   gems: 0,
+  gemLedger: [],
   bestStars: {},
   noAds: false,
   skins: [],
@@ -93,12 +105,21 @@ export function parseSave(raw: string | null): SaveData {
     const stars: Record<string, number> = {};
     if (d.bestStars && typeof d.bestStars === 'object')
       for (const [k, v] of Object.entries(d.bestStars)) stars[k] = Math.min(3, num(v));
+    const revision = num(d.revision);
+    const updatedAt = num(d.updatedAt);
+    // M4-5a: saves with a ledger derive the balance from it; older saves get one opening entry.
+    const gemLedger = Array.isArray(d.gemLedger)
+      ? parseLedger(d.gemLedger)
+      : num(d.gems) > 0
+        ? [legacyOpeningEntry(num(d.gems), revision, updatedAt)]
+        : [];
     return {
       version: 1,
-      revision: num(d.revision),
-      updatedAt: num(d.updatedAt),
+      revision,
+      updatedAt,
       coins: num(d.coins),
-      gems: num(d.gems),
+      gems: ledgerBalance(gemLedger),
+      gemLedger,
       bestStars: stars,
       noAds: d.noAds === true,
       skins: Array.isArray(d.skins)
@@ -132,10 +153,11 @@ export function parseSave(raw: string | null): SaveData {
 /**
  * Merge a local and remote save when both changed (cloud sync conflict).
  * Higher revision wins for settings; progress takes the max so nothing earned
- * is lost; purchases (noAds) are sticky.
+ * is lost; purchases (noAds) are sticky; gems merge by ledger (M4-5a).
  */
 export function mergeSaves(a: SaveData, b: SaveData): SaveData {
   const newer = a.revision >= b.revision ? a : b;
+  const gemLedger = mergeLedgers(a.gemLedger, b.gemLedger);
   const stars: Record<string, number> = { ...a.bestStars };
   for (const [k, v] of Object.entries(b.bestStars)) stars[k] = Math.max(stars[k] ?? 0, v);
   return {
@@ -143,12 +165,10 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     revision: Math.max(a.revision, b.revision) + 1,
     updatedAt: Math.max(a.updatedAt, b.updatedAt),
     coins: Math.max(a.coins, b.coins),
-    // Gems are spendable (gem revive): taking the max would undo a spend made on one side
-    // (spend 10 on device A, merge with stale B -> refund). Keep the lower balance for now.
-    // KNOWN GAP: this can lose gems bought or earned on the other device, and stores do NOT
-    // restore consumables like gems. Harmless until cloud save exists; must be replaced by a
-    // gem spend/grant ledger merge (PLAN M4-5) before cloud save ships.
-    gems: Math.min(a.gems, b.gems),
+    // M4-5a: union of both ledgers by entry id. A grant or purchase on either side is kept, a
+    // spend on either side stays spent, and an entry seen on both sides counts once.
+    gems: ledgerBalance(gemLedger),
+    gemLedger,
     reviveGemDay: mergeGemDay(a.reviveGemDay, b.reviveGemDay),
     bestStars: stars,
     noAds: a.noAds || b.noAds,
@@ -212,6 +232,7 @@ export class SaveStore {
   async commit(): Promise<void> {
     this.data.revision++;
     this.data.updatedAt = this.now();
+    reconcileGems(this.data, this.data.updatedAt); // M4-5a: no balance change without an entry
     try {
       await this.backend.store(JSON.stringify(this.data));
     } catch {

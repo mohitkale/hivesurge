@@ -11,6 +11,7 @@ import { GemReviveCaps, isEventFinalLevel, reviveGemConfig } from './platform/re
 import { canOfferRewarded, shouldShowInterstitialOnClaim } from './platform/adPolicy';
 import { AdPacer } from './platform/adPacer';
 import { applyPurchase } from './platform/entitlements';
+import { recordGems } from './platform/gemLedger';
 import { ResultSession } from './platform/resultSession';
 import { adModeFromUrl, MockPlatform } from './platform/mockPlatform';
 import type { RewardedPlacement, RewardedResult } from './platform/platform';
@@ -920,7 +921,7 @@ export class Game {
     const id = this.world.level.id;
     // Feedback 2026-10-15: new-best stars also pay gems; the map shows what was earned.
     const gain = starGain(this.save.bestStars[id] ?? 0, r.stars);
-    this.save.gems += gain.gems;
+    recordGems(this.save, gain.gems, `stars:${id}`); // M4-5a ledger entry
     this.lastEarned = {
       levelNo: this.levelNo(this.world.level),
       won: this.world.outcome === 'won',
