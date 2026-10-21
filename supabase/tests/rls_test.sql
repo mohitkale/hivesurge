@@ -116,6 +116,50 @@ begin
   if not public.push_save('{"version":1}'::jsonb, 1, null) then raise exception 'FAIL: B push'; end if;
 end $$;
 
+-- ---------- sync_player (one batched round trip) as user A ----------
+select set_config('request.jwt.claims',
+  '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+do $$
+declare r jsonb;
+begin
+  -- Stale expected revision: conflict, the cloud save comes back, nothing is overwritten.
+  r := public.sync_player('{"version":1,"coins":1}'::jsonb, 5, 1,
+    '[]'::jsonb, '{}'::jsonb,
+    '[{"session":"s2","name":"level_start","props":{},"client_ts":"2026-10-22T00:00:00Z"}]'::jsonb);
+  if (r ->> 'ok')::boolean or (r ->> 'revision')::int <> 2 or r -> 'data' ->> 'coins' <> '7' then
+    raise exception 'FAIL: sync_player conflict %', r;
+  end if;
+  -- Retrying the same events batch is idempotent.
+  r := public.sync_player(null, 2, 2, '[]'::jsonb, '{}'::jsonb,
+    '[{"session":"s2","name":"level_start","props":{},"client_ts":"2026-10-22T00:00:00Z"}]'::jsonb);
+  if not (r ->> 'ok')::boolean or r -> 'data' <> 'null'::jsonb then
+    raise exception 'FAIL: sync_player no-op %', r;
+  end if;
+  -- Merged push with the right expected revision succeeds.
+  r := public.sync_player('{"version":1,"coins":7}'::jsonb, 3, 2,
+    '[{"level_id":"l2","best_stars":2,"best_coins":5}]'::jsonb, '{"battles":3}'::jsonb, '[]'::jsonb);
+  if not (r ->> 'ok')::boolean or (r ->> 'revision')::int <> 3 then
+    raise exception 'FAIL: sync_player push %', r;
+  end if;
+  if (select battles from public.player_stats) <> 3 then raise exception 'FAIL: stats via sync_player'; end if;
+  begin
+    perform public.sync_player(null, 0, 0, '[]'::jsonb, '{}'::jsonb,
+      '[{"session":"s","name":"x","client_ts":"2026-10-22T00:00:00Z","user_id":"22222222-2222-4222-8222-222222222222"}]'::jsonb);
+  exception when others then raise exception 'FAIL: extra user_id key must be ignored, not error';
+  end;
+end $$;
+
+reset role;
+do $$ begin
+  if (select count(*) from public.events where user_id = '11111111-1111-4111-8111-111111111111') <> 3 then
+    raise exception 'FAIL: event count for A (expected 3)';
+  end if;
+  if exists (select 1 from public.events where user_id = '22222222-2222-4222-8222-222222222222') then
+    raise exception 'FAIL: A wrote an event as B';
+  end if;
+end $$;
+set local role authenticated;
+
 -- ---------- logged-out API role ----------
 reset role;
 set local role anon;
@@ -131,6 +175,11 @@ do $$ begin
     raise exception 'FAIL: anon can call push_save';
   exception when insufficient_privilege then null;
   end;
+  begin
+    perform public.sync_player(null, 0, null);
+    raise exception 'FAIL: anon can call sync_player';
+  exception when insufficient_privilege then null;
+  end;
 end $$;
 
 -- ---------- admin via admin_users ----------
@@ -143,7 +192,7 @@ do $$
 declare n integer;
 begin
   if (select count(*) from public.saves) <> 2 then raise exception 'FAIL: admin read all saves'; end if;
-  if (select count(*) from public.events) <> 1 then raise exception 'FAIL: admin read events'; end if;
+  if (select count(*) from public.events) <> 3 then raise exception 'FAIL: admin read events'; end if;
   update public.saves set data = '{"hacked":true}'
     where user_id = '11111111-1111-4111-8111-111111111111';
   get diagnostics n = row_count;
@@ -154,7 +203,9 @@ end $$;
 reset role;
 do $$ begin
   if (select data ->> 'coins' from public.saves
-      where user_id = '11111111-1111-4111-8111-111111111111') <> '7' then
+      where user_id = '11111111-1111-4111-8111-111111111111') <> '7'
+     or (select revision from public.saves
+      where user_id = '11111111-1111-4111-8111-111111111111') <> 3 then
     raise exception 'FAIL: A save changed';
   end if;
 end $$;
