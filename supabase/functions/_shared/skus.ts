@@ -79,7 +79,7 @@ export const SERVER_SKUS: Record<ServerSkuId, ServerSku> = {
     usd: 2.99,
     inr: 99,
     grants: { skipTickets: 10, noAds: true },
-    available: false,
+    available: true,
   },
   season_pass: {
     id: 'season_pass',

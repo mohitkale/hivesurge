@@ -92,6 +92,8 @@ export interface ChestInfoOpts {
   canHalve?: boolean;
   /** Skip tickets owned (G8: skip the ad with a ticket). */
   tickets?: number;
+  /** Ticket use allowed (not the first chest); tickets are not limited by ad caps. */
+  canTicket?: boolean;
 }
 
 export function chestInfoHtml(s: SaveData, c: Chest, now: number, o: ChestInfoOpts = {}): string {
@@ -111,7 +113,7 @@ export function chestInfoHtml(s: SaveData, c: Chest, now: number, o: ChestInfoOp
       );
     if (st === 'unlocking' && o.canHalve)
       actions.push('<button class="btn ad" data-a="halve">▶ Watch ad: ½ time</button>');
-    if (st === 'unlocking' && o.canHalve && (o.tickets ?? 0) > 0)
+    if (st === 'unlocking' && o.canTicket && (o.tickets ?? 0) > 0)
       actions.push(
         `<button class="btn" data-a="ticket">🎟 Use ticket: ½ time (${o.tickets})</button>`,
       );
@@ -271,3 +273,15 @@ export function goalBarHtml(g: Goal): string {
   return `<div class="goal-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Next goal: ${esc(g.label)}">
     <small>Next goal: <b>${esc(g.label)}</b></small><span class="ch-bar"><span style="width:${pct}%"></span></span></div>`;
 }
+
+/** Session-start away doubler (ad-placements.md #10). */
+export function awayOfferHtml(coins: number): string {
+  return `<div class="modal"><div class="card offer away-offer">
+    <h2>🍯 Welcome back!</h2><p>Your honey room made <b>🪙 ${coins}</b> while you were away.</p>
+    <div class="row"><button class="btn ad primary" data-a="away:double">▶ Watch ad: 🪙 ${coins * 2}</button>
+    <button class="btn" data-a="away:collect">Collect 🪙 ${coins}</button></div></div></div>`;
+}
+
+/** Home button for the daily rewarded card pack (ad-placements.md #7). */
+export const dailyPackButtonHtml = () =>
+  '<button class="btn ad" data-a="dailypack">▶ Free card pack (Wood odds)</button>';
