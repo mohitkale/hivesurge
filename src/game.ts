@@ -10,11 +10,12 @@ import { haptic, Sfx } from './audio/sfx';
 import { GemReviveCaps, isEventFinalLevel, reviveGemConfig } from './platform/reviveGems';
 import { canOfferRewarded, shouldShowInterstitialOnClaim } from './platform/adPolicy';
 import { AdPacer } from './platform/adPacer';
-import { applyPurchase } from './platform/entitlements';
+import { starterOfferEligible } from './platform/offers';
+import { checkoutReturn, purchaseMode } from './purchases/config';
 import { recordGems } from './platform/gemLedger';
 import { ResultSession } from './platform/resultSession';
 import { adModeFromUrl, MockPlatform } from './platform/mockPlatform';
-import type { RewardedPlacement, RewardedResult } from './platform/platform';
+import type { RewardedPlacement, RewardedResult, Sku } from './platform/platform';
 import {
   ReviveOffer,
   ReviveSession,
@@ -96,6 +97,10 @@ export class Game {
   private readonly analytics = new Analytics(localStorage);
   /** M4-4/5: account + cloud save controller, lazy chunk (null until first needed). */
   private cloud: Promise<import('./platform/cloud/controller').CloudController> | null = null;
+  /** M5-7: purchase flow, lazy chunk (null until the shop or a Checkout return needs it). */
+  private purchases: Promise<import('./purchases/service').PurchaseService> | null = null;
+  /** G13: pop-up IAP offers shown this session (max 1). */
+  private popupOffersShown = 0;
   private accountOpen = false;
   /** fix/perf-lowend: auto quality tiers (?quality=low|med|high pins one). */
   private readonly quality: AutoQuality;
@@ -557,6 +562,99 @@ export class Game {
     this.showTitle();
   }
 
+  /** M5-7: load the purchase flow once (Stripe test mode needs Supabase + a pk_test_ key). */
+  private purchaseService(): Promise<import('./purchases/service').PurchaseService> {
+    this.purchases ??= (async () => {
+      const [{ PurchaseService }, { DomCheckoutUi }] = await Promise.all([
+        import('./purchases/service'),
+        import('./purchases/checkoutUi'),
+      ]);
+      const stripe = purchaseMode() === 'stripe';
+      const cloud = stripe || this.cloud ? await this.cloudController().catch(() => null) : null;
+      return new PurchaseService({
+        save: () => this.save,
+        device: this.store.device,
+        userId: async () => (this.cloud ? ((await this.cloud).user?.id ?? null) : null),
+        returnUrl: `${location.origin}${location.pathname}`,
+        allowedOrigins: [location.origin],
+        kv: localStorage,
+        ui: new DomCheckoutUi(this.overlay),
+        remote: stripe ? (cloud?.backend.purchases ?? null) : null,
+        now: Date.now,
+      });
+    })();
+    return this.purchases;
+  }
+
+  /** Buy a SKU through the purchase flow; true when a server-confirmed grant was applied. */
+  private async buy(sku: Sku, cur: 'usd' | 'inr', source: string): Promise<boolean> {
+    const svc = await this.purchaseService();
+    this.analytics.track('purchase_started', { sku, source, mode: svc.mode });
+    const out = await svc.buy(sku, cur);
+    if (out.status === 'granted') {
+      this.analytics.track('purchase', {
+        sku,
+        price: formatPrice(CATALOG[sku].price, cur),
+        sandbox: true,
+        provider: out.record.provider,
+        source,
+      });
+      this.afterGrant();
+      return true;
+    }
+    this.analytics.track(out.status === 'cancelled' ? 'purchase_cancelled' : 'purchase_failed', {
+      sku,
+      reason: out.status === 'failed' ? out.reason : out.status,
+    });
+    if (out.status === 'failed')
+      this.shopMessage =
+        out.reason === 'sign_in_required'
+          ? 'Sign in first (Settings → Account) to buy with Stripe test mode.'
+          : 'Purchase failed. Nothing was charged.';
+    else if (out.status === 'pending')
+      this.shopMessage = 'Payment received. Your items arrive in a moment (use Restore).';
+    else if (out.status === 'cancelled') this.shopMessage = 'Purchase cancelled.';
+    return false;
+  }
+
+  private shopMessage = '';
+  private lastSkin = '';
+
+  /** A purchase grant landed: persist, and rebuild the scene if a skin was auto-equipped. */
+  private afterGrant(): void {
+    const skin = this.equippedSkin();
+    if (skin !== this.lastSkin) {
+      this.lastSkin = skin;
+      this.scene.dispose();
+      this.scene = this.makeScene();
+      this.resize();
+    }
+    this.persist();
+  }
+
+  /** Boot hook (main.ts): back from hosted Stripe Checkout (`?checkout=...`). */
+  async resumeCheckout(search: string): Promise<void> {
+    const ret = checkoutReturn(search);
+    if (!ret) return;
+    history.replaceState(null, '', location.pathname);
+    if (ret.kind === 'cancel') {
+      this.analytics.track('purchase_cancelled', { reason: 'checkout_cancel' });
+      return;
+    }
+    const svc = await this.purchaseService();
+    this.lastSkin = this.equippedSkin();
+    const out = await svc.collect(ret.sessionId, 15);
+    if (out.status === 'granted') {
+      this.analytics.track('purchase', {
+        sku: out.record.sku,
+        sandbox: true,
+        provider: out.record.provider,
+      });
+      this.afterGrant();
+      if (this.phase === 'title') this.showTitle();
+    }
+  }
+
   private showShop(): void {
     const cur = currencyFor(navigator.language, Intl.DateTimeFormat().resolvedOptions().timeZone);
     const shown = visibleSkus(Object.values(CATALOG), countryFromLocale(navigator.language));
@@ -566,26 +664,40 @@ export class Game {
           `<div class="row"><button class="btn" data-a="buy:${s.id}">${s.title} · ${formatPrice(s.price, cur)}</button></div>`,
       )
       .join('');
+    const mode = purchaseMode();
+    const tag =
+      mode === 'stripe'
+        ? 'STRIPE TEST MODE · test cards only, nothing is charged'
+        : 'SANDBOX · mock Stripe Checkout, nothing is charged';
+    const msg = this.shopMessage ? `<p class="small" role="status">${this.shopMessage}</p>` : '';
+    this.shopMessage = '';
     this.overlay.innerHTML = `<div class="modal"><div class="card">
-      <span class="ad-tag">SANDBOX · nothing is charged</span><h2>Shop</h2>${items}
-      <p class="small">Any purchase removes forced ads. Rewarded ads stay optional.</p>
-      <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
-    const handlers: Record<string, () => void> = { back: () => this.showTitle() };
+      <span class="ad-tag">${tag}</span><h2>Shop</h2>${items}
+      <p class="small">Prices include taxes where applicable. Any purchase removes forced ads. Rewarded ads stay optional.</p>${msg}
+      <div class="row"><button class="btn" data-a="restore">Restore purchases</button>
+      <button class="btn primary" data-a="back">Back</button></div></div></div>`;
+    const handlers: Record<string, () => void> = {
+      back: () => this.showTitle(),
+      restore: async () => {
+        const svc = await this.purchaseService();
+        this.lastSkin = this.equippedSkin();
+        try {
+          const got = await svc.restore();
+          this.afterGrant();
+          this.shopMessage = got.length
+            ? `Restored ${got.length} purchase${got.length > 1 ? 's' : ''}.`
+            : 'Everything is already restored.';
+        } catch {
+          this.shopMessage = 'Could not reach the store. Try again later.';
+        }
+        this.showShop();
+      },
+    };
     for (const k of shown.map((s) => s.id)) {
       handlers[`buy:${k}`] = async () => {
-        if (await this.platform.purchase(k)) {
-          this.analytics.track('purchase', {
-            sku: k,
-            price: formatPrice(CATALOG[k].price, cur),
-            sandbox: true,
-          });
-          const skinBefore = this.equippedSkin();
-          applyPurchase(this.save, k, this.platform.name === 'sandbox'); // G6: any purchase removes forced ads
-          // Auto-equipped skin (Starter Pack): show it on the title-screen bees right away.
-          if (this.equippedSkin() !== skinBefore) return this.rebuildScene();
-          this.persist();
-        }
-        this.showTitle();
+        this.lastSkin = this.equippedSkin();
+        await this.buy(k, cur, 'shop');
+        this.showShop();
       };
     }
     this.bind(handlers);
@@ -755,6 +867,7 @@ export class Game {
       }</div></div></div>`;
     if (offerDouble)
       this.analytics.track('ad_offered', { placement: 'win_double', type: 'rewarded' });
+    this.maybeStarterOffer(r);
     this.bind({
       double: async () => {
         if (this.result.isClaimed || !offerDouble) return;
@@ -769,6 +882,40 @@ export class Game {
         this.result.markRewardedDeclined();
         this.claim(r);
       },
+    });
+  }
+
+  /**
+   * M5-7 Starter Pack pop-up over the win screen (G13: max 1 per session, no countdown, equal
+   * "No thanks"). Declining blocks the interstitial on this transition (decision 43 / G4).
+   */
+  private maybeStarterOffer(r: Rewards): void {
+    if (!starterOfferEligible(this.save, this.popupOffersShown, CATALOG.starter_pack.available))
+      return;
+    this.popupOffersShown++;
+    const cur = currencyFor(navigator.language, Intl.DateTimeFormat().resolvedOptions().timeZone);
+    const el = document.createElement('div');
+    el.className = 'modal offer';
+    el.innerHTML = `<div class="card"><span class="ad-tag">OFFER · sandbox</span>
+      <h2>Starter Pack</h2><p>500 🪙 · 50 💎 · Starter bee skin · no forced ads</p>
+      <p class="price">${formatPrice(CATALOG.starter_pack.price, cur)}</p>
+      <div class="row"><button class="btn" data-o="no">No thanks</button>
+      <button class="btn" data-o="buy">View offer</button></div></div>`;
+    this.overlay.appendChild(el);
+    this.analytics.track('offer_shown', { offer: 'starter_pack', screen: 'win' });
+    el.addEventListener('click', async (e) => {
+      const o = (e.target as HTMLElement).closest<HTMLElement>('[data-o]')?.dataset.o;
+      if (!o) return;
+      el.remove();
+      if (o === 'no') {
+        this.result.markOfferDeclined();
+        this.analytics.track('offer_declined', { offer: 'starter_pack' });
+        return;
+      }
+      this.lastSkin = this.equippedSkin();
+      const bought = await this.buy('starter_pack', cur, 'offer');
+      if (!bought) this.result.markOfferDeclined();
+      if (this.phase === 'result' && !this.result.isClaimed) this.showWin(r);
     });
   }
 

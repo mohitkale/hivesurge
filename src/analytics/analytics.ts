@@ -16,6 +16,11 @@ export type AnalyticsEventName =
   | 'gems_spent'
   | 'boost_granted'
   | 'purchase'
+  | 'purchase_started'
+  | 'purchase_cancelled'
+  | 'purchase_failed'
+  | 'offer_shown'
+  | 'offer_declined'
   | 'ftue_step';
 
 export interface AnalyticsEvent {
@@ -82,6 +87,11 @@ export class Analytics {
       gems_spent: 0,
       boost_granted: 0,
       purchase: 0,
+      purchase_started: 0,
+      purchase_cancelled: 0,
+      purchase_failed: 0,
+      offer_shown: 0,
+      offer_declined: 0,
       ftue_step: 0,
     };
     for (const e of this.events()) if (e.name in out) out[e.name]++;
