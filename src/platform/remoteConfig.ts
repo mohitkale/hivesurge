@@ -116,16 +116,37 @@ export function cachedRemoteConfig(): RemoteConfig {
     return defaultRemoteConfig();
   }
 }
-/** Background refresh for the next launch; failures keep the cached/default config. */
-export async function refreshRemoteConfig(url = '/remote-config.json'): Promise<boolean> {
-  try {
-    if (typeof fetch !== 'function') return false;
-    const r = await fetch(url, { cache: 'no-cache' });
-    if (!r.ok) return false;
-    const j: unknown = await r.json();
+/**
+ * Background refresh for the next launch; failures keep the cached/default config.
+ * M6-5: with Supabase configured, the live admin-published version (`remote_config`, latest
+ * row, anon-readable) wins; with none published (or no backend) the shipped file is used.
+ */
+export async function refreshRemoteConfig(
+  env: { url: string; anonKey: string } | null = null,
+  file = '/remote-config.json',
+): Promise<'supabase' | 'file' | false> {
+  if (typeof fetch !== 'function') return false;
+  const store = (j: unknown) => {
     if (validateRemoteConfig(loadRemoteConfigRaw(j)).length) return false;
     localStorage.setItem(RC_KEY, JSON.stringify(j));
     return true;
+  };
+  try {
+    if (env) {
+      const r = await fetch(
+        `${env.url}/rest/v1/remote_config?select=version,config&order=version.desc&limit=1`,
+        {
+          headers: { apikey: env.anonKey, Authorization: `Bearer ${env.anonKey}` },
+          cache: 'no-cache',
+        },
+      );
+      if (!r.ok) return false;
+      const rows = (await r.json()) as { config?: unknown }[];
+      if (Array.isArray(rows) && rows.length) return store(rows[0].config) ? 'supabase' : false;
+    }
+    const r = await fetch(file, { cache: 'no-cache' });
+    if (!r.ok) return false;
+    return store(await r.json()) ? 'file' : false;
   } catch {
     return false;
   }

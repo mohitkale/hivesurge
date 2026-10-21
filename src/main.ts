@@ -19,7 +19,9 @@ Promise.all([import('./game'), store.load()])
       const idle = window.requestIdleCallback ?? ((fn: () => void) => setTimeout(fn, 1500));
       idle(() => game.startCloud());
       // M5-6g: background refresh (lazy chunk), applied on the next launch.
-      idle(() => void import('./platform/remoteConfig').then((m) => m.refreshRemoteConfig()));
+      idle(
+        () => void import('./platform/remoteConfig').then((m) => m.refreshRemoteConfig(cloudEnv())),
+      );
     }
     // M5-7: back from hosted Stripe Checkout: collect the server-confirmed grant (lazy chunk).
     if (/[?&]checkout=/.test(location.search)) void game.resumeCheckout(location.search);
