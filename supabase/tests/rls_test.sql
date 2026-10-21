@@ -236,5 +236,168 @@ do $$ begin
   end if;
 end $$;
 
-select 'M4/M5 RLS tests: all passed' as result;
+-- ---------- M6 admin panel: roles, server-side checks, audit per write ----------
+-- Make A's cloud save a v2 document with one paid grant (as owner).
+update public.saves set data = '{"version":2,"revision":3,"coins":7,"coinBook":{"earn":{"d1":7},"spend":{},"grants":{"purchase:cs_test_rls_a":0}},"gems":120,"gemLedger":[{"id":"purchase:cs_test_rls_a","delta":120,"reason":"purchase:gems_small","at":1}],"noAds":true,"skins":[]}'
+  where user_id = '11111111-1111-4111-8111-111111111111';
+create temp table m6_cfg (c jsonb) on commit drop;
+insert into m6_cfg values ('{"ads":{"interstitialPerSession":4,"interstitialPerDay":15,"rewardedPerSession":12,"rewardedPerDay":30,"placements":{"boost":{"session":6,"day":20}}},"chests":{"wood":{"odds":{"C":80,"R":18,"E":2,"L":0}},"silver":{"odds":{"C":70,"R":24,"E":5.5,"L":0.5}},"gold":{"odds":{"C":60,"R":28,"E":10,"L":2}},"royal":{"odds":{"C":50,"R":30,"E":15,"L":5}}},"difficulty":{"expectedP":[[0,0.5],[10,0.6]],"lossAssist":[[2,0.95],[3,0.9]],"scaleFloor":0.85}}');
+grant select on m6_cfg to authenticated, anon;
+
+-- Non-admin A: every admin RPC is refused server-side, admin tables are invisible/read-only.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+do $$
+declare c jsonb := (select c from m6_cfg);
+begin
+  if public.admin_whoami() is not null then raise exception 'FAIL: A is not an admin'; end if;
+  begin perform public.admin_find_players(''); raise exception 'FAIL: A find_players';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_player_detail('11111111-1111-4111-8111-111111111111'); raise exception 'FAIL: A detail';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_grant('11111111-1111-4111-8111-111111111111', 999, 999, 'self grant'); raise exception 'FAIL: A self-grant';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_publish_config(c, 'x'); raise exception 'FAIL: A publish';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_stats(now() - interval '1 day', now()); raise exception 'FAIL: A stats';
+  exception when insufficient_privilege then null; end;
+  begin perform private.admin_grant('11111111-1111-4111-8111-111111111111', 1, 1, 'direct call'); raise exception 'FAIL: A private grant';
+  exception when insufficient_privilege then null; end;
+  begin perform private.audit('x', null, null, null, null, 'forged'); raise exception 'FAIL: A forged audit';
+  exception when insufficient_privilege then null; end;
+  begin insert into public.admin_audit (action) values ('forged'); raise exception 'FAIL: A audit insert';
+  exception when insufficient_privilege then null; end;
+  begin insert into public.remote_config (config) values (c); raise exception 'FAIL: A config insert';
+  exception when insufficient_privilege then null; end;
+  begin insert into public.level_overrides (level_id, data) values ('x', '{}'); raise exception 'FAIL: A level insert';
+  exception when insufficient_privilege then null; end;
+  begin update public.admin_users set role = 'owner'; raise exception 'FAIL: A role edit';
+  exception when insufficient_privilege then null; end;
+  if (select count(*) from public.admin_audit) <> 0 then raise exception 'FAIL: A reads audit'; end if;
+end $$;
+
+-- Logged-out: no admin RPCs; the live remote config is public.
+reset role;
+set local role anon;
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $$ begin
+  begin perform public.admin_whoami(); raise exception 'FAIL: anon whoami';
+  exception when insufficient_privilege then null; end;
+  perform 1 from public.remote_config;
+  begin perform 1 from public.admin_audit; raise exception 'FAIL: anon audit';
+  exception when insufficient_privilege then null; end;
+end $$;
+
+-- B is a viewer (default role): read-only, email masked, writes refused.
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
+do $$
+declare r jsonb; c jsonb := (select c from m6_cfg);
+begin
+  if public.admin_whoami() <> 'viewer' then raise exception 'FAIL: B viewer'; end if;
+  r := public.admin_find_players('rls-a@example.invalid');
+  if jsonb_array_length(r) <> 1 or r -> 0 ->> 'email' <> 'r***@example.invalid' then
+    raise exception 'FAIL: viewer lookup/mask %', r;
+  end if;
+  r := public.admin_player_detail('11111111-1111-4111-8111-111111111111');
+  if (r -> 'save' -> 'data' ->> 'gems')::int <> 120 or jsonb_array_length(r -> 'purchases') <> 1 then
+    raise exception 'FAIL: viewer detail %', r;
+  end if;
+  begin perform public.admin_grant('11111111-1111-4111-8111-111111111111', 10, 0, 'viewer grant'); raise exception 'FAIL: viewer grant';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_reset_save('11111111-1111-4111-8111-111111111111', 'viewer reset', 'RESET'); raise exception 'FAIL: viewer reset';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_publish_config(c, 'viewer'); raise exception 'FAIL: viewer publish';
+  exception when insufficient_privilege then null; end;
+  r := public.admin_stats(now() - interval '1 day', now() + interval '1 hour');
+  if (r ->> 'players')::int < 1 then raise exception 'FAIL: viewer stats %', r; end if;
+end $$;
+
+-- B as support: capped grants with reason, reset with confirm; one audit row per write.
+reset role;
+update public.admin_users set role = 'support' where user_id = '22222222-2222-4222-8222-222222222222';
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
+do $$
+declare r jsonb; c jsonb := (select c from m6_cfg);
+begin
+  begin perform public.admin_grant('11111111-1111-4111-8111-111111111111', 20000, 0, 'too much'); raise exception 'FAIL: support cap';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_grant('11111111-1111-4111-8111-111111111111', 10, 0, 'no'); raise exception 'FAIL: short reason';
+  exception when invalid_parameter_value then null; end;
+  r := public.admin_grant('11111111-1111-4111-8111-111111111111', 100, 5, 'test grant for QA');
+  if (r ->> 'coins')::int <> 107 or (r ->> 'gems')::int <> 125 then raise exception 'FAIL: grant %', r; end if;
+  if (select count(*) from public.admin_audit where action = 'grant' and admin_id = '22222222-2222-4222-8222-222222222222') <> 1 then raise exception 'FAIL: grant audit'; end if;
+  if (select (data -> 'coinBook' -> 'grants' ->> (r ->> 'key'))::int from public.saves
+      where user_id = '11111111-1111-4111-8111-111111111111') <> 100 then raise exception 'FAIL: keyed grant'; end if;
+  begin perform public.admin_publish_config(c, 'support'); raise exception 'FAIL: support publish';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_reset_save('11111111-1111-4111-8111-111111111111', 'reset for QA', 'reset'); raise exception 'FAIL: reset confirm';
+  exception when invalid_parameter_value then null; end;
+  r := public.admin_reset_save('11111111-1111-4111-8111-111111111111', 'reset for QA', 'RESET');
+  if (select count(*) from public.admin_audit where action = 'reset_save' and admin_id = '22222222-2222-4222-8222-222222222222') <> 1 then raise exception 'FAIL: reset audit'; end if;
+end $$;
+
+reset role;
+do $$
+declare d jsonb := (select data from public.saves where user_id = '11111111-1111-4111-8111-111111111111');
+begin
+  if (d ->> 'resetEpoch')::int <> 1 or (d ->> 'gems')::int <> 120 or (d ->> 'coins')::int <> 0
+     or exists (select 1 from jsonb_object_keys(d -> 'coinBook' -> 'grants') as k where k like 'admin:%') or not (d ->> 'noAds')::boolean then
+    raise exception 'FAIL: reset keeps paid items only %', d;
+  end if;
+  if exists (select 1 from public.level_progress where user_id = '11111111-1111-4111-8111-111111111111') then
+    raise exception 'FAIL: reset clears progress';
+  end if;
+end $$;
+
+-- liveops publishes (validated server-side), cannot change odds once live; owner rolls back.
+update public.admin_users set role = 'liveops' where user_id = '22222222-2222-4222-8222-222222222222';
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
+do $$
+declare c jsonb := (select c from m6_cfg); v1 integer; v2 integer;
+begin
+  begin perform public.admin_publish_config(jsonb_set(c, '{chests,gold,odds,L}', '3'), 'bad odds'); raise exception 'FAIL: odds publish check';
+  exception when invalid_parameter_value then null; end;
+  begin perform public.admin_publish_config(jsonb_set(c, '{ads,interstitialPerSession}', '6'), 'caps'); raise exception 'FAIL: cap publish check';
+  exception when invalid_parameter_value then null; end;
+  if array_length(public.admin_validate_config(jsonb_set(c, '{ads,interstitialPerDay}', '20')), 1) <> 1 then
+    raise exception 'FAIL: validate reports cap';
+  end if;
+  v1 := public.admin_publish_config(c, 'first');
+  v2 := public.admin_publish_config(jsonb_set(c, '{ads,interstitialPerSession}', '3'), 'fewer ads');
+  begin perform public.admin_publish_config(jsonb_set(c, '{chests,gold,odds}', '{"C":59,"R":28,"E":10,"L":3}'), 'odds'); raise exception 'FAIL: liveops odds';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_rollback_config(v1, 'roll it back'); raise exception 'FAIL: liveops rollback';
+  exception when insufficient_privilege then null; end;
+  perform public.admin_save_level('clover-run', '{"id":"clover-run","gates":[],"waves":[],"nestHp":100,"timeLimit":60}', 'tune nest');
+  begin perform public.admin_save_level('clover-run', '{"id":"other"}', 'bad level'); raise exception 'FAIL: level shape';
+  exception when invalid_parameter_value then null; end;
+  if (select count(*) from public.admin_audit where action in ('config_publish', 'level_save') and admin_id = '22222222-2222-4222-8222-222222222222') <> 3 then
+    raise exception 'FAIL: publish/level audit';
+  end if;
+end $$;
+
+reset role;
+update public.admin_users set role = 'owner' where user_id = '22222222-2222-4222-8222-222222222222';
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
+do $$
+declare v integer;
+begin
+  v := public.admin_rollback_config((select min(version) from public.remote_config), 'back to first');
+  if (select (config -> 'ads' ->> 'interstitialPerSession')::int from public.remote_config
+      order by version desc limit 1) <> 4 then raise exception 'FAIL: rollback'; end if;
+  if (select count(*) from public.admin_audit where admin_id = '22222222-2222-4222-8222-222222222222') <> 6 then raise exception 'FAIL: one audit row per write'; end if;
+end $$;
+reset role;
+
+select 'M4/M5/M6 RLS tests: all passed' as result;
 rollback;

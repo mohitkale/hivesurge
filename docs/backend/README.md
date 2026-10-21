@@ -184,3 +184,25 @@ Without secrets both functions answer **503 `stripe_not_configured`** (checked l
 To redeploy the functions: `supabase functions deploy create-checkout` and
 `supabase functions deploy stripe-webhook --no-verify-jwt` (the CLI bundles `_shared/`; the
 MCP deploy was done with an esbuild single-file bundle of the same sources).
+
+## Admin panel backend (M6, sandbox only)
+
+Migration `20261022000700_m6_admin.sql` (applied to `hivesurge-sandbox` 2026-10-22; security advisor: only the accepted `auth_leaked_password_protection` warning).
+
+- **Roles** (`admin_users.role`, see `docs/design/admin-m6.md`): `viewer` (read-only, emails masked), `support` (grant up to 10,000 coins / 500 gems per grant, reset saves), `liveops` (publish remote config and level rows; cannot change chest odds once live), `owner` (everything, including config rollback). The old `admin` value became `owner`.
+- **Server-side checks:** every `public.admin_*` RPC is a SECURITY INVOKER wrapper around a SECURITY DEFINER function in the unexposed `private` schema. That function calls `private.require_role(...)` (raises `42501 forbidden`) and writes one `admin_audit` row in the same transaction. Clients cannot insert into `admin_audit`, `remote_config`, `level_overrides` or `admin_users`, and admins cannot edit player rows directly.
+- **Grants** are keyed (`admin:<audit id>`) into `coinBook.grants` and `gemLedger`, the same shape purchases use, so they merge exactly once on every device. The player's client picks them up at its next cloud save sync.
+- **Reset** keeps the id, paid items (`purchase:*` / `refund:*` grants, `noAds`, skins) and bumps `resetEpoch`. A client whose local save has a lower epoch replaces it instead of merging old progress back. Reset also clears `level_progress` and `player_stats`.
+- **Remote config** (`remote_config`, append-only versions, latest = live, readable with the anon key). `private.validate_remote_config` is the server-side publish check: every chest's odds must sum to 100, caps must stay within G5 (interstitial 4/session and 15/day, rewarded 12/30), and difficulty may only get easier. Rollback publishes a copy of an old version.
+- **Level rows** (`level_overrides`): admin-edited copies of `src/levels/*.json`. The game does not read them yet; the shipped JSON files stay the source of truth.
+
+### Grant someone admin (SQL editor or MCP `execute_sql`, as the project owner)
+
+```sql
+-- find the user id first: select id, email from auth.users where email = 'you@example.com';
+insert into public.admin_users (user_id, role) values ('<user uuid>', 'owner')
+  on conflict (user_id) do update set role = excluded.role;
+-- revoke: delete from public.admin_users where user_id = '<user uuid>';
+```
+
+There is deliberately no client path to grant or change roles.

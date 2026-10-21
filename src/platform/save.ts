@@ -38,6 +38,8 @@ export interface SaveData {
   version: 2;
   revision: number;
   updatedAt: number;
+  /** M6-3: bumped by an admin save reset; a higher epoch replaces (never merges with) a lower one. */
+  resetEpoch: number;
   /** Cached coin balance; `coinBook` is the source of truth (M5-4a). */
   coins: number;
   coinBook: CounterBook;
@@ -112,6 +114,7 @@ export const defaultSave = (): SaveData => ({
   version: 2,
   revision: 0,
   updatedAt: 0,
+  resetEpoch: 0,
   coins: 0,
   coinBook: emptyBook(),
   skipTickets: 0,
@@ -163,6 +166,7 @@ export function parseSave(raw: string | null): SaveData {
       version: 2,
       revision,
       updatedAt,
+      resetEpoch: Math.floor(num(d.resetEpoch)),
       coins: bookBalance(coinBook),
       coinBook,
       skipTickets: bookBalance(ticketBook),
@@ -207,6 +211,11 @@ export function parseSave(raw: string | null): SaveData {
  * is lost; purchases (noAds) are sticky; gems merge by ledger (M4-5a).
  */
 export function mergeSaves(a0: SaveData, b0: SaveData, device: string = deviceId()): SaveData {
+  // M6-3: an admin reset wins outright, so the device cannot merge the old progress back.
+  if (a0.resetEpoch !== b0.resetEpoch) {
+    const w = a0.resetEpoch > b0.resetEpoch ? a0 : b0;
+    return { ...structuredClone(w), revision: Math.max(a0.revision, b0.revision) + 1 };
+  }
   // Fold any unreconciled cached balance into this device's book first (pure: on copies).
   const a = reconciledCopy(a0, device);
   const b = reconciledCopy(b0, device);
