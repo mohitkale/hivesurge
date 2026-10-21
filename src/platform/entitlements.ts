@@ -1,8 +1,11 @@
+import { recordGems, type GemEntry } from './gemLedger';
 import { CATALOG, type Sku } from './platform';
 
 export interface Wallet {
   coins: number;
   gems: number;
+  /** M4-5a: present on the save; purchases add a ledger entry. */
+  gemLedger?: GemEntry[];
   noAds: boolean;
   /** Owned bee skin ids. */
   skins: string[];
@@ -25,6 +28,6 @@ export function applyPurchase(w: Wallet, sku: Sku, sandbox = true): void {
     w.equippedSkin = g.skin; // auto-equip on purchase (QA M2-19a)
   }
   w.coins += g.coins ?? 0;
-  w.gems += g.gems ?? 0;
+  recordGems(w, g.gems ?? 0, `purchase:${sku}`);
   w.noAds = true;
 }

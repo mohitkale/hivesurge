@@ -304,8 +304,13 @@ describe('M2-21c save merge (048 follow-up)', () => {
   });
 
   it('a gem spend on one device is not undone by merging a stale save', () => {
-    const spent = save(10, 5, '2026-10-11', 1); // spent 10 of 20
-    const stale = save(20, 9, '2026-10-11', 0); // newer revision, but before the spend
+    // M4-5a: both saves share the opening grant; only one has the spend entry.
+    const open = { id: 'g1', delta: 20, reason: 'stars:l1', at: 1 };
+    const spent = {
+      ...save(10, 5, '2026-10-11', 1),
+      gemLedger: [open, { id: 's1', delta: -10, reason: 'revive', at: 2 }],
+    };
+    const stale = { ...save(20, 9, '2026-10-11', 0), gemLedger: [open] }; // newer revision, before the spend
     expect(mergeSaves(spent, stale).gems).toBe(10);
     expect(mergeSaves(stale, spent).gems).toBe(10);
   });

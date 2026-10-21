@@ -3,6 +3,7 @@
  * ("Gem revive"), monetization/revive-m2-21a.md (C1–C8), guardrail G19.
  */
 import { dayKey } from './adPacer';
+import { spendGems, type GemWallet } from './gemLedger';
 
 /** C8: remote config `revive.gemPrice` / `revive.gemCaps`. Defaults mirror monetization/revive-gem.json. */
 export interface ReviveGemConfig {
@@ -69,16 +70,14 @@ export class GemReviveCaps {
   }
 }
 
-/** Anything holding the gem balance (the save). */
-export interface GemWallet {
-  gems: number;
-}
+export type { GemWallet } from './gemLedger';
 
-/** Atomic debit: all or nothing. Returns false (and changes nothing) when the balance is short. */
+/**
+ * Atomic debit: all or nothing. Returns false (and changes nothing) when the balance is short.
+ * M4-5a: on a save the spend is a ledger entry, so a cloud merge never refunds it.
+ */
 export function debitGems(w: GemWallet, amount: number): boolean {
-  if (!(amount > 0) || w.gems < amount) return false;
-  w.gems -= amount;
-  return true;
+  return spendGems(w, amount, 'revive');
 }
 
 /**

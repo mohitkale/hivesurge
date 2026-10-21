@@ -50,11 +50,18 @@ describe('save store', () => {
   });
   it('merges conflicting saves without losing progress or purchases', () => {
     const a = { ...defaultSave(), revision: 5, coins: 100, bestStars: { x: 1 }, noAds: true };
-    const b = { ...defaultSave(), revision: 7, coins: 80, gems: 9, bestStars: { x: 3, y: 2 } };
+    const b = {
+      ...defaultSave(),
+      revision: 7,
+      coins: 80,
+      gems: 9,
+      gemLedger: [{ id: 'b1', delta: 9, reason: 'stars:y', at: 1 }],
+      bestStars: { x: 3, y: 2 },
+    };
     const m = mergeSaves(a, b);
     expect(m.coins).toBe(100);
-    // 048 follow-up: gems take the lower balance so a spend is never refunded by a merge.
-    expect(m.gems).toBe(0);
+    // M4-5a: gems merge by ledger, so gems earned on the other device are kept.
+    expect(m.gems).toBe(9);
     expect(m.bestStars).toEqual({ x: 3, y: 2 });
     expect(m.noAds).toBe(true);
     expect(m.revision).toBe(8);
