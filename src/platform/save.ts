@@ -53,9 +53,26 @@ export interface SaveData {
   adDay: AdDayCounters;
   /** M2-21c (C2): gem revives today; the per-session count is not saved. */
   reviveGemDay: GemReviveDay;
+  /** M4-6: lifetime stats for the cloud `player_stats` / `level_progress` sync (max-merged). */
+  stats: PlayerStats;
   /** `shake`: camera screen shake (round 3, default off). */
   settings: { muted: boolean; colorBlind: boolean; haptics: boolean; shake: boolean };
 }
+
+export interface PlayerStats {
+  wins: number;
+  losses: number;
+  coinsEarned: number;
+  /** Best coin reward per level id ("best score"). */
+  bestCoins: Record<string, number>;
+}
+
+export const emptyStats = (): PlayerStats => ({
+  wins: 0,
+  losses: 0,
+  coinsEarned: 0,
+  bestCoins: {},
+});
 
 export interface AdDayCounters {
   /** Local calendar day, YYYY-MM-DD. */
@@ -92,6 +109,7 @@ export const defaultSave = (): SaveData => ({
   ftueStep2Fails: 0,
   adDay: emptyAdDay(),
   reviveGemDay: emptyGemReviveDay(),
+  stats: emptyStats(),
   settings: { muted: false, colorBlind: false, haptics: true, shake: false },
 });
 
@@ -138,6 +156,7 @@ export function parseSave(raw: string | null): SaveData {
         day: typeof d.reviveGemDay?.day === 'string' ? d.reviveGemDay.day : '',
         count: num(d.reviveGemDay?.count),
       },
+      stats: parseStats(d.stats),
       settings: {
         muted: d.settings?.muted === true,
         colorBlind: d.settings?.colorBlind === true,
@@ -179,7 +198,59 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     ftueStep: Math.max(a.ftueStep, b.ftueStep),
     holdUsed: a.holdUsed || b.holdUsed,
     ftueStep2Fails: Math.max(a.ftueStep2Fails, b.ftueStep2Fails),
+    stats: mergeStats(a.stats, b.stats),
   };
+}
+
+function maxRecord(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
+  const out = { ...a };
+  for (const [k, v] of Object.entries(b)) out[k] = Math.max(out[k] ?? 0, v);
+  return out;
+}
+
+/** Stats only grow, so a merge takes the max of each counter (never double counts). */
+export function mergeStats(a: PlayerStats, b: PlayerStats): PlayerStats {
+  return {
+    wins: Math.max(a.wins, b.wins),
+    losses: Math.max(a.losses, b.losses),
+    coinsEarned: Math.max(a.coinsEarned, b.coinsEarned),
+    bestCoins: maxRecord(a.bestCoins, b.bestCoins),
+  };
+}
+
+function parseStats(v: unknown): PlayerStats {
+  if (!v || typeof v !== 'object') return emptyStats();
+  const o = v as Partial<PlayerStats>;
+  const best: Record<string, number> = {};
+  if (o.bestCoins && typeof o.bestCoins === 'object')
+    for (const [k, n] of Object.entries(o.bestCoins)) best[k] = num(n);
+  return {
+    wins: num(o.wins),
+    losses: num(o.losses),
+    coinsEarned: num(o.coinsEarned),
+    bestCoins: best,
+  };
+}
+
+/**
+ * Copy `src` into `target` in place, keeping nested object identity (the game, ad pacer and
+ * gem caps hold references to `adDay`, `reviveGemDay`, `settings`). Used when a cloud merge
+ * replaces the running save.
+ */
+export function assignSaveInPlace(target: SaveData, src: SaveData): void {
+  const t = target as unknown as Record<string, unknown>;
+  for (const [k, v] of Object.entries(src)) {
+    const cur = t[k];
+    if (isPlainObject(v) && isPlainObject(cur)) {
+      for (const key of Object.keys(cur)) if (!(key in v)) delete cur[key];
+      for (const [kk, vv] of Object.entries(v))
+        cur[kk] = isPlainObject(vv) ? { ...vv } : Array.isArray(vv) ? [...vv] : vv;
+    } else t[k] = Array.isArray(v) ? [...v] : isPlainObject(v) ? { ...v } : v;
+  }
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v);
 }
 
 function parseAdDay(v: unknown): AdDayCounters {
@@ -221,10 +292,28 @@ export class LocalSaveBackend implements SaveBackend {
 
 export class SaveStore {
   data: SaveData = defaultSave();
+  private readonly listeners = new Set<() => void>();
   constructor(
     private readonly backend: SaveBackend,
     private readonly now: () => number = Date.now,
   ) {}
+  /** M4-5: called after every local commit (the cloud sync schedules a push). */
+  onCommit(fn: () => void): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+  /**
+   * M4-5: replace the running save with a merged/cloud copy, in place, and persist it locally.
+   * The revision is taken from `next` (a merge already advanced it); listeners are not called.
+   */
+  async replace(next: SaveData): Promise<void> {
+    assignSaveInPlace(this.data, next);
+    try {
+      await this.backend.store(JSON.stringify(this.data));
+    } catch {
+      /* keep playing with in-memory state */
+    }
+  }
   async load(): Promise<SaveData> {
     this.data = parseSave(await this.backend.load());
     return this.data;
@@ -238,6 +327,12 @@ export class SaveStore {
     } catch {
       /* private mode / quota: keep playing with in-memory state */
     }
+    for (const fn of this.listeners)
+      try {
+        fn();
+      } catch {
+        /* a sync hook must never break saving */
+      }
   }
 }
 

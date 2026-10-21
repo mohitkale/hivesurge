@@ -931,6 +931,12 @@ export class Game {
     };
     this.save.bestStars[id] = Math.max(this.save.bestStars[id] ?? 0, r.stars);
     this.save.battlesCompleted++;
+    // M4-6: lifetime stats for the cloud player_stats / level_progress sync.
+    const st = this.save.stats;
+    if (this.world.outcome === 'won') st.wins++;
+    else st.losses++;
+    st.coinsEarned += r.coins;
+    st.bestCoins[id] = Math.max(st.bestCoins[id] ?? 0, r.coins);
     // FTUE is done after its first win (replays of level 1 run without prompts).
     // Decision 40: a win finishes the FTUE only once step 5 is done (or on the L2 carry, the
     // last FTUE level); otherwise the remaining steps carry into the next battle.
