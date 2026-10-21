@@ -10,6 +10,10 @@ export default tseslint.config(
   prettier,
   { languageOptions: { globals: { ...globals.browser } } },
   {
+    files: ['supabase/functions/**'],
+    languageOptions: { globals: { Deno: 'readonly' } },
+  },
+  {
     files: ['scripts/**', 'tests/**', 'playtests/**'],
     languageOptions: { globals: { ...globals.node } },
   },
