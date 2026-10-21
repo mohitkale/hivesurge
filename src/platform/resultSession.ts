@@ -9,6 +9,7 @@ export class ResultSession {
   private rewarded = false;
   private revived = false;
   private declined = false;
+  private offerDeclined = false;
 
   /** Returns true only on the first call. */
   tryClaim(): boolean {
@@ -54,9 +55,18 @@ export class ResultSession {
     return this.declined;
   }
 
+  /** M5-7 (G13 + decision 43): "No thanks" on a pop-up IAP offer also blocks the interstitial. */
+  markOfferDeclined(): void {
+    this.offerDeclined = true;
+  }
+
+  get offerWasDeclined(): boolean {
+    return this.offerDeclined;
+  }
+
   /** G4 + decision 43: true when the claim on this result must not show an interstitial. */
   get blocksInterstitial(): boolean {
-    return this.rewarded || this.declined;
+    return this.rewarded || this.declined || this.offerDeclined;
   }
 
   /**

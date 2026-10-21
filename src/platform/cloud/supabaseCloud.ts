@@ -1,3 +1,5 @@
+import type { PurchaseRecord } from '../../../supabase/functions/_shared/grant.ts';
+import type { RemotePurchases } from '../../purchases/service';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type { CloudBackend, CloudUser, SyncRequest, SyncResponse } from './types';
 
@@ -21,6 +23,30 @@ const toUser = (u: User | null | undefined): CloudUser | null =>
 export class SupabaseCloud implements CloudBackend {
   readonly kind = 'supabase' as const;
   constructor(private readonly sb: SupabaseClient) {}
+
+  /** M5-7: Stripe test-mode Checkout via the `create-checkout` Edge Function; RLS-scoped reads. */
+  readonly purchases: RemotePurchases = {
+    createCheckout: async (body) => {
+      const { data, error } = await this.sb.functions.invoke('create-checkout', { body });
+      const d = (data ?? {}) as { id?: unknown; url?: unknown };
+      if (error || typeof d.id !== 'string' || typeof d.url !== 'string')
+        throw new Error('checkout unavailable');
+      if (!/^https:\/\/checkout\.stripe\.com\//.test(d.url))
+        throw new Error('unexpected checkout url');
+      return { id: d.id, url: d.url };
+    },
+    listPurchases: async () => {
+      const { data, error } = await this.sb
+        .from('purchases_sandbox')
+        .select(
+          'session_id,user_id,sku,provider,status,amount,currency,grants,payment_intent,created_at,refunded_at',
+        )
+        .not('session_id', 'is', null)
+        .order('created_at');
+      if (error) throw new Error(error.message || 'network error');
+      return (data ?? []) as PurchaseRecord[];
+    },
+  };
 
   async currentUser() {
     // getSession reads the local session (refreshing it when needed); no request per call.

@@ -75,4 +75,6 @@ export interface CloudBackend {
   signOut(): Promise<void>;
   onAuthChange(cb: (user: CloudUser | null) => void): () => void;
   sync(req: SyncRequest): Promise<SyncResponse>;
+  /** M5-7: Stripe test-mode purchases (Supabase only; the mock cloud uses the in-browser mock). */
+  readonly purchases?: import('../../purchases/service').RemotePurchases;
 }

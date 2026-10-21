@@ -19,6 +19,8 @@ Promise.all([import('./game'), store.load()])
       const idle = window.requestIdleCallback ?? ((fn: () => void) => setTimeout(fn, 1500));
       idle(() => game.startCloud());
     }
+    // M5-7: back from hosted Stripe Checkout: collect the server-confirmed grant (lazy chunk).
+    if (/[?&]checkout=/.test(location.search)) void game.resumeCheckout(location.search);
     // Dev HMR: tear the old game down (frame loop, sim timer, GL context) before reloading.
     import.meta.hot?.dispose(() => game.dispose());
   })
