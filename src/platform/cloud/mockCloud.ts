@@ -34,6 +34,8 @@ export class MockCloudServer {
   db: MockDb;
   /** Set true to simulate the backend being down. */
   offline = false;
+  /** Server clock (M5-4c: returned as `now` from every sync). */
+  clock: () => number = Date.now;
   constructor(
     private readonly kv?: KeyValueStore,
     private readonly key = 'hivesurge.mockcloud.db.v1',
@@ -101,6 +103,7 @@ export class MockCloudServer {
       ok,
       revision: now?.revision ?? null,
       data: now && (!ok || changed) ? structuredClone(now.data) : null,
+      now: this.clock(),
     };
   }
 }

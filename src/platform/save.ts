@@ -7,6 +7,17 @@ import {
   parseLedger,
   reconcileGems,
 } from './gemLedger';
+import {
+  addGrant,
+  bookBalance,
+  type CounterBook,
+  emptyBook,
+  mergeBooks,
+  parseBook,
+  reconcileBook,
+} from './counter';
+import { deviceId } from './device';
+import { defaultMeta, type MetaState, mergeMeta, parseMeta, reconcileMeta } from './saveMeta';
 
 /**
  * Save data is a single versioned document. `revision` increases on every
@@ -23,10 +34,18 @@ export interface GemReviveDay {
 export const emptyGemReviveDay = (): GemReviveDay => ({ day: '', count: 0 });
 
 export interface SaveData {
-  version: 1;
+  /** M5-4a: v2 adds coin/ticket books and `meta`; v1 saves migrate on parse. */
+  version: 2;
   revision: number;
   updatedAt: number;
+  /** Cached coin balance; `coinBook` is the source of truth (M5-4a). */
   coins: number;
+  coinBook: CounterBook;
+  /** G8 ad-skip tickets (cached) and their book. */
+  skipTickets: number;
+  ticketBook: CounterBook;
+  /** M5-4 collection, chests, loadout, hive base, XP. */
+  meta: MetaState;
   /** Cached spendable balance, always `ledgerBalance(gemLedger)` (M4-5a). */
   gems: number;
   /** M4-5a: append-only gem grant/spend ledger; the source of truth for `gems`. */
@@ -90,10 +109,14 @@ export const emptyAdDay = (): AdDayCounters => ({
 });
 
 export const defaultSave = (): SaveData => ({
-  version: 1,
+  version: 2,
   revision: 0,
   updatedAt: 0,
   coins: 0,
+  coinBook: emptyBook(),
+  skipTickets: 0,
+  ticketBook: emptyBook(),
+  meta: defaultMeta(),
   gems: 0,
   gemLedger: [],
   bestStars: {},
@@ -118,8 +141,8 @@ export function parseSave(raw: string | null): SaveData {
   const def = defaultSave();
   if (!raw) return def;
   try {
-    const d = JSON.parse(raw) as Partial<SaveData>;
-    if (d.version !== 1) return def;
+    const d = JSON.parse(raw) as Omit<Partial<SaveData>, 'version'> & { version?: number };
+    if (d.version !== 1 && d.version !== 2) return def;
     const stars: Record<string, number> = {};
     if (d.bestStars && typeof d.bestStars === 'object')
       for (const [k, v] of Object.entries(d.bestStars)) stars[k] = Math.min(3, num(v));
@@ -131,11 +154,20 @@ export function parseSave(raw: string | null): SaveData {
       : num(d.gems) > 0
         ? [legacyOpeningEntry(num(d.gems), revision, updatedAt)]
         : [];
+    // M5-4a: v2 derives coins from the book; v1 balances become one stable opening grant.
+    const coinBook = parseBook(d.version === 2 ? d.coinBook : undefined);
+    if (d.version === 1 && num(d.coins) > 0)
+      addGrant(coinBook, `legacy:${revision}:${updatedAt}`, num(d.coins));
+    const ticketBook = parseBook(d.version === 2 ? d.ticketBook : undefined);
     return {
-      version: 1,
+      version: 2,
       revision,
       updatedAt,
-      coins: num(d.coins),
+      coins: bookBalance(coinBook),
+      coinBook,
+      skipTickets: bookBalance(ticketBook),
+      ticketBook,
+      meta: parseMeta(d.version === 2 ? d.meta : undefined),
       gems: ledgerBalance(gemLedger),
       gemLedger,
       bestStars: stars,
@@ -174,8 +206,13 @@ export function parseSave(raw: string | null): SaveData {
  * Higher revision wins for settings; progress takes the max so nothing earned
  * is lost; purchases (noAds) are sticky; gems merge by ledger (M4-5a).
  */
-export function mergeSaves(a: SaveData, b: SaveData): SaveData {
+export function mergeSaves(a0: SaveData, b0: SaveData, device: string = deviceId()): SaveData {
+  // Fold any unreconciled cached balance into this device's book first (pure: on copies).
+  const a = reconciledCopy(a0, device);
+  const b = reconciledCopy(b0, device);
   const newer = a.revision >= b.revision ? a : b;
+  const coinBook = mergeBooks(a.coinBook, b.coinBook);
+  const ticketBook = mergeBooks(a.ticketBook, b.ticketBook);
   const gemLedger = mergeLedgers(a.gemLedger, b.gemLedger);
   const stars: Record<string, number> = { ...a.bestStars };
   for (const [k, v] of Object.entries(b.bestStars)) stars[k] = Math.max(stars[k] ?? 0, v);
@@ -183,7 +220,13 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     ...newer,
     revision: Math.max(a.revision, b.revision) + 1,
     updatedAt: Math.max(a.updatedAt, b.updatedAt),
-    coins: Math.max(a.coins, b.coins),
+    // M5-4a: coins/tickets merge by PN-counter book, so a spend is never refunded and coins
+    // earned on another device are kept.
+    coins: bookBalance(coinBook),
+    coinBook,
+    skipTickets: bookBalance(ticketBook),
+    ticketBook,
+    meta: mergeMeta(a.meta, b.meta, newer.meta),
     // M4-5a: union of both ledgers by entry id. A grant or purchase on either side is kept, a
     // spend on either side stays spent, and an entry seen on both sides counts once.
     gems: ledgerBalance(gemLedger),
@@ -200,6 +243,23 @@ export function mergeSaves(a: SaveData, b: SaveData): SaveData {
     ftueStep2Fails: Math.max(a.ftueStep2Fails, b.ftueStep2Fails),
     stats: mergeStats(a.stats, b.stats),
   };
+}
+
+function reconciledCopy(s: SaveData, device: string): SaveData {
+  const c = structuredClone(s);
+  reconcileSave(c, device);
+  return c;
+}
+
+/**
+ * M5-4a: write cached balances (coins, tickets, pollen, XP) into this device's books and
+ * gems into the ledger. Called on every commit and before every merge.
+ */
+export function reconcileSave(s: SaveData, device: string = deviceId(), now = Date.now()): void {
+  s.coins = reconcileBook(s.coinBook, s.coins, device);
+  s.skipTickets = reconcileBook(s.ticketBook, s.skipTickets, device);
+  reconcileMeta(s.meta, device);
+  reconcileGems(s, now);
 }
 
 function maxRecord(a: Record<string, number>, b: Record<string, number>): Record<string, number> {
@@ -296,6 +356,8 @@ export class SaveStore {
   constructor(
     private readonly backend: SaveBackend,
     private readonly now: () => number = Date.now,
+    /** M5-4a: this device's id for the PN-counter books (tests pass one per fake device). */
+    readonly device: string = deviceId(),
   ) {}
   /** M4-5: called after every local commit (the cloud sync schedules a push). */
   onCommit(fn: () => void): () => void {
@@ -321,7 +383,7 @@ export class SaveStore {
   async commit(): Promise<void> {
     this.data.revision++;
     this.data.updatedAt = this.now();
-    reconcileGems(this.data, this.data.updatedAt); // M4-5a: no balance change without an entry
+    reconcileSave(this.data, this.device, this.data.updatedAt); // M4-5a / M5-4a books
     try {
       await this.backend.store(JSON.stringify(this.data));
     } catch {

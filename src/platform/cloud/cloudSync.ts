@@ -35,6 +35,8 @@ export interface CloudSyncOptions {
   /** Called after the running save was changed by a sync (refresh the UI). */
   onApplied?: () => void;
   onStatus?: (s: SyncStatus) => void;
+  /** M5-4c: server time from each round trip (re-anchors the trusted game clock). */
+  onServerTime?: (serverMs: number) => void;
   now?: () => number;
   setTimer?: (fn: () => void, ms: number) => unknown;
   clearTimer?: (t: unknown) => void;
@@ -195,6 +197,7 @@ export class CloudSync {
           events: events.map(toRow),
         };
         const r = await this.backend.sync(req);
+        if (typeof r.now === 'number') this.opts.onServerTime?.(r.now);
         // Progress and events are idempotent server-side, so they count as sent either way.
         if (sendProgress) meta.progress = progressJson;
         if (events.length) meta.eventsTs = events[events.length - 1].ts;
@@ -210,7 +213,7 @@ export class CloudSync {
           res.conflicts++;
           if (r.data != null && r.revision !== null) {
             const cloud = parseSave(JSON.stringify(r.data));
-            const merged = mergeSaves(this.store.data, cloud);
+            const merged = mergeSaves(this.store.data, cloud, this.store.device);
             merged.revision = Math.max(merged.revision, r.revision + 1);
             await this.store.replace(merged);
             meta.rev = r.revision;

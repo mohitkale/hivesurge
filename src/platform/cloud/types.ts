@@ -59,6 +59,8 @@ export interface SyncResponse {
   revision: number | null;
   /** Cloud save JSON, sent back on a conflict or when it changed since `expected`. */
   data: unknown;
+  /** M5-4c: server time (ms since epoch) for the trusted game clock; absent on old servers. */
+  now?: number;
 }
 
 export interface CloudBackend {

@@ -1,5 +1,6 @@
 import type { AnalyticsEvent } from '../../analytics/analytics';
 import type { SaveStore } from '../save';
+import { gameClock } from '../clock';
 import { cloudEnv, MOCK_SESSION_KEY } from './config';
 import { CloudSync, type SyncStatus } from './cloudSync';
 import { MockCloudBackend, MockCloudServer, normEmail } from './mockCloud';
@@ -41,6 +42,7 @@ export class CloudController {
       events: opts.events,
       onApplied: opts.onApplied,
       onStatus: () => opts.onChange?.(),
+      onServerTime: (ms) => gameClock().setServerTime(ms),
     });
   }
 
