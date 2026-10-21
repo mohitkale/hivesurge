@@ -3,3 +3,8 @@ dist
 *.log
 .DS_Store
 dist-review
+
+# Local env (real Supabase URL / anon key live only here; never commit)
+.env.local
+.env.*.local
+*.local
