@@ -454,3 +454,33 @@ export function grantKeyed(s: SaveData, key: string, coins: number, tickets = 0)
   if (b) s.skipTickets += tickets;
   return a || b;
 }
+
+// ---- M5-5 rewarded placements (monetization/ad-placements.md #5, #7, #10) ----
+
+/** Chest-time skips (ad or ticket) are never offered on the player's first chest. */
+export const chestSkipAllowed = (s: SaveData) => s.meta.chestsOpened > 0;
+
+/** G8: spend one ad-skip ticket to halve an unlocking chest (instead of watching an ad). */
+export function useSkipTicket(s: SaveData, id: string, now: number): boolean {
+  if (!chestSkipAllowed(s) || s.skipTickets < 1) return false;
+  if (!halveChestTime(s, id, now)) return false;
+  s.skipTickets--;
+  return true;
+}
+
+/** Daily rewarded card pack: a Wood chest's worth of cards, opened at once (odds on screen). */
+export function openDailyPack(s: SaveData, rng: Rng): ChestReward {
+  const r = rollChest(s, 'wood', rng);
+  applyChestReward(s, r);
+  s.meta.chestsOpened++;
+  return r;
+}
+
+/** Away doubler threshold: below this the session-start offer is not worth an ad. */
+export const AWAY_DOUBLE_MIN = 20;
+/** Collect idle honey coins, doubled when the away-doubler ad completed. */
+export function collectHoneyAway(s: SaveData, now: number, doubled: boolean): number {
+  const c = collectHoney(s, now);
+  if (doubled) s.coins += c;
+  return doubled ? c * 2 : c;
+}

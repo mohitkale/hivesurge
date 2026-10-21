@@ -1,5 +1,7 @@
 /** `boost`: pre-level boost screen (feedback 2026-10-15). */
-export type RewardedPlacement = 'win_double' | 'revive' | 'boost';
+/** M5-5 adds chest_skip, daily_pack and away_doubler (monetization/ad-placements.md #5, #7, #10). */
+export type RewardedPlacement =
+  'win_double' | 'revive' | 'boost' | 'chest_skip' | 'daily_pack' | 'away_doubler';
 /**
  * Outcome of a rewarded ad request. `completed` / `closed` were impressions (an ad was shown);
  * `no_fill` / `error` (load failure or 5 s timeout) showed nothing.
@@ -102,7 +104,7 @@ export const CATALOG: Record<Sku, SkuInfo> = {
     type: 'consumable',
     price: { usd: 2.99, inr: 99 },
     random: false,
-    available: false, // M5-5: tickets wallet lands with the rewarded placements
+    available: true, // M5-5: tickets halve chest timers instead of an ad (G8)
     grants: { skipTickets: 10, noAds: true },
   },
   season_pass: {

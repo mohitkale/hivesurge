@@ -1,0 +1,89 @@
+{
+  "ads": {
+    "interstitialPerSession": 4,
+    "interstitialPerDay": 15,
+    "rewardedPerSession": 12,
+    "rewardedPerDay": 30,
+    "placements": {
+      "win_double": {
+        "session": 6,
+        "day": 20
+      },
+      "revive": {
+        "session": 3,
+        "day": 10
+      },
+      "boost": {
+        "session": 6,
+        "day": 20
+      },
+      "chest_skip": {
+        "session": 3,
+        "day": 8
+      },
+      "daily_pack": {
+        "session": 1,
+        "day": 1
+      },
+      "away_doubler": {
+        "session": 1,
+        "day": 3
+      }
+    }
+  },
+  "chests": {
+    "wood": {
+      "odds": {
+        "C": 80,
+        "R": 18,
+        "E": 2,
+        "L": 0
+      }
+    },
+    "silver": {
+      "odds": {
+        "C": 70,
+        "R": 24,
+        "E": 5.5,
+        "L": 0.5
+      }
+    },
+    "gold": {
+      "odds": {
+        "C": 60,
+        "R": 28,
+        "E": 10,
+        "L": 2
+      }
+    },
+    "royal": {
+      "odds": {
+        "C": 50,
+        "R": 30,
+        "E": 15,
+        "L": 5
+      }
+    }
+  },
+  "difficulty": {
+    "expectedP": [
+      [1, 0],
+      [2, 0],
+      [3, 5],
+      [5, 7],
+      [10, 18],
+      [14, 24],
+      [25, 34],
+      [36, 42],
+      [52, 46],
+      [74, 54],
+      [111, 61],
+      [160, 71]
+    ],
+    "lossAssist": [
+      [2, 0.95],
+      [3, 0.9]
+    ],
+    "scaleFloor": 0.85
+  }
+}

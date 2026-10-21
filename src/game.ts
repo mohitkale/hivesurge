@@ -10,6 +10,7 @@ import { haptic, Sfx } from './audio/sfx';
 import { GemReviveCaps, isEventFinalLevel, reviveGemConfig } from './platform/reviveGems';
 import { canOfferRewarded, shouldShowInterstitialOnClaim } from './platform/adPolicy';
 import { AdPacer } from './platform/adPacer';
+import { applyRemoteConfig, cachedRemoteConfig } from './platform/remoteConfig';
 import { starterOfferEligible } from './platform/offers';
 import { gameClock } from './platform/clock';
 import { CHESTS, XP } from './meta/defs';
@@ -30,6 +31,13 @@ import {
   startUnlock,
   unlockedSlots,
   upgradeBee,
+  chestSkipAllowed,
+  useSkipTicket,
+  openDailyPack,
+  collectHoneyAway,
+  honeyPending,
+  AWAY_DOUBLE_MIN,
+  halveChestTime,
 } from './meta/economy';
 import { metaMods } from './meta/mods';
 import type { RoomId } from './meta/defs';
@@ -42,6 +50,8 @@ import {
   goalBarHtml,
   hiveHtml,
   nextGoal,
+  awayOfferHtml,
+  dailyPackButtonHtml,
 } from './ui/meta';
 import { checkoutReturn, purchaseMode } from './purchases/config';
 import { recordGems } from './platform/gemLedger';
@@ -204,7 +214,10 @@ export class Game {
     if (!this.save.ftueDone && this.save.battlesCompleted > 0 && this.save.ftueStep === 0)
       this.save.ftueDone = true;
     this.world = new World(this.currentLevel());
-    this.pacer = new AdPacer(this.save.adDay);
+    // M5-6g: last fetched remote config (validated) drives caps, chest odds and difficulty.
+    const rc = cachedRemoteConfig();
+    applyRemoteConfig(rc);
+    this.pacer = new AdPacer(this.save.adDay, Date.now, rc.ads);
     this.gemCaps = new GemReviveCaps(this.save.reviveGemDay, this.gemConfig.gemCaps);
     applyTheme(document.documentElement, this.save.settings.colorBlind);
     this.sfx.setMuted(this.save.settings.muted);
@@ -386,6 +399,7 @@ export class Game {
       skin: () => this.showSkins(),
       settings: () => this.showSettings(),
     });
+    if (this.save.ftueDone) this.maybeAwayOffer();
   }
 
   /** Campaign stage n = levels cleared in order (loadout slots, expectedP). */
@@ -398,13 +412,64 @@ export class Game {
     const now = gameClock().now();
     settleBuilds(this.save, now);
     return `${goalBarHtml(nextGoal(this.save, this.stage(), now))}${chestRowHtml(this.save, now)}
-      <div class="row"><button class="btn" data-a="bees">🐝 Bees</button><button class="btn" data-a="hive">🏠 Hive</button></div>`;
+      <div class="row"><button class="btn" data-a="bees">🐝 Bees</button><button class="btn" data-a="hive">🏠 Hive</button></div>${this.dailyPackOk() ? `<div class="row">${dailyPackButtonHtml()}</div>` : ''}`;
+  }
+
+  private dailyPackOk(): boolean {
+    return (
+      chestSkipAllowed(this.save) &&
+      canOfferRewarded(this.save) &&
+      this.pacer.canRewarded('daily_pack')
+    );
+  }
+
+  /** Away doubler: offered once, at session start only, when idle honey is worth it. */
+  private awayChecked = false;
+  private maybeAwayOffer(): boolean {
+    if (this.awayChecked) return false;
+    this.awayChecked = true;
+    const now = gameClock().now();
+    const coins = honeyPending(this.save, now);
+    if (
+      coins < AWAY_DOUBLE_MIN ||
+      !canOfferRewarded(this.save) ||
+      !this.pacer.canRewarded('away_doubler')
+    )
+      return false;
+    this.overlay.insertAdjacentHTML('beforeend', awayOfferHtml(coins));
+    this.analytics.track('offer_shown', { offer: 'away_doubler' });
+    this.bind({
+      'away:double': () => {
+        void this.watchRewarded('away_doubler').then((res) => {
+          collectHoneyAway(this.save, gameClock().now(), res === 'completed');
+          this.persist();
+          this.showTitle();
+        });
+      },
+      'away:collect': () => {
+        this.analytics.track('offer_declined', { offer: 'away_doubler' });
+        collectHoneyAway(this.save, gameClock().now(), false);
+        this.persist();
+        this.showTitle();
+      },
+    });
+    return true;
   }
 
   private metaHandlers(): Record<string, () => void> {
     const h: Record<string, () => void> = {
       bees: () => this.showBees(),
       hive: () => this.showHive(),
+      dailypack: () => {
+        void this.watchRewarded('daily_pack').then((res) => {
+          if (res !== 'completed') return this.showTitle();
+          const r = openDailyPack(this.save, Math.random);
+          this.persist();
+          this.metaScreen = null;
+          this.overlay.innerHTML = chestOpenHtml(r);
+          this.bind({ collect: () => this.showTitle() });
+        });
+      },
       freechest: () => {
         if (claimFreeChest(this.save, gameClock().now(), Math.random)) this.persist();
         this.showTitle();
@@ -436,10 +501,33 @@ export class Game {
   private showChest(id: string): void {
     const c = this.save.meta.chests.find((x) => x.id === id);
     if (!c) return this.showTitle();
-    this.overlay.innerHTML = chestInfoHtml(this.save, c, gameClock().now());
+    const skipOk = chestSkipAllowed(this.save);
+    this.overlay.innerHTML = chestInfoHtml(this.save, c, gameClock().now(), {
+      canHalve: skipOk && canOfferRewarded(this.save) && this.pacer.canRewarded('chest_skip'),
+      canTicket: skipOk,
+      tickets: this.save.skipTickets,
+    });
     this.metaScreen = () => this.showChest(id);
     this.bind({
       back: () => this.showTitle(),
+      halve: () => {
+        void this.watchRewarded('chest_skip').then((res) => {
+          if (res === 'completed' && halveChestTime(this.save, id, gameClock().now()))
+            this.persist();
+          this.showChest(id);
+        });
+      },
+      ticket: () => {
+        if (useSkipTicket(this.save, id, gameClock().now())) {
+          this.analytics.track('ad_watched', {
+            placement: 'chest_skip',
+            completed: true,
+            type: 'ticket',
+          });
+          this.persist();
+        }
+        this.showChest(id);
+      },
       unlock: () => {
         if (startUnlock(this.save, id, gameClock().now())) this.persist();
         this.showChest(id);

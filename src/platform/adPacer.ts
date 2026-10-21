@@ -1,6 +1,6 @@
 import type { AdDayCounters } from './save';
 
-/** G5 caps (monetization/ad-placements.md; ASSUMPTIONS, tune via remote config in M5-6g). */
+/** G5 caps (monetization/ad-placements.md). M5-6g: overridable via remote config (remoteConfig.ts), never above these guardrail maxima for interstitials and global rewarded. */
 export const AD_CAPS = {
   interstitialPerSession: 4,
   interstitialPerDay: 15,
@@ -10,6 +10,9 @@ export const AD_CAPS = {
     win_double: { session: 6, day: 20 },
     revive: { session: 3, day: 10 },
     boost: { session: 6, day: 20 },
+    chest_skip: { session: 3, day: 8 },
+    daily_pack: { session: 1, day: 1 },
+    away_doubler: { session: 1, day: 3 },
   } as Record<string, { session: number; day: number }>,
 };
 export type AdCaps = typeof AD_CAPS;
