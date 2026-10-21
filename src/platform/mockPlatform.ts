@@ -1,5 +1,6 @@
 import {
   CATALOG,
+  formatPrice,
   type Platform,
   type RewardedPlacement,
   type RewardedResult,
@@ -60,7 +61,7 @@ export class MockPlatform implements Platform {
     return new Promise((resolve) => {
       const el = this.modal(`
         <div class="ad-tag">SANDBOX PURCHASE · no money is charged</div>
-        <h2>${info.title}</h2><p class="price">${info.price}</p>
+        <h2>${info.title}</h2><p class="price">${formatPrice(info.price)}</p>
         <div class="row"><button class="btn" data-a="cancel">Cancel</button>
         <button class="btn primary" data-a="ok">Confirm (test)</button></div>`);
       el.addEventListener('click', (e) => {

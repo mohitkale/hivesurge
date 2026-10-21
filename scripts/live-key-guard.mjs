@@ -32,6 +32,20 @@ export function findLiveKeys(roots) {
   return hits;
 }
 
+/**
+ * M5-6f: Stripe keys in the environment (build env, CI secrets, edge function secrets copied
+ * into a shell) must be test mode. Returns offending variable NAMES only (never values).
+ */
+export function findNonTestStripeEnv(env) {
+  const bad = [];
+  for (const [name, value] of Object.entries(env)) {
+    if (typeof value !== 'string' || !/STRIPE/i.test(name)) continue;
+    const v = value.trim();
+    if (/^(sk|pk|rk)_/.test(v) && !/^(sk|pk|rk)_test_/.test(v)) bad.push(name);
+  }
+  return bad;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = resolve(process.argv[2] ?? '.');
   const envFiles = existsSync(root)
@@ -44,8 +58,11 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     join(root, 'dist'),
     join(root, 'dist-review'), // npm run build:review
     join(root, 'index.html'),
+    join(root, 'supabase'), // edge functions + migrations (M5-6e)
     ...envFiles,
   ]);
+  for (const name of findNonTestStripeEnv(process.env))
+    hits.push(`env ${name}: Stripe key is not test mode (sk_test_/pk_test_/rk_test_ only)`);
   if (hits.length) {
     for (const h of hits) console.error(`live-key guard FAILED: ${h}`);
     process.exit(1);

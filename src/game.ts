@@ -23,7 +23,13 @@ import {
   UNAVAILABLE_MS,
   type ReviveStep,
 } from './platform/revive';
-import { CATALOG, type Sku } from './platform/platform';
+import {
+  CATALOG,
+  countryFromLocale,
+  currencyFor,
+  formatPrice,
+  visibleSkus,
+} from './platform/platform';
 import { Analytics } from './analytics/analytics';
 import type { SaveData, SaveStore } from './platform/save';
 import { AutoQuality, initialTier, qualityOverrideFromUrl } from './render/quality';
@@ -552,10 +558,12 @@ export class Game {
   }
 
   private showShop(): void {
-    const items = (Object.keys(CATALOG) as Sku[])
+    const cur = currencyFor(navigator.language, Intl.DateTimeFormat().resolvedOptions().timeZone);
+    const shown = visibleSkus(Object.values(CATALOG), countryFromLocale(navigator.language));
+    const items = shown
       .map(
-        (k) =>
-          `<div class="row"><button class="btn" data-a="buy:${k}">${CATALOG[k].title} · ${CATALOG[k].price}</button></div>`,
+        (s) =>
+          `<div class="row"><button class="btn" data-a="buy:${s.id}">${s.title} · ${formatPrice(s.price, cur)}</button></div>`,
       )
       .join('');
     this.overlay.innerHTML = `<div class="modal"><div class="card">
@@ -563,10 +571,14 @@ export class Game {
       <p class="small">Any purchase removes forced ads. Rewarded ads stay optional.</p>
       <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
     const handlers: Record<string, () => void> = { back: () => this.showTitle() };
-    for (const k of Object.keys(CATALOG) as Sku[]) {
+    for (const k of shown.map((s) => s.id)) {
       handlers[`buy:${k}`] = async () => {
         if (await this.platform.purchase(k)) {
-          this.analytics.track('purchase', { sku: k, price: CATALOG[k].price, sandbox: true });
+          this.analytics.track('purchase', {
+            sku: k,
+            price: formatPrice(CATALOG[k].price, cur),
+            sandbox: true,
+          });
           const skinBefore = this.equippedSkin();
           applyPurchase(this.save, k, this.platform.name === 'sandbox'); // G6: any purchase removes forced ads
           // Auto-equipped skin (Starter Pack): show it on the title-screen bees right away.
