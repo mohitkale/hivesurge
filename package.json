@@ -4,7 +4,7 @@
   "description": "Hive Surge: original swarm-lane web game (vertical slice)",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/live-key-guard.mjs && tsc --noEmit && vite build && node scripts/live-key-guard.mjs && node scripts/size-budget.mjs",
+    "build": "node scripts/live-key-guard.mjs && tsc --noEmit && vite build && vite build --mode admin && node scripts/live-key-guard.mjs && node scripts/size-budget.mjs && node scripts/admin-split-check.mjs",
     "preview": "vite preview",
     "build:review": "node scripts/live-key-guard.mjs && tsc --noEmit && vite build --outDir dist-review --emptyOutDir && node scripts/live-key-guard.mjs && node scripts/size-budget.mjs dist-review",
     "review": "npm run build:review && npm run serve:review",
@@ -12,7 +12,9 @@
     "test": "vitest run",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "size": "node scripts/size-budget.mjs"
+    "size": "node scripts/size-budget.mjs",
+    "admin": "vite --open /admin",
+    "e2e": "playwright test"
   },
   "license": "UNLICENSED",
   "dependencies": {
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@types/three": "^0.186.0",
     "eslint": "^10.12.0",
@@ -31,7 +34,8 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.1",
     "vite": "^8.3.4",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "zod": "^4.6.7"
   },
   "private": true,
   "type": "module"

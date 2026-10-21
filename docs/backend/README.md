@@ -206,3 +206,11 @@ insert into public.admin_users (user_id, role) values ('<user uuid>', 'owner')
 ```
 
 There is deliberately no client path to grant or change roles.
+
+### Open the admin panel locally
+
+- **Mock mode** (no env vars, or add `?mock=1`): `npm run admin` (or `npm run dev`, then open `http://localhost:5173/admin`). Click **Sign in (mock)**. The data is a seeded in-memory set of 24 players with events, sandbox purchases and config v1. `?role=viewer|support|liveops|owner|none` switches the role (`none` shows the 403 page). The mock applies the same role, cap, reason and publish rules as the server.
+- **Real sandbox:** put `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for `hivesurge-sandbox` in `.env.local`, run `npm run admin`, enter your email and click **Send magic link**. Sign-in is existing users only (`shouldCreateUser: false`), and the built-in mailer only sends to the org's team emails. Add `http://localhost:5173/admin.html` to the auth redirect URLs (dashboard, Authentication → URL configuration). A signed-in user who is not in `admin_users` gets the 403 page, and every RPC refuses them server-side.
+- The panel refuses to start unless the URL is the sandbox project (`src/admin/sandbox.ts`), localhost, or mock. It shows a red SANDBOX banner.
+- **Build:** `npm run build` builds the player game into `dist/` and the admin entry into `dist-admin/`. `scripts/admin-split-check.mjs` fails the build if any admin code or `admin.html` ends up in `dist/`. Don't deploy `dist-admin/`.
+- **Smoke tests:** `npx playwright test` (mock mode, system Chrome) runs in CI after the build.

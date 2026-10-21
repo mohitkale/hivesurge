@@ -12,6 +12,16 @@ export interface RemoteConfig {
   ads: AdCaps;
   chests: Record<ChestType, { odds: Record<Rarity, number> }>;
   difficulty: { expectedP: [number, number][]; lossAssist: [number, number][]; scaleFloor: number };
+  /** M6-5 live-ops calendar (docs/design/liveops-m7.md); consumed by M7-3. Times in ms. */
+  events?: LiveEvent[];
+}
+
+export interface LiveEvent {
+  id: string;
+  name?: string;
+  start: number;
+  end: number;
+  rules?: Record<string, unknown>;
 }
 
 /** Guardrail ceilings (guardrails.md G5): remote config may lower caps, never raise them. */
@@ -69,6 +79,17 @@ export function validateRemoteConfig(c: RemoteConfig): string[] {
     !d.expectedP.every(([n, p], i, a) => isNum(n) && isNum(p) && (i === 0 || n > a[i - 1][0]))
   )
     e.push('difficulty.expectedP must be increasing [n, P] points');
+  if (c.events !== undefined) {
+    if (!Array.isArray(c.events) || c.events.length > 50)
+      e.push('events must be a list of up to 50');
+    else if (
+      c.events.some(
+        (v) =>
+          !v || typeof v.id !== 'string' || !isNum(v.start) || !isNum(v.end) || v.end <= v.start,
+      )
+    )
+      e.push('events need an id and end > start');
+  }
   return e;
 }
 
@@ -120,5 +141,6 @@ function loadRemoteConfigRaw(j: unknown): RemoteConfig {
     },
     chests: { ...d.chests, ...(x.chests ?? {}) },
     difficulty: { ...d.difficulty, ...(x.difficulty ?? {}) },
+    ...(x.events !== undefined ? { events: x.events } : {}),
   };
 }

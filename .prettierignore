@@ -2,3 +2,6 @@ dist
 dist-review
 node_modules
 package-lock.json
+dist-admin
+test-results
+playwright-report

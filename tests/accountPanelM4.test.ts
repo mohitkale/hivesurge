@@ -72,7 +72,16 @@ describe('M4 lazy loading: Supabase stays out of the first-load bundle', () => {
         readFileSync(f, 'utf8'),
       ),
     );
-    expect(importers).toEqual(['src/platform/cloud/supabaseCloud.ts']);
+    // M6: the admin entry (src/admin/, never in the player bundle) has its own lazy client.
+    expect(importers.filter((f) => !f.startsWith('src/admin/'))).toEqual([
+      'src/platform/cloud/supabaseCloud.ts',
+    ]);
+    expect(importers.filter((f) => f.startsWith('src/admin/'))).toEqual([
+      'src/admin/supabaseBackend.ts',
+    ]);
+    expect(readFileSync('src/admin/supabaseBackend.ts', 'utf8')).not.toMatch(
+      /^import \{[^}]*\} from '@supabase/m,
+    );
     const src = readFileSync('src/platform/cloud/supabaseCloud.ts', 'utf8');
     expect(src).toMatch(/^import type .*@supabase\/supabase-js/m);
     expect(src).not.toMatch(/^import \{[^}]*\} from '@supabase/m);

@@ -1,11 +1,30 @@
 import { defineConfig } from 'vitest/config';
+import type { Plugin } from 'vite';
 
-export default defineConfig({
+/** Dev server: `/admin` opens the admin entry (admin.html). */
+const adminRoute = (): Plugin => ({
+  name: 'admin-route',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (req.url && /^\/admin\/?(\?|$)/.test(req.url))
+        req.url = req.url.replace(/^\/admin\/?/, '/admin.html');
+      next();
+    });
+  },
+});
+
+// M6-2: `vite build` = player bundle only (index.html). `vite build --mode admin` builds the
+// separate admin entry into dist-admin/, so no admin code can ship with the game.
+export default defineConfig(({ mode }) => ({
   base: './',
   server: { host: true },
+  plugins: [adminRoute()],
+  publicDir: mode === 'admin' ? false : 'public',
   build: {
     target: 'es2020',
+    outDir: mode === 'admin' ? 'dist-admin' : 'dist',
     rollupOptions: {
+      input: mode === 'admin' ? { admin: 'admin.html' } : { main: 'index.html' },
       output: {
         // Three.js in its own long-cache vendor chunk, separate from game code.
         manualChunks(id: string) {
@@ -19,4 +38,4 @@ export default defineConfig({
     },
   },
   test: { include: ['tests/**/*.test.ts'], environment: 'node' },
-});
+}));
