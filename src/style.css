@@ -24,6 +24,7 @@ html,
 body {
   margin: 0;
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
   /* Round 3 guard: no screen may ever scroll sideways (real layout fixes below too). */
   overflow-x: hidden;
@@ -34,6 +35,8 @@ body {
 #app {
   position: relative;
   height: 100%;
+  height: 100dvh;
+  overflow: hidden;
   max-width: 100vw;
   margin: 0 auto;
   aspect-ratio: auto;
@@ -380,7 +383,12 @@ body {
   z-index: 5;
   overflow-x: hidden;
   overflow-y: auto;
+  /* Keep content scrollable; hide the visible scrollbar (desktop QA). */
+  scrollbar-width: none;
   padding: 8px;
+}
+.modal::-webkit-scrollbar {
+  display: none;
 }
 .ad-modal {
   background: rgba(10, 6, 16, 0.88);
@@ -736,9 +744,14 @@ body {
   /* QA BUG-03: the zig-zag map nodes overflowed sideways at 390 px (horizontal scrollbar). */
   overflow-x: hidden;
   overflow-y: auto;
+  /* Home content is taller than the viewport; scroll without a visible bar. */
+  scrollbar-width: none;
   padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
   color: #fff;
   text-align: center;
+}
+.home-card::-webkit-scrollbar {
+  display: none;
 }
 .wallet {
   display: flex;
@@ -961,7 +974,12 @@ body {
 /* Round 3: hyper-casual home screen (logo, progress, modes, collection, challenges, ranks). */
 .home-r3 {
   place-items: start center;
-  overflow-y: auto;
+  /* Scrolling lives on .home-card; keep the modal itself from showing a bar. */
+  overflow: hidden;
+  scrollbar-width: none;
+}
+.home-r3::-webkit-scrollbar {
+  display: none;
 }
 .home-main {
   display: flex;
