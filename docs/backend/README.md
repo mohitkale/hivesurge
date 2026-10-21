@@ -55,6 +55,46 @@ final version, so a fresh project only needs the four files.
 - `src/platform/cloud/cloudSync.ts` — local-first sync: at most one `sync_player` round trip
   per 10 s; conflicts merge with `mergeSaves` (gem ledger, M4-5a) and retry.
 
+## Account (M4-4)
+
+Settings → **☁️ Account & cloud save** (opt-in; guests never need it):
+
+- **Turn on cloud save (guest)**: anonymous Supabase user; the save syncs right away.
+- **Link email** (guest account): `auth.updateUser({ email })` sends a confirm link; after it,
+  the same user id (and cloud save) has an email and works on other devices.
+- **Email me a link**: magic-link sign-in (creates the account if new). On a second device the
+  local progress merges into the account's cloud save (gem ledger union, nothing lost).
+- **Sync now / Sign out**: sign-out keeps the local save on the device.
+
+With no env vars the same panel runs on the **mock cloud** (this browser's localStorage, labelled
+MOCK CLOUD): "links" sign in at once and nothing is sent.
+
+## Human steps (dashboard only; the MCP has no auth-config tool)
+
+1. Authentication → Sign In / Providers → **Allow anonymous sign-ins: on** (today: off; the
+   panel then says "Guest cloud save is not enabled on this backend yet").
+2. Authentication → URL Configuration → Site URL `http://localhost:5173`; Redirect URLs
+   `http://localhost:5173/**`, `http://127.0.0.1:5173/**`, `http://127.0.0.1:4180/**`.
+3. Free-tier email: the built-in mailer only sends to the organisation's team emails and is
+   rate-limited, so test magic links with your own (team) address. Other addresses need custom
+   SMTP (not set up; no outside contact).
+
+## Try it locally
+
+```sh
+# Mock cloud (no Supabase): works with zero env vars
+npm run dev            # http://localhost:5173 → ⚙️ → Account & cloud save
+
+# Real sandbox backend
+cp .env.example .env.local   # fill in the project URL + publishable/anon key (never commit)
+npm run dev
+```
+
+Then: ⚙️ → Account & cloud save → "Email me a link" with your Supabase team email (or "Turn on
+cloud save (guest)" once anonymous sign-ins are on). Play a battle; within ~10 s the
+`saves`, `level_progress`, `player_stats` and `events` rows appear (Table editor). Sign in on a
+second browser with the same email to see the merge.
+
 ## RLS rules (M4-3)
 
 - Players read and write **only their own rows** (`user_id = auth.uid()`); never delete.

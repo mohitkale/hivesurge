@@ -1,3 +1,4 @@
+import { cloudEnv, shouldAutoStartCloud } from './platform/cloud/config';
 import { LocalSaveBackend, SaveStore } from './platform/save';
 
 /**
@@ -12,6 +13,12 @@ Promise.all([import('./game'), store.load()])
   .then(([{ Game }]) => {
     if (overlay) overlay.innerHTML = '';
     const game = new Game(store);
+    // M4: a returning signed-in player (or an auth link redirect) syncs in the background once
+    // the game is up. Guests never load the cloud chunk until they open Account.
+    if (shouldAutoStartCloud(localStorage, location, cloudEnv())) {
+      const idle = window.requestIdleCallback ?? ((fn: () => void) => setTimeout(fn, 1500));
+      idle(() => game.startCloud());
+    }
     // Dev HMR: tear the old game down (frame loop, sim timer, GL context) before reloading.
     import.meta.hot?.dispose(() => game.dispose());
   })
