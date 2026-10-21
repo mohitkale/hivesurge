@@ -5,31 +5,157 @@ export type RewardedPlacement = 'win_double' | 'revive' | 'boost';
  * `no_fill` / `error` (load failure or 5 s timeout) showed nothing.
  */
 export type RewardedResult = 'completed' | 'closed' | 'no_fill' | 'error';
-export type Sku = 'no_ads' | 'starter_pack' | 'gems_small';
+export type Sku =
+  | 'no_ads'
+  | 'starter_pack'
+  | 'gems_small'
+  | 'gems_medium'
+  | 'gems_large'
+  | 'skip_tickets_10'
+  | 'season_pass';
+
+export type SkuType = 'non_consumable' | 'consumable' | 'non_consumable_per_season';
+
+/** Test prices (monetization/iap-catalog.md). USD anchors; INR tiers are PPP assumptions. */
+export interface SkuPrice {
+  usd: number;
+  inr: number;
+}
+
+export interface SkuGrants {
+  coins?: number;
+  gems?: number;
+  noAds?: boolean;
+  /** Bee skin id unlocked by the purchase. */
+  skin?: string;
+  /** Ad-skip tickets (G8: skip a rewarded ad and still get the reward). */
+  skipTickets?: number;
+  /** Season pass premium track (M7-2). */
+  seasonPremium?: boolean;
+}
 
 export interface SkuInfo {
   id: Sku;
   title: string;
-  price: string;
-  /** `skin`: bee skin id unlocked by the purchase (monetization/skus.json). */
-  grants: { coins?: number; gems?: number; noAds?: boolean; skin?: string };
+  type: SkuType;
+  price: SkuPrice;
+  /** M5-11 / G12: paid SKUs never grant random items. */
+  random: false;
+  /** false = listed in skus.json but not sold yet (season pass waits for M7-2). */
+  available: boolean;
+  grants: SkuGrants;
 }
 
+/**
+ * M5-6a: the frozen catalog, kept in sync with monetization/skus.json by a unit test.
+ * G6: every SKU also grants `noAds`.
+ */
 export const CATALOG: Record<Sku, SkuInfo> = {
-  no_ads: { id: 'no_ads', title: 'No Forced Ads', price: '$2.99', grants: { noAds: true } },
+  no_ads: {
+    id: 'no_ads',
+    title: 'No Forced Ads',
+    type: 'non_consumable',
+    price: { usd: 2.99, inr: 149 },
+    random: false,
+    available: true,
+    grants: { noAds: true },
+  },
   starter_pack: {
     id: 'starter_pack',
     title: 'Starter Pack',
-    price: '$2.99',
+    type: 'non_consumable',
+    price: { usd: 2.99, inr: 149 },
+    random: false,
+    available: true,
     grants: { coins: 500, gems: 50, noAds: true, skin: 'starter' },
   },
   gems_small: {
     id: 'gems_small',
     title: 'Pouch of Gems',
-    price: '$4.99',
-    grants: { gems: 120, noAds: true }, // G6: every purchase removes forced ads
+    type: 'consumable',
+    price: { usd: 4.99, inr: 249 },
+    random: false,
+    available: true,
+    grants: { gems: 120, noAds: true },
+  },
+  gems_medium: {
+    id: 'gems_medium',
+    title: 'Jar of Gems',
+    type: 'consumable',
+    price: { usd: 9.99, inr: 499 },
+    random: false,
+    available: true,
+    grants: { gems: 300, noAds: true },
+  },
+  gems_large: {
+    id: 'gems_large',
+    title: 'Comb of Gems',
+    type: 'consumable',
+    price: { usd: 19.99, inr: 999 },
+    random: false,
+    available: true,
+    grants: { gems: 700, noAds: true },
+  },
+  skip_tickets_10: {
+    id: 'skip_tickets_10',
+    title: '10 Ad-Skip Tickets',
+    type: 'consumable',
+    price: { usd: 2.99, inr: 99 },
+    random: false,
+    available: false, // M5-5: tickets wallet lands with the rewarded placements
+    grants: { skipTickets: 10, noAds: true },
+  },
+  season_pass: {
+    id: 'season_pass',
+    title: 'Season Pass',
+    type: 'non_consumable_per_season',
+    price: { usd: 4.99, inr: 249 },
+    random: false,
+    available: false, // M7-2: no season yet
+    grants: { seasonPremium: true, noAds: true },
   },
 };
+
+export type Currency = 'usd' | 'inr';
+
+/** Display price for a SKU, e.g. "$2.99" or "₹149". */
+export function formatPrice(p: SkuPrice, currency: Currency = 'usd'): string {
+  return currency === 'inr' ? `₹${p.inr}` : `$${p.usd.toFixed(2)}`;
+}
+
+/** INR for Indian locales / time zone, USD elsewhere (test prices only). */
+export function currencyFor(locale: string, timeZone = ''): Currency {
+  return /-IN\b/i.test(locale) || /Asia\/(Calcutta|Kolkata)/.test(timeZone) ? 'inr' : 'usd';
+}
+
+/**
+ * G16 / M5-4b: regions where paid random items are disabled (research M5-3: Belgium by law,
+ * Netherlands conservatively, plus CN, SK, RS per guardrails.md). Remote config may extend it.
+ */
+export const RANDOM_PAID_BLOCKED_REGIONS = ['BE', 'NL', 'CN', 'SK', 'RS'];
+
+/** Minimal shape so the filter also covers future (random) SKUs. */
+export interface ListedSku {
+  id: string;
+  available: boolean;
+  random: boolean;
+}
+
+/** SKUs the store may show in a region: sold now, and no paid random items where blocked. */
+export function visibleSkus<T extends ListedSku>(
+  skus: readonly T[],
+  country: string,
+  blocked: readonly string[] = RANDOM_PAID_BLOCKED_REGIONS,
+): T[] {
+  const c = country.toUpperCase();
+  return skus.filter((s) => s.available && !(s.random && blocked.includes(c)));
+}
+
+/** Best-effort country from the browser locale (e.g. "nl-BE" -> "BE"); '' when unknown. */
+export function countryFromLocale(locale: string): string {
+  const m = /[-_]([A-Za-z]{2})\b/.exec(locale);
+  return m ? m[1].toUpperCase() : '';
+}
 
 /**
  * One interface per distribution target (own site, Poki, CrazyGames, ...).
