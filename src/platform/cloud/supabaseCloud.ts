@@ -72,6 +72,7 @@ export class SupabaseCloud implements CloudBackend {
       ok: o.ok === true,
       revision: typeof o.revision === 'number' ? o.revision : null,
       data: o.data ?? null,
+      now: typeof o.now === 'number' && Number.isFinite(o.now) ? o.now : undefined,
     };
   }
 }
