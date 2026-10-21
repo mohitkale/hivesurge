@@ -88,6 +88,9 @@ export class Game {
   private readonly store: SaveStore;
   private readonly save: SaveData;
   private readonly analytics = new Analytics(localStorage);
+  /** M4-4/5: account + cloud save controller, lazy chunk (null until first needed). */
+  private cloud: Promise<import('./platform/cloud/controller').CloudController> | null = null;
+  private accountOpen = false;
   /** fix/perf-lowend: auto quality tiers (?quality=low|med|high pins one). */
   private readonly quality: AutoQuality;
   private readonly qualityPinned = qualityOverrideFromUrl(location.search);
@@ -359,6 +362,73 @@ export class Game {
     });
   }
 
+  /** M4: load the cloud controller once (Supabase client only if env vars are set). */
+  private cloudController(): Promise<import('./platform/cloud/controller').CloudController> {
+    this.cloud ??= import('./platform/cloud/controller').then(({ CloudController }) =>
+      CloudController.create(this.store, {
+        events: () => this.analytics.events(),
+        onApplied: () => this.onCloudApplied(),
+        onChange: () => {
+          if (this.accountOpen) void this.showAccount();
+        },
+      }),
+    );
+    return this.cloud;
+  }
+
+  /** Boot hook (main.ts): a returning signed-in player syncs without opening Account. */
+  startCloud(): void {
+    this.cloudController().catch((e: unknown) => {
+      console.warn('cloud unavailable, playing offline', e);
+      this.cloud = null;
+    });
+  }
+
+  /** A sync merged the cloud save into the running one: refresh what is on screen. */
+  private onCloudApplied(): void {
+    applyTheme(document.documentElement, this.save.settings.colorBlind);
+    this.sfx.setMuted(this.save.settings.muted);
+    if (this.phase === 'title' && !this.accountOpen && this.overlay.querySelector('.home'))
+      this.showTitle();
+  }
+
+  private async showAccount(): Promise<void> {
+    this.accountOpen = true;
+    const { accountHtml } = await import('./ui/account');
+    if (!this.accountOpen) return;
+    if (!this.cloud) this.overlay.innerHTML = accountHtml(null);
+    let c;
+    try {
+      c = await this.cloudController();
+    } catch {
+      this.cloud = null;
+      this.overlay.innerHTML = `<div class="modal"><div class="card"><h2>Account</h2>
+        <p class="small">Cloud save is unavailable right now. Your progress is saved on this device.</p>
+        <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
+      this.bind({ back: () => this.closeAccount() });
+      return;
+    }
+    if (!this.accountOpen) return;
+    const prevEmail = this.overlay.querySelector<HTMLInputElement>('#acct-email')?.value ?? '';
+    this.overlay.innerHTML = accountHtml(c.state());
+    const input = this.overlay.querySelector<HTMLInputElement>('#acct-email');
+    if (input) input.value = prevEmail;
+    const email = () => input?.value ?? '';
+    this.bind({
+      back: () => this.closeAccount(),
+      'acct:guest': () => void c.playAsGuest(),
+      'acct:magic': () => void c.sendMagicLink(email()),
+      'acct:link': () => void c.linkEmail(email()),
+      'acct:sync': () => void c.syncNow(),
+      'acct:signout': () => void c.signOut(),
+    });
+  }
+
+  private closeAccount(): void {
+    this.accountOpen = false;
+    this.showSettings();
+  }
+
   private showSettings(): void {
     this.overlay.innerHTML = `
       <div class="modal"><div class="card"><h2>Settings</h2>
@@ -368,10 +438,12 @@ export class Game {
         ${prefersReducedMotion() ? '<p class="small">Reduced motion is on: no screen shake.</p>' : ''}
         <p class="small">Mouse/touch: hold &amp; drag · Keys: ←/→ or A/D, Space fires, Q = Queen</p>
         <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
+        <div class="row"><button class="btn" data-a="account">☁️ Account &amp; cloud save</button></div>
         <div class="row"><button class="btn primary" data-a="back">Back</button></div>
       </div></div>`;
     this.bind({
       back: () => this.showTitle(),
+      account: () => void this.showAccount(),
       cb: () => {
         this.save.settings.colorBlind = !this.save.settings.colorBlind;
         applyTheme(document.documentElement, this.save.settings.colorBlind);

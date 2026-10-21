@@ -1237,3 +1237,18 @@ body {
     animation: none;
   }
 }
+
+/* M4-4 account panel */
+.account .acct-email {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  border: 2px solid rgba(42, 31, 61, 0.2);
+  background: #fff;
+  color: #2a1f3d;
+  font: inherit;
+}
+.account .btn {
+  white-space: nowrap;
+}
