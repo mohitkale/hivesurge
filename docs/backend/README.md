@@ -33,12 +33,14 @@ No paid add-on, compute upgrade or branch was used. (Supabase branching is a pai
 
 ## Schema (`supabase/migrations/`)
 
-| Migration                           | What                                                                                                                                      |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `20261022000100_m4_schema.sql`      | `profiles`, `saves` (jsonb + `revision`), `level_progress`, `player_stats`, `events`, `purchases_sandbox`, `admin_users`; profile trigger |
-| `20261022000200_m4_rls.sql`         | RLS on every table, `private.is_admin()`, grants (no `anon` access, no player deletes)                                                    |
-| `20261022000400_m4_sync_player.sql` | `sync_player`: one batched round trip (save + progress/stats + events) and `private.insert_events` (idempotent, insert-only)              |
-| `20261022000300_m4_rpc.sql`         | `push_save` (optimistic concurrency on `revision`) and `sync_progress` (monotonic max-merge), both `security invoker`                     |
+| Migration                           | What                                                                                                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `20261022000100_m4_schema.sql`      | `profiles`, `saves` (jsonb + `revision`), `level_progress`, `player_stats`, `events`, `purchases_sandbox`, `admin_users`; profile trigger            |
+| `20261022000200_m4_rls.sql`         | RLS on every table, `private.is_admin()`, grants (no `anon` access, no player deletes)                                                               |
+| `20261022000400_m4_sync_player.sql` | `sync_player`: one batched round trip (save + progress/stats + events) and `private.insert_events` (idempotent, insert-only)                         |
+| `20261022000300_m4_rpc.sql`         | `push_save` (optimistic concurrency on `revision`) and `sync_progress` (monotonic max-merge), both `security invoker`                                |
+| `20261022000500_m5_sync_now.sql`    | `sync_player` also returns `now` (server ms) for the trusted game clock (M5-4c)                                                                      |
+| `20261022000600_m5_purchases.sql`   | `purchases_sandbox` gains `session_id` (unique), `payment_intent`, `status`, `amount`, `currency`, `grants`; **client insert/update revoked** (M5-8) |
 
 Apply with the Supabase CLI (`supabase db push`) or the MCP `apply_migration`, in file order.
 
@@ -99,7 +101,9 @@ second browser with the same email to see the merge.
 
 - Players read and write **only their own rows** (`user_id = auth.uid()`); never delete.
 - `events`: players **insert only**; only admins read.
-- `purchases_sandbox`: insert requires `sandbox = true`; provider is `mock` or `stripe_test`.
+- `purchases_sandbox`: players **read their own rows only** (restore). Since M5-8 only the
+  `stripe-webhook` Edge Function (service role) inserts or updates purchases, so a client cannot
+  grant itself paid items. `sandbox` must be true; provider is `mock` or `stripe_test`.
 - `admin_users`: read-only from the API (a user sees only their own row). Admins
   (`private.is_admin()`, a `security definer` helper in the unexposed `private` schema) can
   read every table but cannot write player rows.
@@ -108,7 +112,7 @@ second browser with the same email to see the merge.
 Tests: [`supabase/tests/rls_test.sql`](../../supabase/tests/rls_test.sql) creates users A and B,
 runs the abuse cases (B reads/updates/inserts A's rows, self-promotion to admin, deletes,
 non-sandbox purchases, anon access, stale save revisions) inside one transaction and rolls
-back. It returns `M4 RLS tests: all passed` or raises on the first failure. The repo test
+back. It returns `M4/M5 RLS tests: all passed` or raises on the first failure. The repo test
 `tests/supabaseMigrations.test.ts` also checks statically that every table enables RLS.
 
 ## Advisors
@@ -132,3 +136,51 @@ created by SQL in the sandbox; password kept off the repo):
 | Logged-out `select saves` / `rpc sync_player`                   | 42501 denied         |
 | `private.insert_events` via the API                             | not exposed          |
 | Two devices on one account, offline spend vs grant, `CloudSync` | merged to 17 gems    |
+
+## Stripe purchases (M5, TEST MODE only)
+
+**Status (2026-10-22): mocked.** No Stripe keys exist on the build box and the Stripe account
+needs Mohit's approval (PLAN M5-6b hard gate), so no account was created. Everything else is
+built and deployed; real test-mode Checkout switches on with secrets only (no code change).
+
+### How it works
+
+| Piece                                      | Where                                      | Notes                                                                                                                                                               |
+| ------------------------------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create-checkout` Edge Function (deployed) | `supabase/functions/create-checkout/`      | `verify_jwt = true`. Signed-in player sends `{sku, currency, returnUrl}`; server prices the SKU from its own catalog and returns the hosted Checkout URL.           |
+| `stripe-webhook` Edge Function (deployed)  | `supabase/functions/stripe-webhook/`       | `verify_jwt = false`; verifies `Stripe-Signature` (HMAC, 5 min tolerance), grants `checkout.session.completed` (paid), revokes currency on a full `charge.refunded` |
+| Shared, unit-tested logic                  | `supabase/functions/_shared/`              | `stripeSig.ts`, `checkout.ts`, `webhook.ts`, `grant.ts` (idempotent save grants, keys `purchase:<session>` / `refund:<session>`), `skus.ts`, `restStore.ts`         |
+| Seed script                                | `scripts/stripe-seed-test.mjs`             | Products `hs_<sku>` and Prices with `lookup_key = <sku>_usd` / `<sku>_inr`; idempotent; refuses non-`sk_test_`/`rk_test_` keys                                      |
+| Grants                                     | webhook → `purchases_sandbox` + cloud save | Row insert is unique by session id; the save gets gem-ledger / coin-book grants keyed by session id (revision + 1, optimistic). The client never grants paid items. |
+
+Without secrets both functions answer **503 `stripe_not_configured`** (checked live
+2026-10-22: webhook 503, checkout without JWT 401, with JWT 503).
+
+### Switch Stripe test mode on (Mohit, about 10 minutes)
+
+1. **Approve the Stripe account in chat** (M5-6b gate), then create or open the Stripe account
+   and stay in **Test mode** (toggle top right). Never activate live payments.
+2. **Developers → API keys** (test mode): copy the **Secret key** (`sk_test_...`) and the
+   **Publishable key** (`pk_test_...`). A restricted key (`rk_test_...`) with write access to
+   Checkout Sessions and read access to Prices also works.
+3. **Developers → Webhooks → Add endpoint**:
+   - URL: `https://yaizrnbfspmzshdzjcjz.supabase.co/functions/v1/stripe-webhook`
+   - Events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+     `charge.refunded`
+   - Copy the endpoint **Signing secret** (`whsec_...`).
+4. **Supabase dashboard → Edge Functions → Secrets** (or `supabase secrets set`) for project
+   `yaizrnbfspmzshdzjcjz`:
+   - `STRIPE_SECRET_KEY` = `sk_test_...` (anything else is refused)
+   - `STRIPE_WEBHOOK_SECRET` = `whsec_...`
+   - optional `ALLOWED_ORIGINS` = comma-separated return origins (default
+     `http://localhost:5173,http://127.0.0.1:5173`)
+5. **Local `.env.local`** (git-ignored, never commit): `VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...`.
+   The build fails if any `*STRIPE*` env var holds a non-test key (`scripts/live-key-guard.mjs`).
+6. Optional: `STRIPE_SECRET_KEY=sk_test_... node scripts/stripe-seed-test.mjs` to create the
+   Products/Prices in the dashboard (Checkout uses inline server prices if you skip this).
+7. Test with cards `4242 4242 4242 4242` (success), `4000 0000 0000 0002` (decline),
+   `4000 0025 0000 3155` (3DS), and refund from the dashboard (PLAN M5-6i / M5-9).
+
+To redeploy the functions: `supabase functions deploy create-checkout` and
+`supabase functions deploy stripe-webhook --no-verify-jwt` (the CLI bundles `_shared/`; the
+MCP deploy was done with an esbuild single-file bundle of the same sources).

@@ -1,4 +1,4 @@
--- M4-3 RLS abuse tests. Run as the database owner (Supabase SQL editor / MCP execute_sql).
+-- M4-3 / M5-8 RLS abuse tests. Run as the database owner (Supabase SQL editor / MCP execute_sql).
 -- Everything runs in one transaction that is rolled back, so no test data is left behind.
 -- Any failed check raises an exception; success returns one row: 'M4 RLS tests: all passed'.
 begin;
@@ -17,6 +17,11 @@ do $$ begin
     raise exception 'FAIL: profile trigger';
   end if;
 end $$;
+
+-- M5-8: purchases are written by the webhook (service role) only; seed one for A as owner.
+insert into public.purchases_sandbox (user_id, sku, provider, session_id, status, grants)
+values ('11111111-1111-4111-8111-111111111111', 'gems_small', 'stripe_test', 'cs_test_rls_a',
+  'paid', '{"gems":120,"noAds":true}');
 
 -- ---------- user A writes own data ----------
 set local role authenticated;
@@ -48,7 +53,25 @@ do $$ begin
   end if;
   insert into public.events (session, name, props, client_ts)
     values ('s1', 'level_win', '{}', now());
-  insert into public.purchases_sandbox (sku) values ('gems_small');
+end $$;
+
+-- M5-8: A reads own purchase but cannot grant itself one, nor edit or refund it.
+do $$
+declare n integer;
+begin
+  if (select count(*) from public.purchases_sandbox) <> 1 then
+    raise exception 'FAIL: A cannot read own purchase';
+  end if;
+  begin
+    insert into public.purchases_sandbox (sku) values ('gems_small');
+    raise exception 'FAIL: client purchase insert allowed';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.purchases_sandbox set status = 'paid', sku = 'gems_large';
+    raise exception 'FAIL: client purchase update allowed';
+  exception when insufficient_privilege then null;
+  end;
 end $$;
 
 -- A cannot read events back (insert-only), nor delete own rows.
@@ -58,11 +81,6 @@ do $$ begin
     delete from public.saves;
     raise exception 'FAIL: delete allowed';
   exception when insufficient_privilege then null;
-  end;
-  begin
-    insert into public.purchases_sandbox (sku, sandbox) values ('x', false);
-    raise exception 'FAIL: non-sandbox purchase allowed';
-  exception when check_violation or insufficient_privilege then null;
   end;
   begin
     insert into public.admin_users (user_id) values ('11111111-1111-4111-8111-111111111111');
@@ -191,8 +209,16 @@ select set_config('request.jwt.claims',
 do $$
 declare n integer;
 begin
-  if (select count(*) from public.saves) <> 2 then raise exception 'FAIL: admin read all saves'; end if;
-  if (select count(*) from public.events) <> 3 then raise exception 'FAIL: admin read events'; end if;
+  -- Count only the test users: the sandbox also holds real e2e accounts.
+  if (select count(*) from public.saves where user_id in ('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222')) <> 2 then
+    raise exception 'FAIL: admin read all saves';
+  end if;
+  if (select count(*) from public.events where user_id in ('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222')) <> 3 then
+    raise exception 'FAIL: admin read events';
+  end if;
+  if (select count(*) from public.purchases_sandbox where user_id in ('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222')) <> 1 then
+    raise exception 'FAIL: admin read purchases';
+  end if;
   update public.saves set data = '{"hacked":true}'
     where user_id = '11111111-1111-4111-8111-111111111111';
   get diagnostics n = row_count;
@@ -210,5 +236,5 @@ do $$ begin
   end if;
 end $$;
 
-select 'M4 RLS tests: all passed' as result;
+select 'M4/M5 RLS tests: all passed' as result;
 rollback;
