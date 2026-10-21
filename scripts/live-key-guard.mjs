@@ -57,6 +57,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     join(root, 'src'),
     join(root, 'dist'),
     join(root, 'dist-review'), // npm run build:review
+    join(root, 'dist-admin'), // M6 admin entry
+    join(root, 'admin.html'),
     join(root, 'index.html'),
     join(root, 'supabase'), // edge functions + migrations (M5-6e)
     ...envFiles,

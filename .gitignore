@@ -8,3 +8,6 @@ dist-review
 .env.local
 .env.*.local
 *.local
+dist-admin
+test-results
+playwright-report
