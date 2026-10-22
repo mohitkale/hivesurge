@@ -58,7 +58,8 @@ import { checkoutReturn, purchaseMode } from './purchases/config';
 import { recordGems } from './platform/gemLedger';
 import { ResultSession } from './platform/resultSession';
 import { adModeFromUrl, MockPlatform } from './platform/mockPlatform';
-import type { RewardedPlacement, RewardedResult, Sku } from './platform/platform';
+import type { Platform, RewardedPlacement, RewardedResult, Sku } from './platform/platform';
+import { isPortal, platformFlag } from './platform/platformFlag';
 import {
   ReviveOffer,
   ReviveSession,
@@ -145,7 +146,8 @@ export class Game {
   private readonly overlay = document.getElementById('overlay')!;
   private readonly sfx = new Sfx();
   private readonly input = new Input(this.canvas);
-  private readonly platform: MockPlatform;
+  /** M7-4: sandbox mock by default; a portal build swaps in its SDK adapter once it loads. */
+  private platform: Platform;
   private readonly store: SaveStore;
   private readonly save: SaveData;
   private readonly analytics = new Analytics(localStorage);
@@ -242,14 +244,18 @@ export class Game {
     this.scene = this.makeScene();
     this.input.setPicker((x, y) => this.scene.pickLaneX(x, y), this.world.maxCannonX);
     if (import.meta.env.DEV) (window as unknown as { __hsGame: Game }).__hsGame = this;
-    this.platform = new MockPlatform(
-      this.overlay,
-      {
-        onAdStart: () => this.sfx.setMuted(true),
-        onAdEnd: () => this.sfx.setMuted(this.save.settings.muted),
-      },
-      adModeFromUrl(location.search),
-    );
+    const adHooks = {
+      onAdStart: () => this.sfx.setMuted(true),
+      onAdEnd: () => this.sfx.setMuted(this.save.settings.muted),
+    };
+    this.platform = new MockPlatform(this.overlay, adHooks, adModeFromUrl(location.search));
+    const flag = platformFlag(import.meta.env.VITE_PLATFORM as string | undefined);
+    if (isPortal(flag))
+      void import('./platform/adapters/portal')
+        .then((m) => m.createPortalPlatform(flag, adHooks))
+        .then((p) => {
+          if (p) this.platform = p;
+        });
     if (import.meta.env.DEV && this.perfOverlay) {
       const overlay = this.perfOverlay;
       overlay.visible = perfEnabledFromUrl(location.search, true);
