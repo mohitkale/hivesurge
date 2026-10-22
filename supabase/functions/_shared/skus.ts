@@ -87,7 +87,7 @@ export const SERVER_SKUS: Record<ServerSkuId, ServerSku> = {
     usd: 4.99,
     inr: 249,
     grants: { seasonPremium: true, noAds: true },
-    available: false,
+    available: true,
   },
 };
 

@@ -236,7 +236,10 @@ describe('M5-6d create-checkout', () => {
     const d = { stripe: stripe(), allowedOrigins: origins };
     const ok = { sku: 'gems_small', currency: 'usd', returnUrl: 'http://localhost:5173/' };
     expect((await handleCreateCheckout(null, ok, d)).status).toBe(401);
+    expect((await handleCreateCheckout(USER, { ...ok, sku: 'nope' }, d)).status).toBe(400);
+    SERVER_SKUS.season_pass.available = false;
     expect((await handleCreateCheckout(USER, { ...ok, sku: 'season_pass' }, d)).status).toBe(400);
+    SERVER_SKUS.season_pass.available = true;
     expect(
       (await handleCreateCheckout(USER, { ...ok, returnUrl: 'https://evil.example/' }, d)).status,
     ).toBe(400);

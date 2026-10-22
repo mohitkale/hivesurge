@@ -72,7 +72,7 @@ describe('round 3: home screen model', () => {
     expect(html).toContain('🔒 Level 20');
     expect(html).toContain('LV <b>4</b>');
     expect(html).toMatch(/mock · local only/);
-    expect(html).toContain('local preview');
+    expect(html).toContain('resets 00:00 UTC'); // M7-3: real daily targets
     expect(html).toContain('Upcoming');
   });
 

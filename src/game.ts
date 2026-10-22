@@ -113,11 +113,20 @@ import { Input } from './ui/input';
 import { starRowHtml } from './ui/stars';
 import { defeatHeadline } from './ui/defeatCopy';
 import { PerfOverlay } from './ui/perfOverlay';
-import { collection, dailyChallenges, homeHtml, mockLeaderboard } from './ui/home';
+import { collection, homeHtml, mockLeaderboard } from './ui/home';
+import { homeChallenges, liveBannerHtml, liveopsHtml } from './ui/liveops';
+import { afterBattle, nextEventLevel, openLive, type LiveCtx } from './meta/liveGame';
+import {
+  claimDaily,
+  claimDailyBonus,
+  claimMilestone,
+  claimTier,
+  claimWeekly,
+  nextEvent,
+  recordAction,
+  rerollDaily,
+} from './meta/liveops';
 
-/** Local calendar day YYYY-MM-DD (daily challenge rotation). */
-const localDay = (d = new Date()): string =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 import { shakeEnabled } from './render/shake';
 
 const prefersReducedMotion = (): boolean =>
@@ -345,7 +354,30 @@ export class Game {
     this.scene.setDemoGhost(f.demoX(w)); // M2-30b
   }
 
+  /** M7-3: live-ops context for the current screen (season, running event). */
+  private live: LiveCtx = { now: 0, season: null, event: null };
+  /** M7-3: set while the player is in an event battle (event level index). */
+  private eventPlay: { k: number } | null = null;
+  private loginNote = '';
+
+  private refreshLive(): LiveCtx {
+    const { ctx, loginDay } = openLive(
+      this.save,
+      cachedRemoteConfig(),
+      gameClock().now(),
+      this.stage(),
+      Math.random,
+    );
+    if (loginDay) {
+      this.loginNote = `Day ${loginDay} login reward collected`;
+      this.persist();
+    }
+    this.live = ctx;
+    return ctx;
+  }
+
   private currentLevel(): LevelDef {
+    if (this.eventPlay && this.live.event) return nextEventLevel(this.save, this.live.event).level;
     const dbgIndex = this.debug.level ? campaignIndexOf(this.debug.level) : -1;
     if (dbgIndex >= 0) return campaignLevel(dbgIndex);
     return campaignLevel(campaignNextIndex(this.save.bestStars));
@@ -368,6 +400,8 @@ export class Game {
   private showTitle(): void {
     this.phase = 'title';
     this.hudRoot.innerHTML = '';
+    this.eventPlay = null;
+    const live = this.refreshLive();
     const no = this.levelNo(this.currentLevel());
     const stars = totalStars(this.save.bestStars);
     const known = SKINS.map((s) => s.id);
@@ -385,15 +419,22 @@ export class Game {
       gems: this.save.gems,
       earned: this.lastEarned,
       collection: collection(no, bees),
-      challenges: dailyChallenges(localDay(), this.save.battlesCompleted),
+      challenges: homeChallenges(this.save),
       ranks: mockLeaderboard(stars, no),
-      meta: this.homeMetaHtml(),
+      meta: `${this.loginNote ? `<p class="small login-note" role="status">🎁 ${this.loginNote}</p>` : ''}${liveBannerHtml(this.save, live, nextEvent(cachedRemoteConfig().events, live.now))}${this.homeMetaHtml()}`,
     });
+    this.loginNote = '';
     this.lastEarned = null;
     this.metaScreen = () => this.showTitle();
     this.bind({
       ...this.metaHandlers(),
       play: () => this.showBoosts(),
+      'event:play': () => {
+        if (!this.live.event) return this.showTitle();
+        this.eventPlay = { k: nextEventLevel(this.save, this.live.event).k };
+        this.startBattle();
+      },
+      liveops: () => this.showLiveops(),
       'mode:story': () => this.showMap(),
       shop: () => this.showShop(),
       skin: () => this.showSkins(),
@@ -542,6 +583,7 @@ export class Game {
       open: () => {
         const r = openChest(this.save, id, gameClock().now());
         if (!r) return this.showChest(id);
+        recordAction(this.save.meta.liveops, 'chest');
         this.persist();
         this.metaScreen = null;
         this.overlay.innerHTML = chestOpenHtml(r);
@@ -557,7 +599,10 @@ export class Game {
     const h: Record<string, () => void> = { back: () => this.showTitle() };
     for (const id of Object.keys(this.save.meta.bees)) {
       h[`upgrade:${id}`] = () => {
-        if (upgradeBee(this.save, id)) this.persist();
+        if (upgradeBee(this.save, id)) {
+          recordAction(this.save.meta.liveops, 'upgrade');
+          this.persist();
+        }
         this.showBees();
       };
       h[`equip:${id}`] = () => {
@@ -927,6 +972,51 @@ export class Game {
     }
   }
 
+  /** M7-3 Targets & Pass screen (daily, weekly, event milestones, season pass). */
+  private showLiveops(note = ''): void {
+    const live = this.refreshLive();
+    const cur = currencyFor(navigator.language, Intl.DateTimeFormat().resolvedOptions().timeZone);
+    const sku = CATALOG.season_pass;
+    const price = sku.available && live.season ? formatPrice(sku.price, cur) : null;
+    this.overlay.innerHTML = liveopsHtml(this.save, live, price);
+    if (note)
+      this.overlay
+        .querySelector('h2')
+        ?.insertAdjacentHTML('afterend', `<p class="small" role="status">${note}</p>`);
+    this.metaScreen = null;
+    const now = live.now;
+    const done = (ok: boolean, fail = 'Free a chest slot first.') => {
+      if (ok) this.persist();
+      this.showLiveops(ok ? '' : fail);
+    };
+    const h: Record<string, () => void> = {
+      back: () => this.showTitle(),
+      'claim:bonus': () =>
+        done(claimDailyBonus(this.save, now, Math.random, live.season ?? undefined)),
+      'buy:season_pass': async () => {
+        await this.buy('season_pass', cur, 'liveops');
+        this.showLiveops();
+      },
+    };
+    for (let i = 0; i < 3; i++) {
+      h[`claim:daily:${i}`] = () =>
+        done(claimDaily(this.save, i, now, Math.random, live.season ?? undefined));
+      h[`reroll:${i}`] = () =>
+        done(rerollDaily(this.save.meta.liveops, i, this.stage()), 'No other target to swap in.');
+    }
+    for (let i = 0; i < 5; i++)
+      h[`claim:weekly:${i}`] = () =>
+        done(claimWeekly(this.save, i, now, Math.random, live.season ?? undefined));
+    for (let i = 0; i < 10; i++)
+      h[`claim:event:${i}`] = () =>
+        done(!!live.event && claimMilestone(this.save, live.event, i, now, Math.random));
+    for (let t = 1; t <= 30; t++)
+      for (const track of ['free', 'premium'] as const)
+        h[`tier:${track}:${t}`] = () =>
+          done(claimTier(this.save, live.season, t, track, now, Math.random));
+    this.bind(h);
+  }
+
   private showShop(): void {
     const cur = currencyFor(navigator.language, Intl.DateTimeFormat().resolvedOptions().timeZone);
     const shown = visibleSkus(Object.values(CATALOG), countryFromLocale(navigator.language));
@@ -994,8 +1084,9 @@ export class Game {
     this.analytics.track('level_start', { level: this.world.level.id });
     this.hud = new Hud(this.hudRoot);
     {
-      const no = this.levelNo(this.world.level);
-      const world = bandTheme(worldBand(no))?.name ?? 'Meadow';
+      const ev = this.eventPlay;
+      const no = ev ? ev.k + 1 : this.levelNo(this.world.level);
+      const world = ev ? 'Event' : (bandTheme(worldBand(no))?.name ?? 'Meadow');
       this.hud.showLevel(no, this.world.level.name, world, !!this.world.level.bossPhases);
       const active = Object.keys(boosts).map((id) => boostById(id));
       if (active.length)
@@ -1422,27 +1513,47 @@ export class Game {
     this.disableResultButtons();
     // G4 + decision 43: a rewarded ad shown, or a rewarded offer declined, blocks it.
     const rewardedShown = this.result.blocksInterstitial;
-    this.save.coins += r.coins;
     const id = this.world.level.id;
-    // Feedback 2026-10-15: new-best stars also pay gems; the map shows what was earned.
-    const gain = starGain(this.save.bestStars[id] ?? 0, r.stars);
-    recordGems(this.save, gain.gems, `stars:${id}`); // M4-5a ledger entry
-    this.lastEarned = {
-      levelNo: this.levelNo(this.world.level),
-      won: this.world.outcome === 'won',
-      coins: r.coins,
-      stars: r.stars,
-      ...gain,
-      meta: this.awardMeta(r, this.world.outcome === 'won', id),
-    };
-    this.save.bestStars[id] = Math.max(this.save.bestStars[id] ?? 0, r.stars);
+    // M7-3: targets, streaks, pass XP; event battles earn event points instead of stars/chests.
+    const ev = this.eventPlay;
+    this.live = { ...this.live, now: gameClock().now() };
+    const lo = afterBattle(this.save, this.world, this.live, r.stars, ev ? ev.k : null);
+    const coins = Math.round(r.coins * lo.coinMul);
+    this.save.coins += coins;
+    if (ev) {
+      this.lastEarned = {
+        levelNo: ev.k + 1,
+        won: this.world.outcome === 'won',
+        coins,
+        stars: 0,
+        newStars: 0,
+        gems: 0,
+        meta: `🎪 +${lo.eventPts} event pts`,
+      };
+    } else {
+      // Feedback 2026-10-15: new-best stars also pay gems; the map shows what was earned.
+      const gain = starGain(this.save.bestStars[id] ?? 0, r.stars);
+      recordGems(this.save, gain.gems, `stars:${id}`); // M4-5a ledger entry
+      const streak = lo.coinMul > 1 ? `🔥 +${Math.round((lo.coinMul - 1) * 100)}% coins` : '';
+      this.lastEarned = {
+        levelNo: this.levelNo(this.world.level),
+        won: this.world.outcome === 'won',
+        coins,
+        stars: r.stars,
+        ...gain,
+        meta: [streak, this.awardMeta(r, this.world.outcome === 'won', id)]
+          .filter(Boolean)
+          .join(' · '),
+      };
+      this.save.bestStars[id] = Math.max(this.save.bestStars[id] ?? 0, r.stars);
+    }
     this.save.battlesCompleted++;
     // M4-6: lifetime stats for the cloud player_stats / level_progress sync.
     const st = this.save.stats;
     if (this.world.outcome === 'won') st.wins++;
     else st.losses++;
-    st.coinsEarned += r.coins;
-    st.bestCoins[id] = Math.max(st.bestCoins[id] ?? 0, r.coins);
+    st.coinsEarned += coins;
+    if (!ev) st.bestCoins[id] = Math.max(st.bestCoins[id] ?? 0, coins);
     // FTUE is done after its first win (replays of level 1 run without prompts).
     // Decision 40: a win finishes the FTUE only once step 5 is done (or on the L2 carry, the
     // last FTUE level); otherwise the remaining steps carry into the next battle.

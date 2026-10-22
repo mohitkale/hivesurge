@@ -15,6 +15,7 @@ import { MockStripe, MockPurchaseStore, TEST_CARDS } from '../src/purchases/mock
 import { applyPurchaseRecords } from '../src/purchases/records';
 import { type CheckoutUi, PurchaseService, type RemotePurchases } from '../src/purchases/service';
 import type { PurchaseRecord } from '../supabase/functions/_shared/grant.ts';
+import { SERVER_SKUS } from '../supabase/functions/_shared/skus.ts';
 
 const ORIGIN = 'http://localhost:5173';
 const SUPA = {
@@ -131,10 +132,15 @@ describe('M5-9 purchase matrix (mock Checkout, same webhook code as the Edge Fun
 
   it('unavailable SKUs cannot be bought (server catalog decides)', async () => {
     const { svc } = rig(script([TEST_CARDS.success]));
-    expect(await svc.buy('season_pass', 'usd')).toEqual({
-      status: 'failed',
-      reason: 'unknown or unavailable item',
-    });
+    SERVER_SKUS.season_pass.available = false; // M7-3 sells it; simulate an unsold SKU
+    try {
+      expect(await svc.buy('season_pass', 'usd')).toEqual({
+        status: 'failed',
+        reason: 'unknown or unavailable item',
+      });
+    } finally {
+      SERVER_SKUS.season_pass.available = true;
+    }
   });
 
   it('refund: restore removes the currency once, keeps No Ads', async () => {
