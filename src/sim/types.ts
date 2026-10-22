@@ -113,4 +113,7 @@ export type SimEvent =
   | { type: 'nestHit'; damage: number; x: number }
   | { type: 'hiveHit'; damage: number; x: number }
   | { type: 'queen'; x: number }
+  | { type: 'frost'; x: number }
+  | { type: 'volley'; x: number; count: number }
+  | { type: 'honeyBlock'; x: number }
   | { type: 'end'; outcome: BattleOutcome };

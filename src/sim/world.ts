@@ -59,6 +59,25 @@ export interface MetaMods {
   queenChargeSec: number;
   /** Enemy nest hp + wave size scale, easier-only (0.85..1). */
   enemyScale: number;
+  /** M7 bee effects (0 / 1 = off). Bumble Tank: every Nth worker shot has `bumbleHp` hp. */
+  bumbleEvery?: number;
+  bumbleHp?: number;
+  /** Carpenter Bee: share of crossing bees a trap absorbs (1 = all, 0.8 = 20% pass through). */
+  trapAbsorb?: number;
+  /** Sweat Bee: chance a × gate spawns one extra bee. */
+  sweatChance?: number;
+  /** Leafcutter: seconds a passed + gate keeps +1 value (0 = off). */
+  leafSeconds?: number;
+  /** Honey Guard: wasps the once-per-battle hive shield blocks (0 = off). */
+  honeyBlocks?: number;
+  /** Royal Jelly Queen: queen hp (0 = default 25). */
+  queenHp?: number;
+  /** Sunburst Drone: every `volleyEvery` s, `volleyCount` bees fire at the cannon x. */
+  volleyEvery?: number;
+  volleyCount?: number;
+  /** Frost Wing: on queen launch, wasps move at (1 - frostSlow) speed for `frostSeconds`. */
+  frostSlow?: number;
+  frostSeconds?: number;
 }
 
 export const NO_MODS: MetaMods = {
@@ -111,6 +130,13 @@ export class World {
   /** Current boss phase (0 = none entered yet). */
   bossPhase = 0;
   private repeatTimers: number[] = [];
+  /** M7 bee-effect state. */
+  private shots = 0;
+  private trapCarry = 0;
+  private leafUntil: number[] = [];
+  honeyLeft = 0;
+  private volleyTimer = 0;
+  frostUntil = -1;
 
   /** Pre-level boosts (feedback 2026-10-15); empty = none. */
   readonly boosts: BattleBoosts;
@@ -143,6 +169,8 @@ export class World {
     this.gatePasses = level.gates.map(() => 0);
     this.gateAngles = level.gates.map(() => 0);
     this.gateSpeedMul = level.gates.map(() => 1);
+    this.leafUntil = level.gates.map(() => -1);
+    this.honeyLeft = Math.max(0, Math.round(mods.honeyBlocks ?? 0));
     this.waspGrid = new SpatialGrid(level.laneWidth, level.laneLength, 1, WASP_CAP);
     this.timedWaves = level.waves
       .filter((w) => w.at !== undefined)
@@ -290,17 +318,39 @@ export class World {
           for (let k = 0; k < perBarrel; k++) {
             const jitter = (this.rng() - 0.5) * (k === 0 ? 0.3 : 1.2);
             const x = clamp(this.cannonX + dx + jitter, L.laneWidth / 2 - 0.25);
-            if (this.bees.spawn(UnitKind.Worker, x, CANNON_Y) >= 0) this.stats.fired++;
+            const every = this.mods.bumbleEvery ?? 0;
+            const tank = every > 0 && ++this.shots % every === 0;
+            const hp = tank ? (this.mods.bumbleHp ?? 3) : UNIT_STATS[UnitKind.Worker].hp;
+            if (this.bees.spawn(UnitKind.Worker, x, CANNON_Y, 0, hp) >= 0) this.stats.fired++;
           }
       }
     } else {
       this.fireTimer = Math.min(this.fireTimer, 0);
     }
     if (input.queen && this.queenReady) {
-      if (this.bees.spawn(UnitKind.Queen, this.cannonX, CANNON_Y) >= 0) {
+      const qhp = this.mods.queenHp || UNIT_STATS[UnitKind.Queen].hp;
+      if (this.bees.spawn(UnitKind.Queen, this.cannonX, CANNON_Y, 0, qhp) >= 0) {
         this.queenCharge = 0;
         this.stats.queens++;
+        if ((this.mods.frostSlow ?? 0) > 0) {
+          this.frostUntil = this.time + (this.mods.frostSeconds ?? 3);
+          this.events.push({ type: 'frost', x: this.cannonX });
+        }
         this.events.push({ type: 'queen', x: this.cannonX });
+      }
+    }
+
+    const volleyEvery = this.mods.volleyEvery ?? 0;
+    if (volleyEvery > 0) {
+      this.volleyTimer += dt;
+      if (this.volleyTimer >= volleyEvery) {
+        this.volleyTimer -= volleyEvery;
+        const n = this.mods.volleyCount ?? 12;
+        for (let k = 0; k < n; k++) {
+          const x = clamp(this.cannonX + (k - (n - 1) / 2) * 0.18, L.laneWidth / 2 - 0.25);
+          if (this.bees.spawn(UnitKind.Worker, x, CANNON_Y) >= 0) this.stats.fired++;
+        }
+        this.events.push({ type: 'volley', x: this.cannonX, count: n });
       }
     }
 
@@ -395,6 +445,15 @@ export class World {
         b.gates[i] |= bit;
         this.gatePasses[g]++;
         if (gate.kind === 'sub') {
+          // Carpenter Bee: the trap only absorbs `trapAbsorb` of crossing bees (deterministic).
+          const absorb = this.mods.trapAbsorb ?? 1;
+          if (absorb < 1 && this.trapLeft[g] > 0) {
+            this.trapCarry += 1 - absorb;
+            if (this.trapCarry >= 1) {
+              this.trapCarry -= 1;
+              continue;
+            }
+          }
           if (this.trapLeft[g] > 0) {
             this.trapLeft[g]--;
             b.hp[i] = 0;
@@ -423,7 +482,13 @@ export class World {
   private applyGate(i: number, g: number): void {
     const b = this.bees;
     const gate = this.level.gates[g];
-    const n = gateSpawnCount(gate);
+    let n = gateSpawnCount(gate);
+    const sweat = this.mods.sweatChance ?? 0;
+    if (gate.kind === 'mul' && sweat > 0 && this.rng() < sweat) n++;
+    if (gate.kind === 'add' && (this.mods.leafSeconds ?? 0) > 0) {
+      if (this.time < this.leafUntil[g]) n++;
+      else this.leafUntil[g] = this.time + (this.mods.leafSeconds as number);
+    }
     let spawned = 0;
     const kind = b.kind[i] as UnitKind;
     // Add gates create plain workers; multiply gates clone the crossing unit (queens too).
@@ -449,14 +514,20 @@ export class World {
     // Wasps drift toward the cannon's column as they near the hive.
     for (let i = w.count - 1; i >= 0; i--) {
       const st = UNIT_STATS[w.kind[i] as UnitKind];
-      w.y[i] -= st.speed * dt;
+      w.y[i] -= st.speed * (this.time < this.frostUntil ? 1 - (this.mods.frostSlow ?? 0) : 1) * dt;
       const pull = w.y[i] < 10 ? 0.6 : 0.15;
       w.x[i] = clamp(w.x[i] + Math.sign(this.cannonX - w.x[i]) * pull * dt, half);
       if (w.y[i] <= 0.4 && w.hp[i] > 0) {
         const dmg = this.hiveShield ? 0 : Math.ceil(w.hp[i]);
-        this.hiveHp -= dmg;
+        if (dmg > 0 && this.honeyLeft > 0) {
+          // Honey Guard: the shield blocks the first `honeyBlocks` wasps that reach the hive.
+          this.honeyLeft--;
+          this.events.push({ type: 'honeyBlock', x: w.x[i] });
+        } else {
+          this.hiveHp -= dmg;
+          this.events.push({ type: 'hiveHit', damage: dmg, x: w.x[i] });
+        }
         w.hp[i] = 0;
-        this.events.push({ type: 'hiveHit', damage: dmg, x: w.x[i] });
       }
     }
   }

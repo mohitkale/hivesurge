@@ -83,7 +83,7 @@ describe('M5-4 home chest row + screens', () => {
     expect(html).toContain('+🪙 99');
   });
 
-  it('bees screen: locked slots until stage 3, affordable upgrade highlighted, pending effects labelled', () => {
+  it('bees screen: locked slots until stage 3, affordable upgrade highlighted, no effect is pending (M7)', () => {
     const s = defaultSave();
     s.meta.bees.bumble = { ...emptyBee(1), pollen: 2 };
     s.coins = 100;
@@ -93,7 +93,7 @@ describe('M5-4 home chest row + screens', () => {
     expect(later.match(/slot locked/g)).toHaveLength(2);
     expect(later).toContain('data-a="upgrade:bumble"');
     expect(later).toContain('can-up');
-    expect(later).toContain('effect coming soon');
+    expect(later).not.toContain('effect coming soon'); // M7: every bee effect is live
     expect(later).toContain('data-a="equip:bumble"');
   });
 
