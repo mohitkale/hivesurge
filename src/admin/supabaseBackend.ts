@@ -130,9 +130,8 @@ export class SupabaseAdminBackend implements AdminBackend {
     return this.rpc<number>('admin_rollback_config', { p_version: version, p_reason: reason });
   }
   async levelOverrides() {
-    const { data, error } = await this.db.from('level_overrides').select('*').order('level_id');
-    if (error) fail(error);
-    return data as LevelOverride[];
+    // M7: players read payload columns only; the editor column comes via the admin RPC.
+    return this.rpc<LevelOverride[]>('admin_levels');
   }
   saveLevel(id: string, data: Record<string, unknown>, reason: string) {
     return this.rpc<number>('admin_save_level', { p_level_id: id, p_data: data, p_reason: reason });

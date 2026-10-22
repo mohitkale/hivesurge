@@ -396,8 +396,36 @@ begin
   if (select (config -> 'ads' ->> 'interstitialPerSession')::int from public.remote_config
       order by version desc limit 1) <> 4 then raise exception 'FAIL: rollback'; end if;
   if (select count(*) from public.admin_audit where admin_id = '22222222-2222-4222-8222-222222222222') <> 6 then raise exception 'FAIL: one audit row per write'; end if;
+  -- M7: owner sees the editor through admin_levels; season/rule ranges are publish-checked.
+  if (select count(*) from jsonb_array_elements(public.admin_levels()) l where l ->> 'updated_by' is not null) < 1 then
+    raise exception 'FAIL: admin_levels editor';
+  end if;
+  if array_length(public.admin_validate_config((select config from public.remote_config order by version desc limit 1)
+      || '{"season":{"id":"S 1","start":0,"days":99,"xpPerTier":1}}'), 1) is null then
+    raise exception 'FAIL: season publish check';
+  end if;
+  if array_length(public.admin_validate_config((select config from public.remote_config order by version desc limit 1)
+      || '{"events":[{"id":"e","start":0,"end":1,"rules":{"waveMul":9}}]}'), 1) is null then
+    raise exception 'FAIL: event rules publish check';
+  end if;
 end $$;
 reset role;
 
-select 'M4/M5/M6 RLS tests: all passed' as result;
+-- M7 (a): players read level payloads only, never the editor, and cannot write.
+set local role anon;
+do $$
+begin
+  if (select count(*) from (select level_id, data, version from public.level_overrides) x) < 1 then
+    raise exception 'FAIL: anon reads levels';
+  end if;
+  begin perform (select updated_by from public.level_overrides limit 1); raise exception 'FAIL: anon reads editor';
+  exception when insufficient_privilege then null; end;
+  begin insert into public.level_overrides (level_id, data) values ('x', '{}'); raise exception 'FAIL: anon writes level';
+  exception when insufficient_privilege then null; end;
+  begin perform public.admin_levels(); raise exception 'FAIL: anon admin_levels';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+
+select 'M4/M5/M6/M7 RLS tests: all passed' as result;
 rollback;
