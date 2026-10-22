@@ -540,7 +540,7 @@ export class Game {
         this.showChest(id);
       },
       open: () => {
-        const r = openChest(this.save, id, gameClock().now(), Math.random);
+        const r = openChest(this.save, id, gameClock().now());
         if (!r) return this.showChest(id);
         this.persist();
         this.metaScreen = null;
