@@ -81,6 +81,7 @@ import { AutoQuality, initialTier, qualityOverrideFromUrl } from './render/quali
 import { FixedStepper, startSimTimer } from './sim/fixedStep';
 import { FloaterLimiter } from './ui/floaterLimiter';
 import { applyTheme, palette } from './ui/theme';
+import { installScrollHints } from './ui/scrollHints';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
 import { biomeForLevel, bandTheme } from './art/biomes';
@@ -244,6 +245,7 @@ export class Game {
     this.scene = this.makeScene();
     this.input.setPicker((x, y) => this.scene.pickLaneX(x, y), this.world.maxCannonX);
     if (import.meta.env.DEV) (window as unknown as { __hsGame: Game }).__hsGame = this;
+    installScrollHints(this.overlay);
     const adHooks = {
       onAdStart: () => this.sfx.setMuted(true),
       onAdEnd: () => this.sfx.setMuted(this.save.settings.muted),
@@ -916,7 +918,8 @@ export class Game {
           : `<div class="row"><button class="btn skin-row skin-locked" data-a="locked:${id}" disabled aria-disabled="true">${preview}<span>🔒 ${name}<small>${unlock}</small></span></button></div>`;
       })
       .join('');
-    this.overlay.innerHTML = `<div class="modal"><div class="card"><h2>Bee skins</h2>${rows}
+    this.overlay.innerHTML = `<div class="modal"><div class="card card-scroll"><h2>Bee skins</h2>
+      <div class="scroll-y scroll-body">${rows}</div>
       <p class="small">Your bees wear the selected skin in battle.</p>
       <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
     const handlers: Record<string, () => void> = { back: () => this.showTitle() };
@@ -1096,9 +1099,9 @@ export class Game {
         : 'SANDBOX · mock Stripe Checkout, nothing is charged';
     const msg = this.shopMessage ? `<p class="small" role="status">${this.shopMessage}</p>` : '';
     this.shopMessage = '';
-    this.overlay.innerHTML = `<div class="modal"><div class="card">
-      <span class="ad-tag">${tag}</span><h2>Shop</h2>${items}
-      <p class="small">Prices include taxes where applicable. Any purchase removes forced ads. Rewarded ads stay optional.</p>${msg}
+    this.overlay.innerHTML = `<div class="modal"><div class="card card-scroll">
+      <span class="ad-tag">${tag}</span><h2>Shop</h2><div class="scroll-y scroll-body">${items}
+      <p class="small">Prices include taxes where applicable. Any purchase removes forced ads. Rewarded ads stay optional.</p></div>${msg}
       <div class="row"><button class="btn" data-a="restore">Restore purchases</button>
       <button class="btn primary" data-a="back">Back</button></div></div></div>`;
     const handlers: Record<string, () => void> = {

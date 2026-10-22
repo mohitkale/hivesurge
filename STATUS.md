@@ -1,6 +1,6 @@
 # Hive Surge — status
 
-_Last updated: 2026-10-22 09:30 IST._ Source plan: `/workspace/mob-control-plan/mob-control-web-plan.md`.
+_Last updated: 2026-10-22 13:30 IST._ Source plan: `/workspace/mob-control-plan/mob-control-web-plan.md`.
 
 ## Current state
 
@@ -80,12 +80,13 @@ _Last updated: 2026-10-22 09:30 IST._ Source plan: `/workspace/mob-control-plan/
 | 64 | 2026-10-22 (eng, M7-11 / M7-12, GitHub PR #38): **Rival rules** in pure `src/meta/rivals.ts`: MMR buckets ±1, shielded hives excluded, no repeat target within 24 h, closest MMR first, labelled "🤖 Practice hive" bots only fill missing slots, and any bot snapshot is relabelled on display. Raid loss is at most floor(N × stored nectar), N = `RAID_LOSS_CAP` = 10% **provisional until MON sets it**; gems and paid items are never touched (1,000-raid test). | Rules ship tested ahead of the raid feature (v2), so the server and UI can call one module later. |
 | 65 | 2026-10-22 (eng, M7-4, GitHub PR #39): **Platform build flag `VITE_PLATFORM`**: unset/unknown/`own` = the labelled sandbox mock (own-site ad network waits for Mohit's approval, M5-6h); `poki` / `crazygames` lazy-load `src/platform/adapters/portal.ts`, load the SDK and run it in sandbox mode (Poki `setDebug(true)`, CrazyGames `local`). If the SDK fails, the game keeps the mock. Contract tests per adapter: G10, G18, timeout, unfilled interstitial, portal builds sell nothing. No submissions. | The default build is unchanged (8.05 KiB gzip first-load JS); portal code is a 2.5 KB chunk that only portal builds fetch. |
 | 66 | 2026-10-22 (qa/eng, M7-7 box scope): **Headless M4–M7 QA pass** (`playtests/m7-qa-2026-10-22.md`, scripts in `playtests/m7-qa/`) plus a CI smoke `e2e/game.e2e.ts` (league + bot labels, Targets & Pass sections, mock shop 0002/4242/restore, mock cloud account). Real sandbox: guest REST reads, password sign-in of a throwaway QA user (`qa-m7-headless@example.invalid`, deleted after the pass), `sync_player`, `league_board`, and a real `create-checkout` redirect to hosted Stripe Checkout (Sandbox, $4.99). Paying inside hosted Checkout could not be automated headlessly (clicks time out; hCaptcha frames), so a manual 4242 run stays open; the grant path itself passed on 2026-10-22 (decision 61). | Box-scope evidence for M7-7 without device access; the remaining checks need a human browser or device. |
+| 67 | 2026-10-22 (eng, feedback round 4 #1, GitHub PR #42): **No native scrollbar anywhere and no page-level scrolling.** `* { scrollbar-width: none }` plus `::-webkit-scrollbar { display: none }`; `html`/`body`/`.modal` never scroll. A card fits the screen, or (long lists: Targets & Pass, Bees, Hive, chest open, Shop, Skins) keeps its header and footer fixed while a `.scroll-y` body scrolls by touch; Home is one `.home-card` track and the collection strip a `.scroll-x` track. `src/ui/scrollHints.ts` marks the edge that hides more content (`data-fade` / `data-fade-x`) and CSS masks a 32 px fade there as the scroll hint. The nested season-pass scroller is gone. `e2e/noScrollbars.e2e.ts` opens all 14 meta screens and modals at 360x640, 390x844, 412x915 and 1280x800 with Chrome's scrollbars drawn (`--hide-scrollbars` removed) and fails on any visible bar, page overflow, or an overflowing track without a fade. | Mohit saw vertical scrollbars on the season pass, rewards and other screens on the live build. A fade edge is the game-style hint; a test at four sizes keeps new screens honest. |
 
 ## Next steps toward MVP (see PLAN.md for owners)
 
 1. Mohit: try the local review build (`npm run build:review && npm run serve:review` → http://127.0.0.1:4180). Optional: M2-19b device pass (unblocks M2-28b real aim traces and M2-19a fps confidence).
 2. QA: M2 box scope is closed (decision 45). Remaining M2 QA needs Mohit's device (M2-19b, then M2-28b real traces). Do not spend cycles on M2-28b until real traces exist.
-3. Eng / review (active): land only M2-exit fixes that QA files; review owns PLAN status updates (decision 39). GitHub PR numbers are now the source of truth (next is #42).
+3. Eng / review (active): land only M2-exit fixes that QA files; review owns PLAN status updates (decision 39). GitHub PR numbers are now the source of truth.
 4. M4: Mohit enables anonymous sign-ins + redirect URLs in the `hivesurge-sandbox` dashboard (docs/backend/README.md). QA runs M4-7 (RLS abuse, offline/online, multi-device) and review M4-8. No Stripe/external accounts without Mohit.
 
 ## Known gaps / risks
@@ -95,3 +96,4 @@ _Last updated: 2026-10-22 09:30 IST._ Source plan: `/workspace/mob-control-plan/
 - Gem merge loss fixed by the M4-5a ledger (decision 46). Concurrent offline spends of the same gems end as a debt shown as 0.
 - M3 licence field TBD pending Mohit; outside testers (PT-A) parked for Mohit.
 - Name "Hive Surge" is a placeholder; trademark search required before any launch (plan §8.3 #7).
+- Deployed origin/main 4526b7e (PR #41) to hivesurge.netlify.app — Netlify deploy 6ad9b737c63121f9195da830, 2026-10-22 12:41 IST (game dist/ only, mock services; CI green).

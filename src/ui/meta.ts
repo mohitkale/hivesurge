@@ -139,9 +139,9 @@ export function chestOpenHtml(r: ChestReward): string {
       return `<li class="card-drop r-${c.rarity}"><span>${d.icon}</span><b>${esc(d.name)}</b><small>${RNAME[c.rarity]} ×${c.count}${c.isNew ? ' · NEW' : ''}${c.overflowCoins ? ` · +🪙 ${c.overflowCoins}` : ''}</small></li>`;
     })
     .join('');
-  return `<div class="modal"><div class="card chest-open">
+  return `<div class="modal"><div class="card card-scroll chest-open">
     <h2>${CICON[r.type]} ${CHESTS[r.type].name} chest</h2>
-    <ul class="card-drops">${cards}</ul>
+    <ul class="card-drops scroll-y scroll-body">${cards}</ul>
     <p class="reward">+🪙 ${r.coins}</p>${r.pity ? '<p class="small">Pity Legendary!</p>' : ''}
     <div class="row"><button class="btn primary" data-a="collect">Collect</button></div></div></div>`;
 }
@@ -184,10 +184,10 @@ export function beesHtml(s: SaveData, stage: number): string {
     return `<li class="bee r-${b.rarity}${can ? ' can-up' : ''}"><span class="bee-icon">${b.icon}</span><b>${esc(b.name)} L${lvl}</b>
       <small>${RNAME[b.rarity]} · ${esc(b.effect)}${pending}</small><span class="bee-act">${up}${eq}</span></li>`;
   }).join('');
-  return `<div class="modal"><div class="card bees-screen">
+  return `<div class="modal"><div class="card card-scroll bees-screen">
     <h2>Bees <small>${owned}/${BEES.length} · power ${loadoutPower(s, stage)}</small></h2>
     <h3>Loadout</h3><ul class="loadout">${slotHtml}</ul>
-    <ul class="bee-grid">${grid}</ul>
+    <ul class="bee-grid scroll-y scroll-body">${grid}</ul>
     <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
 }
 
@@ -217,9 +217,9 @@ export function hiveHtml(s: SaveData, now: number): string {
   }).join('');
   const honey = honeyPending(s, now);
   const lvl = playerLevel(s);
-  return `<div class="modal"><div class="card hive-screen">
+  return `<div class="modal"><div class="card card-scroll hive-screen">
     <h2>Hive <small>account level ${lvl} · room cap ${cap}</small></h2>
-    <ul class="rooms">${rows}</ul>
+    <ul class="rooms scroll-y scroll-body">${rows}</ul>
     ${roomLevel(s, 'honey') > 0 ? `<div class="row"><button class="btn" data-a="honey" ${honey ? '' : 'disabled'}>Collect honey · 🪙 ${honey}</button></div>` : ''}
     <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
 }

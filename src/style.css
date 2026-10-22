@@ -376,19 +376,104 @@ body {
 .modal {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: rgba(42, 24, 56, 0.55);
   backdrop-filter: blur(2px);
   z-index: 5;
+  /* Feedback round 4: the modal never scrolls; its card fits or scrolls inside a faded track. */
+  overflow: hidden;
+  overflow-x: hidden;
+  padding: calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom));
+}
+/* Feedback round 4 (Mohit: "vertical scrollbars at many places"): no native scrollbar anywhere.
+   Tracks still scroll by touch / wheel / keys; ui/scrollHints.ts sets data-fade on the edge
+   that hides more content and the mask below fades it as the scroll hint. */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.scroll-y {
   overflow-x: hidden;
   overflow-y: auto;
-  /* Keep content scrollable; hide the visible scrollbar (desktop QA). */
-  scrollbar-width: none;
-  padding: 8px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
-.modal::-webkit-scrollbar {
-  display: none;
+.scroll-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+[data-fade='end'] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent);
+}
+[data-fade='start'] {
+  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to top, #000 calc(100% - 32px), transparent);
+}
+[data-fade='both'] {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 32px,
+    #000 calc(100% - 32px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 32px,
+    #000 calc(100% - 32px),
+    transparent
+  );
+}
+[data-fade-x='end'] {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+[data-fade-x='start'] {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent);
+}
+[data-fade-x='both'] {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent
+  );
+}
+/* A card with a long list: header and footer stay put, only the .scroll-body track moves. */
+.card-scroll {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.card-scroll > * {
+  flex-shrink: 0;
+}
+.card-scroll > .scroll-body {
+  flex: 0 1 auto;
+  min-height: 0;
+  padding-bottom: 8px;
 }
 .ad-modal {
   background: rgba(10, 6, 16, 0.88);
@@ -403,6 +488,11 @@ body {
   width: min(100%, 340px);
   min-width: 0;
   max-width: 100%;
+  /* Never taller than the screen; a short card that still overflows scrolls with a fade. */
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   text-align: center;
   box-shadow: 0 8px 0 rgba(0, 0, 0, 0.2);
   overflow-wrap: anywhere;
@@ -744,14 +834,11 @@ body {
   /* QA BUG-03: the zig-zag map nodes overflowed sideways at 390 px (horizontal scrollbar). */
   overflow-x: hidden;
   overflow-y: auto;
-  /* Home content is taller than the viewport; scroll without a visible bar. */
-  scrollbar-width: none;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
   color: #fff;
   text-align: center;
-}
-.home-card::-webkit-scrollbar {
-  display: none;
 }
 .wallet {
   display: flex;
@@ -973,13 +1060,9 @@ body {
 
 /* Round 3: hyper-casual home screen (logo, progress, modes, collection, challenges, ranks). */
 .home-r3 {
-  place-items: start center;
-  /* Scrolling lives on .home-card; keep the modal itself from showing a bar. */
+  justify-content: flex-start;
+  /* Scrolling lives on .home-card (faded track); the modal itself never scrolls. */
   overflow: hidden;
-  scrollbar-width: none;
-}
-.home-r3::-webkit-scrollbar {
-  display: none;
 }
 .home-main {
   display: flex;
@@ -1120,13 +1203,7 @@ body {
   padding: 2px 0 6px;
   display: flex;
   gap: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
   scroll-snap-type: x mandatory;
-}
-.coll-strip::-webkit-scrollbar {
-  display: none;
 }
 .coll-item {
   flex: none;
@@ -1326,8 +1403,6 @@ body {
   margin: 6px 0;
   display: grid;
   gap: 6px;
-  max-height: 52vh;
-  overflow-y: auto;
 }
 .card-drop,
 .bee,
@@ -1403,8 +1478,7 @@ body {
   background: #ff7a1a33;
 }
 .liveops-screen {
-  max-height: 88vh;
-  overflow-y: auto;
+  width: min(100%, 380px);
 }
 .liveops-screen h3 {
   margin: 12px 0 4px;
@@ -1422,10 +1496,6 @@ body {
 }
 .milestone span {
   margin-left: auto;
-}
-.pass-scroll {
-  max-height: 260px;
-  overflow-y: auto;
 }
 table.pass {
   width: 100%;
