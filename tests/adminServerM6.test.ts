@@ -6,11 +6,18 @@ const MIG = 'supabase/migrations/20261022000700_m6_admin.sql';
 const sql = readFileSync(MIG, 'utf8');
 
 describe('M6-2 admin server (migration static checks; live checks in supabase/tests/rls_test.sql)', () => {
-  it('no SECURITY DEFINER function in an exposed schema (all migrations)', () => {
+  it('no SECURITY DEFINER function in an exposed schema is callable by anon/authenticated', () => {
     for (const f of readdirSync('supabase/migrations')) {
       const s = readFileSync(`supabase/migrations/${f}`, 'utf8');
-      for (const m of s.matchAll(/create (?:or replace )?function public\.(\w+)[\s\S]*?\$\$;/g))
-        expect(m[0], `${f}: public.${m[1]}`).not.toMatch(/security definer/);
+      for (const m of s.matchAll(/create (?:or replace )?function public\.(\w+)[\s\S]*?\$\$;/g)) {
+        if (!/security definer/.test(m[0])) continue;
+        // Allowed only when locked to the service role (M5-6b `function_secret`).
+        expect(s, `${f}: public.${m[1]}`).toMatch(
+          new RegExp(
+            `revoke all on function public\\.${m[1]}\\([^)]*\\) from public, anon, authenticated;`,
+          ),
+        );
+      }
     }
   });
 

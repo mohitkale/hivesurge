@@ -51,6 +51,10 @@ describe('M4-2/M4-3 Supabase migrations', () => {
   });
 
   it('contain no keys or secrets', () => {
-    expect(sql).not.toMatch(/eyJ[A-Za-z0-9_-]{20,}|sb_secret_|service_role/);
+    // The role name may appear only in a GRANT (M5-6b Vault RPC); never a key.
+    expect(sql.replace(/to service_role;/g, '')).not.toMatch(
+      /eyJ[A-Za-z0-9_-]{20,}|sb_secret_|service_role/,
+    );
+    expect(sql).not.toMatch(/(sk|rk)_(test|live)_[A-Za-z0-9]{8,}|whsec_[A-Za-z0-9]{8,}/);
   });
 });
