@@ -19,6 +19,8 @@ export interface GateDef {
   motion?: GateMotion;
   /** Boss levels: gate appears only from this boss phase (1-based) onward. */
   fromPhase?: number;
+  /** M7-9: a thorn-wall obstacle (a short trap placed off the gate column). */
+  obstacle?: boolean;
 }
 
 export type EnemyKind = 'wasp' | 'hornet' | 'matriarch';
