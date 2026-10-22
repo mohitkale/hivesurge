@@ -73,6 +73,8 @@ export interface LevelDef {
   waves: WaveDef[];
   /** Boss levels only; ordered by descending `nestBelow`. */
   bossPhases?: BossPhase[];
+  /** M7-3: the last level of a live event (M2-21c C6: no gem revive there). */
+  isEventFinalLevel?: boolean;
 }
 
 export const enum UnitKind {

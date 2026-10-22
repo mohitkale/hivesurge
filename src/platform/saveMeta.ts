@@ -1,3 +1,4 @@
+import { defaultLiveOps, mergeLiveOps, parseLiveOps, type LiveOpsState } from './saveLiveops';
 import { BEE_IDS, CHEST_TYPES, type ChestType, ROOM_IDS } from '../meta/defs';
 import {
   bookBalance,
@@ -58,6 +59,8 @@ export interface MetaState {
   lossStreak: { level: string; count: number };
   /** Season pass premium track owned (purchase, sticky). */
   seasonPremium: boolean;
+  /** M7-3 targets, streaks, season pass and event progress. */
+  liveops: LiveOpsState;
 }
 
 export const OPENED_KEEP = 200;
@@ -80,6 +83,7 @@ export function defaultMeta(): MetaState {
     xpBook: emptyBook(),
     lossStreak: { level: '', count: 0 },
     seasonPremium: false,
+    liveops: defaultLiveOps(),
   };
 }
 
@@ -147,6 +151,7 @@ export function parseMeta(v: unknown): MetaState {
     xpBook,
     lossStreak: { level: typeof ls.level === 'string' ? ls.level : '', count: n0(ls.count) },
     seasonPremium: v.seasonPremium === true,
+    liveops: parseLiveOps(v.liveops),
   };
 }
 
@@ -212,5 +217,6 @@ export function mergeMeta(a: MetaState, b: MetaState, newer: MetaState): MetaSta
     xpBook,
     lossStreak: { ...newer.lossStreak },
     seasonPremium: a.seasonPremium || b.seasonPremium,
+    liveops: mergeLiveOps(a.liveops, b.liveops, newer === a),
   };
 }

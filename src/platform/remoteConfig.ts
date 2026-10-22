@@ -1,6 +1,7 @@
 import { CHESTS, type ChestType, type Rarity } from '../meta/defs';
 import { EXPECTED_P, LOSS_ASSIST, SCALE_FLOOR } from '../meta/economy';
 import { AD_CAPS, type AdCaps } from './adPacer';
+import { validateEventRules } from '../meta/liveops';
 
 /**
  * M5-4b / M5-6g remote config: ad caps, chest odds and difficulty knobs. The shipped values
@@ -14,6 +15,8 @@ export interface RemoteConfig {
   difficulty: { expectedP: [number, number][]; lossAssist: [number, number][]; scaleFloor: number };
   /** M6-5 live-ops calendar (docs/design/liveops-m7.md); consumed by M7-3. Times in ms. */
   events?: LiveEvent[];
+  /** M7-3 season pass (28 days, 30 tiers). Times in ms. */
+  season?: { id: string; start: number; days: number; xpPerTier: number };
 }
 
 export interface LiveEvent {
@@ -89,6 +92,19 @@ export function validateRemoteConfig(c: RemoteConfig): string[] {
       )
     )
       e.push('events need an id and end > start');
+    else c.events.forEach((v, i) => e.push(...validateEventRules(v.rules, `events[${i}].rules`)));
+  }
+  if (c.season !== undefined) {
+    const z = c.season;
+    if (
+      !z ||
+      typeof z.id !== 'string' ||
+      !/^[a-z0-9-]{1,32}$/.test(z.id) ||
+      !isNum(z.start) ||
+      !(Number.isInteger(z.days) && z.days >= 1 && z.days <= 60) ||
+      !(Number.isInteger(z.xpPerTier) && z.xpPerTier >= 50 && z.xpPerTier <= 2000)
+    )
+      e.push('season needs an id, start, days 1..60 and xpPerTier 50..2000');
   }
   return e;
 }
@@ -163,5 +179,6 @@ function loadRemoteConfigRaw(j: unknown): RemoteConfig {
     chests: { ...d.chests, ...(x.chests ?? {}) },
     difficulty: { ...d.difficulty, ...(x.difficulty ?? {}) },
     ...(x.events !== undefined ? { events: x.events } : {}),
+    ...(x.season !== undefined ? { season: x.season } : {}),
   };
 }

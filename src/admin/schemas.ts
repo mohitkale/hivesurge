@@ -49,12 +49,22 @@ export const EventsSchema = z
   )
   .max(50);
 
+export const SeasonSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]{1,32}$/),
+    start: z.number().int(),
+    days: z.number().int().min(1).max(60),
+    xpPerTier: z.number().int().min(50).max(2000),
+  })
+  .strict();
+
 export const RemoteConfigSchema = z
   .object({
     ads: AdsSchema,
     chests: ChestsSchema,
     difficulty: DifficultySchema,
     events: EventsSchema.optional(),
+    season: SeasonSchema.optional(),
   })
   .strict();
 

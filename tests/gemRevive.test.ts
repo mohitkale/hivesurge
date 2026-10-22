@@ -270,8 +270,9 @@ describe('G19 tests T-G19a–g', () => {
       expect(h).not.toMatch(/shop|store|buy|href|purchase/i);
   });
 
-  it('T-G19f: no gem revive on an event final level (stub false until M7-3)', () => {
-    expect(isEventFinalLevel('clover-run')).toBe(false);
+  it('T-G19f: no gem revive on an event final level (M7-3 level flag)', () => {
+    expect(isEventFinalLevel({ id: 'clover-run' } as { isEventFinalLevel?: boolean })).toBe(false);
+    expect(isEventFinalLevel({ isEventFinalLevel: true })).toBe(true);
     expect(new ReviveOffer(loaded(), gems(50, { eventFinalLevel: true })).gemState).toBe('hidden');
   });
 

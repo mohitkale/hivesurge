@@ -1213,7 +1213,7 @@ export class Game {
         wallet: this.save,
         price: this.gemConfig.gemPrice,
         caps: this.gemCaps,
-        eventFinalLevel: isEventFinalLevel(this.world.level.id),
+        eventFinalLevel: isEventFinalLevel(this.world.level),
       });
       this.analytics.track('ad_offered', {
         placement: 'revive',
