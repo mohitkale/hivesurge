@@ -1,4 +1,5 @@
-import { addGrant } from '../platform/counter';
+import { addGrant, bookSum, type CounterBook } from '../platform/counter';
+import { createRng } from '../sim/rng';
 import { recordGems, spendGems } from '../platform/gemLedger';
 import type { SaveData } from '../platform/save';
 import { emptyBee } from '../platform/saveMeta';
@@ -187,8 +188,28 @@ export function rollChest(s: SaveData, type: ChestType, rng: Rng): ChestReward {
 }
 
 /** Apply a rolled reward: first card unlocks a bee at L1, maxed bees convert cards to coins. */
-export function applyChestReward(s: SaveData, r: ChestReward): void {
-  s.coins += r.coins;
+/**
+ * Credit a keyed grant to `book` and return the new cached balance. Keeps any not yet
+ * reconciled change in `cached`, and lets a grant pay off a debt (book sum < 0) instead of
+ * minting coins when the cached balance shows 0.
+ */
+export function creditKeyed(
+  book: CounterBook,
+  cached: number,
+  key: string,
+  amount: number,
+): number {
+  const pending = cached - Math.max(0, bookSum(book));
+  if (!addGrant(book, key, amount)) return cached;
+  return Math.max(0, Math.max(0, bookSum(book)) + pending);
+}
+
+/**
+ * Apply a chest's contents. With `key` (M7 offline-merge fix, `chest:<id>`) coins and cards are
+ * keyed grants, so the same chest opened on two offline devices pays once after a merge.
+ */
+export function applyChestReward(s: SaveData, r: ChestReward, key?: string): void {
+  let coins = r.coins;
   for (const c of r.cards) {
     const b = (s.meta.bees[c.bee] ??= emptyBee());
     let cards = c.count;
@@ -198,20 +219,38 @@ export function applyChestReward(s: SaveData, r: ChestReward): void {
     }
     if (b.level >= MAX_LEVEL[c.rarity]) {
       c.overflowCoins = cards * OVERFLOW_COINS[c.rarity];
-      s.coins += c.overflowCoins;
-    } else b.pollen += cards;
+      coins += c.overflowCoins;
+    } else if (key) b.pollen = creditKeyed(b.book, b.pollen, key, cards);
+    else b.pollen += cards;
   }
+  if (key) s.coins = creditKeyed(s.coinBook, s.coins, key, coins);
+  else s.coins += coins;
   s.meta.pityLegendary = r.cards.some((c) => c.rarity === 'L') ? 0 : s.meta.pityLegendary + 1;
 }
 
-/** Open a ready chest. Returns null if it is missing or still locked. */
-export function openChest(s: SaveData, id: string, now: number, rng: Rng): ChestReward | null {
+/** Deterministic per-chest RNG: two devices opening the same chest roll the same contents. */
+export function chestRng(id: string): Rng {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return createRng(h >>> 0);
+}
+
+/**
+ * Open a ready chest. Returns null if it is missing or still locked. M7: contents roll from the
+ * chest id and land as `chest:<id>` grants, so an offline double open pays once on merge.
+ */
+export function openChest(
+  s: SaveData,
+  id: string,
+  now: number,
+  rng: Rng = chestRng(id),
+): ChestReward | null {
   const i = s.meta.chests.findIndex((x) => x.id === id);
   if (i < 0) return null;
   const c = s.meta.chests[i];
   if (c.unlockAt === null || c.unlockAt > now) return null;
   const r = rollChest(s, c.type, rng);
-  applyChestReward(s, r);
+  applyChestReward(s, r, `chest:${id}`);
   s.meta.chests.splice(i, 1);
   s.meta.opened.push(id);
   if (s.meta.opened.length > 200) s.meta.opened.splice(0, s.meta.opened.length - 200);
@@ -448,10 +487,10 @@ export function collectHoney(s: SaveData, now: number): number {
 
 /** Apply a server-confirmed coin/ticket grant once (key e.g. `purchase:<session id>`). */
 export function grantKeyed(s: SaveData, key: string, coins: number, tickets = 0): boolean {
-  const a = coins ? addGrant(s.coinBook, key, coins) : false;
-  const b = tickets ? addGrant(s.ticketBook, key, tickets) : false;
-  if (a) s.coins += coins;
-  if (b) s.skipTickets += tickets;
+  const a = !!coins && !(key in s.coinBook.grants);
+  const b = !!tickets && !(key in s.ticketBook.grants);
+  if (a) s.coins = creditKeyed(s.coinBook, s.coins, key, coins);
+  if (b) s.skipTickets = creditKeyed(s.ticketBook, s.skipTickets, key, tickets);
   return a || b;
 }
 
