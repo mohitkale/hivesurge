@@ -1635,6 +1635,16 @@ export class Game {
         case 'queen':
           this.sfx.queen();
           break;
+        // M7 bee effects: a short floater so the player sees the bee working.
+        case 'frost':
+          this.float('❄️ Frost', e.x, 4);
+          break;
+        case 'volley':
+          this.float(`☀️ +${e.count}`, e.x, 3);
+          break;
+        case 'honeyBlock':
+          if (this.floaters.allow(-1, performance.now())) this.float('🍯 Blocked', e.x, 1, '', 1);
+          break;
         case 'end':
           break;
       }
