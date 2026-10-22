@@ -82,6 +82,7 @@ import { FixedStepper, startSimTimer } from './sim/fixedStep';
 import { FloaterLimiter } from './ui/floaterLimiter';
 import { applyTheme, palette } from './ui/theme';
 import { installScrollHints } from './ui/scrollHints';
+import { shopItem, toggleRow } from './ui/gameUi';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
 import { biomeForLevel, bandTheme } from './art/biomes';
@@ -824,13 +825,24 @@ export class Game {
 
   private showSettings(): void {
     this.overlay.innerHTML = `
-      <div class="modal"><div class="card"><h2>Settings</h2>
-        <div class="row"><button class="btn" data-a="cb">Colour-blind: ${this.save.settings.colorBlind ? 'on' : 'off'}</button>
-        <button class="btn" data-a="hap">Haptics: ${this.save.settings.haptics ? 'on' : 'off'}</button>
-        <button class="btn" data-a="shake">Screen shake: ${this.save.settings.shake ? 'low' : 'off'}</button></div>
-        ${prefersReducedMotion() ? '<p class="small">Reduced motion is on: no screen shake.</p>' : ''}
-        <p class="small">Mouse/touch: hold &amp; drag · Keys: ←/→ or A/D, Space fires, Q = Queen</p>
-        <p class="small">🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</p>
+      <div class="modal"><div class="card settings"><h2>⚙️ Settings</h2>
+        <div class="toggle-list">
+        ${toggleRow('cb', '🎨', 'Colour-blind palette', this.save.settings.colorBlind)}
+        ${toggleRow('hap', '📳', 'Haptics', this.save.settings.haptics)}
+        ${toggleRow(
+          'shake',
+          '🫨',
+          'Screen shake',
+          this.save.settings.shake,
+          prefersReducedMotion()
+            ? 'Off: reduced motion is on'
+            : this.save.settings.shake
+              ? 'Low'
+              : '',
+        )}
+        </div>
+        <div class="info-row"><span>🎮</span><small>Hold &amp; drag to aim · ←/→ or A/D · Space fires · Q = Queen</small></div>
+        <div class="info-row"><span>👛</span><small>🪙 ${this.save.coins} · 💎 ${this.save.gems}${this.save.noAds ? ' · no forced ads' : ''}</small></div>
         <div class="row"><button class="btn" data-a="account">☁️ Account &amp; cloud save</button></div>
         <div class="row"><button class="btn primary" data-a="back">Back</button></div>
       </div></div>`;
@@ -841,6 +853,8 @@ export class Game {
         this.save.settings.colorBlind = !this.save.settings.colorBlind;
         applyTheme(document.documentElement, this.save.settings.colorBlind);
         this.rebuildScene();
+        this.persist();
+        this.showSettings();
       },
       shake: () => {
         this.save.settings.shake = !this.save.settings.shake;
@@ -1086,12 +1100,7 @@ export class Game {
   private showShop(): void {
     const cur = currencyFor(navigator.language, Intl.DateTimeFormat().resolvedOptions().timeZone);
     const shown = visibleSkus(Object.values(CATALOG), countryFromLocale(navigator.language));
-    const items = shown
-      .map(
-        (s) =>
-          `<div class="row"><button class="btn" data-a="buy:${s.id}">${s.title} · ${formatPrice(s.price, cur)}</button></div>`,
-      )
-      .join('');
+    const items = shown.map((s) => shopItem(s, formatPrice(s.price, cur))).join('');
     const mode = purchaseMode();
     const tag =
       mode === 'stripe'
@@ -1100,7 +1109,7 @@ export class Game {
     const msg = this.shopMessage ? `<p class="small" role="status">${this.shopMessage}</p>` : '';
     this.shopMessage = '';
     this.overlay.innerHTML = `<div class="modal"><div class="card card-scroll">
-      <span class="ad-tag">${tag}</span><h2>Shop</h2><div class="scroll-y scroll-body">${items}
+      <span class="ad-tag">${tag}</span><h2>🛍️ Shop</h2><div class="scroll-y scroll-body"><ul class="shop-list">${items}</ul>
       <p class="small">Prices include taxes where applicable. Any purchase removes forced ads. Rewarded ads stay optional.</p></div>${msg}
       <div class="row"><button class="btn" data-a="restore">Restore purchases</button>
       <button class="btn primary" data-a="back">Back</button></div></div></div>`;

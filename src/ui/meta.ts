@@ -76,13 +76,16 @@ export function chestRowHtml(s: SaveData, now: number): string {
     <ul class="chest-row">${slots.join('')}</ul><div class="row">${free}</div></section>`;
 }
 
-/** Per-card odds table (G12: shown on every chest tap). */
+/**
+ * Per-card odds (G12: shown on every chest tap). Feedback round 4: rarity chips instead of a
+ * table; each chip still names the rarity and its exact chance.
+ */
 export function oddsTableHtml(type: keyof typeof CHESTS): string {
   const d = CHESTS[type];
   const rows = (['C', 'R', 'E', 'L'] as Rarity[])
-    .map((r) => `<tr><td>${RNAME[r]}</td><td>${d.odds[r]}%</td></tr>`)
+    .map((r) => `<li class="odd r-${r}"><b>${d.odds[r]}%</b><small>${RNAME[r]}</small></li>`)
     .join('');
-  return `<table class="odds" aria-label="Odds per card"><thead><tr><th>Rarity</th><th>Chance per card</th></tr></thead><tbody>${rows}</tbody></table>${
+  return `<p class="odds-title small">Chance per card</p><ul class="odds" aria-label="Odds per card">${rows}</ul>${
     d.guaranteedEpic ? '<p class="small">Includes at least 1 Epic or better.</p>' : ''
   }`;
 }
