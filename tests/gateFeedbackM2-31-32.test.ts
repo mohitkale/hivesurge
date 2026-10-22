@@ -124,13 +124,14 @@ describe('M2-32 trap telegraph (design ruling)', () => {
     expect(600 - left).toBe(w.gatePasses[trapIdx]);
   });
 
-  it('label stays fixed at the starting value while the trap holds', () => {
+  it('feedback round 4: the label counts down with each absorbed bee (was fixed in M2-32)', () => {
     const w = new World(L2);
-    const labels = new Set<string>();
-    fireAt(w, -3.8, 4, () => labels.add(trapLabelText(trap, w.trapRemaining(trapIdx))));
-    expect([...labels]).toEqual(['−600']);
-    expect(trapLabelText(trap, 0)).toBe('✓');
-    expect(readFileSync('src/render/scene.ts', 'utf8')).not.toMatch(/`−\$\{left\}`/);
+    const labels: string[] = [];
+    fireAt(w, -3.8, 4, () => labels.push(trapLabelText(trap, w.trapRemaining(trapIdx))));
+    expect(labels[0]).toBe('−600');
+    expect(new Set(labels).size).toBeGreaterThan(1);
+    expect(labels.at(-1)).toBe(`−${w.trapRemaining(trapIdx)}`);
+    expect(trapLabelText(trap, 0)).toBe('');
   });
 
   it('fill bar drains with absorbed bees', () => {
@@ -145,7 +146,7 @@ describe('M2-32 trap telegraph (design ruling)', () => {
   });
 
   it('one-time tip: L2 first trap hit only, then saved as shown', () => {
-    expect(TRAP_TIP.text).toBe('Traps eat bees until drained. Aim for gates!');
+    expect(TRAP_TIP.text).toMatch(/count down/);
     expect(shouldShowTrapTip('dandelion-drift', false)).toBe(true);
     expect(shouldShowTrapTip('dandelion-drift', true)).toBe(false);
     expect(shouldShowTrapTip('clover-run', false)).toBe(false);

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { Shake } from './shake';
 import { gateLabel } from '../sim/gates';
-import { trapFill, trapLabelText } from '../ui/trapTelegraph';
+import { BlockerCounter, trapFill } from '../ui/trapTelegraph';
+import { Shatter } from './shatter';
 import { UnitKind, type GateDef, type LevelDef } from '../sim/types';
 import type { UnitPool } from '../sim/units';
 import type { World } from '../sim/world';
@@ -42,6 +43,9 @@ import { TIER_SETTINGS, type TierSettings } from './quality';
 
 import { COLORS, type Palette } from '../ui/theme';
 
+/** Sub line under a blocker's countdown. */
+const TRAP_SUB = 'to break';
+
 /** Original palette: honey yellow + teal (player) vs plum purple + orange (rivals). */
 let PALETTE: Palette & { trap: string; add: string } = {
   ...COLORS,
@@ -58,10 +62,11 @@ interface GateView {
   group: THREE.Group;
   canvas?: HTMLCanvasElement;
   texture: THREE.CanvasTexture;
-  lastShown: number;
   pulse: number;
   /** M2-32: trap fill bar (drains as the trap absorbs bees). */
   fill?: THREE.Mesh;
+  /** Feedback round 4: live hit countdown + shatter state for a blocker (sub gate). */
+  counter?: BlockerCounter;
   label: THREE.Mesh;
 }
 
@@ -71,6 +76,8 @@ export class GameScene {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(48, 1, 0.1, 200);
   readonly particles = new Particles();
+  /** Feedback round 4: pooled glass shards for blockers that reach 0. */
+  readonly shatter = new Shatter();
   private readonly level: LevelDef;
   private readonly bees: Record<'worker' | 'queen', THREE.InstancedMesh>;
   private readonly wasps: Record<'wasp' | 'hornet', THREE.InstancedMesh>;
@@ -176,7 +183,7 @@ export class GameScene {
       ),
       waspFar: this.unitMesh(waspFarGeometry(0.5), 400, 0.5, 30),
     };
-    this.scene.add(this.particles.mesh);
+    this.scene.add(this.particles.mesh, this.shatter.mesh);
     this.buildCannon();
     this.buildNest();
     this.buildHive();
@@ -491,7 +498,7 @@ export class GameScene {
       }),
     );
     panel.position.y = 0.8;
-    const texture = labelTexture(gateLabel(g), color, g.kind === 'sub' ? 'trap' : '');
+    const texture = labelTexture(gateLabel(g), color, g.kind === 'sub' ? TRAP_SUB : '');
     // Labels grow with distance so the farthest row stays >= 18 CSS px on a
     // 360 px wide phone (art/ART_DIRECTION.md §Gates); tilted toward the camera.
     const lh = labelHeight(g.y, this.level.laneLength);
@@ -503,6 +510,7 @@ export class GameScene {
     label.position.y = labelCentreY(lh);
     label.rotation.x = LABEL_TILT;
     label.userData.h = lh;
+    label.userData.ls = 1;
     // Solid beam in the gate colour: the translucent panel alone washes out on grass.
     const beam = new THREE.Mesh(
       new THREE.BoxGeometry(g.width, 0.22, 0.22),
@@ -548,10 +556,10 @@ export class GameScene {
       group,
       texture,
       canvas: texture.image as HTMLCanvasElement,
-      lastShown: g.value,
       pulse: 0,
       fill,
       label,
+      counter: g.kind === 'sub' ? new BlockerCounter(g) : undefined,
     });
   }
 
@@ -584,6 +592,7 @@ export class GameScene {
     const ls = labelScale(this.camera.aspect);
     for (const gv of this.gates) {
       const lh = (gv.label.userData.h as number) * ls;
+      gv.label.userData.ls = ls;
       gv.label.scale.setScalar(ls);
       gv.label.position.y = labelCentreY(lh);
     }
@@ -682,27 +691,8 @@ export class GameScene {
       gv.pulse = Math.max(0, gv.pulse - dt * 6);
       const ps = 1 + gv.pulse * 0.12;
       gv.group.scale.set(ps, ps, ps);
-      if (g.kind === 'sub') {
-        const left = world.trapRemaining(i);
-        if (left !== gv.lastShown && gv.canvas) {
-          // M2-32: the label stays at the starting value; the bar under it drains.
-          if (gv.fill) {
-            const f = trapFill(g, left);
-            gv.fill.scale.x = Math.max(f, 1e-4);
-            gv.fill.position.x = (-(1 - f) * (gv.fill.userData.w as number)) / 2;
-          }
-          const wasLive = gv.lastShown > 0;
-          gv.lastShown = left;
-          if (left > 0 && wasLive) continue; // fixed label: no redraw while the trap holds
-          drawLabel(
-            gv.canvas,
-            trapLabelText(g, left),
-            left > 0 ? PALETTE.trap : '#999',
-            left > 0 ? 'trap' : 'broken',
-          );
-          gv.texture.needsUpdate = true;
-        }
-      }
+      const c = gv.counter;
+      if (c) this.syncBlocker(gv, c, g, world.trapRemaining(i), dt);
     }
 
     // Nest squash + shrink with HP
@@ -719,6 +709,7 @@ export class GameScene {
     }
 
     this.particles.update(dt);
+    this.shatter.update(dt);
 
     // Camera with decaying shake
     const off = this.shake.update(dt);
@@ -726,6 +717,33 @@ export class GameScene {
     this.camera.position.x += off.x;
     this.camera.position.y += off.y;
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /**
+   * Feedback round 4: the blocker label counts down on every hit (with a pop), the drain bar
+   * follows, and at 0 the pane shatters into pooled shards and the gate is removed.
+   */
+  private syncBlocker(gv: GateView, c: BlockerCounter, g: GateDef, left: number, dt: number): void {
+    const r = c.sync(left);
+    if (r.hit && gv.fill) {
+      const f = trapFill(g, c.shown);
+      gv.fill.scale.x = Math.max(f, 1e-4);
+      gv.fill.position.x = (-(1 - f) * (gv.fill.userData.w as number)) / 2;
+    }
+    if (r.hit && !r.shatter && gv.canvas) {
+      drawLabel(gv.canvas, c.label, PALETTE.trap, TRAP_SUB);
+      gv.texture.needsUpdate = true;
+    }
+    if (r.shatter) {
+      const x = gv.group.position.x;
+      // The whole blocker breaks: posts, pane and the count plate above it.
+      const lh = (gv.label.userData.h as number) * (gv.label.userData.ls as number);
+      this.shatter.burst(x, 1.9, -g.y, Math.max(g.width, lh * 1.6), 3.2, PALETTE.trap);
+      this.particles.burst(x, 1.2, -g.y, '#ffffff', 8, 4, 0.9);
+    }
+    c.tick(dt);
+    gv.label.scale.setScalar((gv.label.userData.ls as number) * c.labelScale);
+    if (!c.visible) gv.group.visible = false;
   }
 
   private readonly lodCounts = [0, 0, 0];
