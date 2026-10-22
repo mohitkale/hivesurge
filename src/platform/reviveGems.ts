@@ -80,11 +80,7 @@ export function debitGems(w: GemWallet, amount: number): boolean {
   return spendGems(w, amount, 'revive');
 }
 
-/**
- * C6: no gem revive on the final level of a live event. The flag is owned by M7-3 (levels
- * will carry it); until events exist this stub is always false.
- */
-export function isEventFinalLevel(levelId: string): boolean {
-  void levelId; // M7-3: look up the level's event flag
-  return false;
+/** C6: no gem revive on the final level of a live event (M7-3: levels carry the flag). */
+export function isEventFinalLevel(level: { isEventFinalLevel?: boolean }): boolean {
+  return level.isEventFinalLevel === true;
 }
