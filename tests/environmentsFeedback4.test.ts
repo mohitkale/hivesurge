@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BIOME_BUDGET, layoutBiome } from '../src/art/biomes';
 import {
   BOSS_ENV,
@@ -83,6 +83,15 @@ describe('environment themes (feedback round 4 #5)', () => {
 });
 
 describe('ambient particles', () => {
+  it('rain streak tops stay inside the box even when spawned at the very top', () => {
+    const spy = vi.spyOn(Math, 'random').mockReturnValue(0.9999);
+    const a = new Ambient('rain', 8, 40, 6);
+    spy.mockRestore();
+    const pos = a.object.geometry.getAttribute('position');
+    for (let i = 0; i < a.liveCount * 2; i++) expect(pos.getY(i)).toBeLessThanOrEqual(6);
+    a.dispose();
+  });
+
   it('scale with the quality tier and stay cheap', () => {
     expect(ambientCount(TIER_SETTINGS.high.particles)).toBe(160);
     expect(ambientCount(TIER_SETTINGS.med.particles)).toBe(60);

@@ -102,18 +102,21 @@ export class Ambient {
   private readonly z: Float32Array;
   private t = 0;
   private readonly rain: boolean;
+  /** Highest particle origin; rain streaks reach `size` above it, so they start lower. */
+  private readonly top: number;
 
   /** `halfWidth` / `length` / `height`: box above the lane the particles live in. */
   constructor(
     kind: AmbientKind,
     private readonly halfWidth: number,
     private readonly length: number,
-    private readonly height = 6,
+    height = 6,
     max = 160,
   ) {
     this.kind = kind;
     this.look = AMBIENT_LOOKS[kind];
     this.rain = kind === 'rain';
+    this.top = this.rain ? height - this.look.size : height;
     this.max = max;
     this.count = max;
     const verts = this.rain ? 2 : 1;
@@ -181,12 +184,12 @@ export class Ambient {
     this.z[i] = 4 - Math.random() * (this.length + 8);
     const fall = this.look.fall;
     this.y[i] = anywhere
-      ? Math.random() * this.height
+      ? Math.random() * this.top
       : fall > 0
-        ? this.height * (0.8 + Math.random() * 0.2)
+        ? this.top * (0.8 + Math.random() * 0.2)
         : fall < 0
           ? 0
-          : Math.random() * this.height;
+          : Math.random() * this.top;
   }
 
   update(dt: number): void {
@@ -200,7 +203,7 @@ export class Ambient {
         L.drift * dt * (0.5 + 0.5 * Math.cos(ph)) + Math.sin(this.t * 1.3 + ph) * L.wobble * dt;
       if (L.fall === 0) this.y[i] = 0.6 + (ph / 6.3) * 2.5 + Math.sin(this.t * 0.9 + ph) * 0.4;
       const sideways = Math.abs(this.x[i]) > this.halfWidth + 1;
-      if (sideways || this.y[i] < 0 || this.y[i] > this.height) {
+      if (sideways || this.y[i] < 0 || this.y[i] > this.top) {
         // Strong wind (dust) re-enters from the upwind edge; everything else respawns anywhere.
         this.respawn(i, sideways && L.fall === 0);
         if (sideways && L.drift > 0.5) this.x[i] = -this.halfWidth;
