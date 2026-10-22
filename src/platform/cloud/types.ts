@@ -77,4 +77,17 @@ export interface CloudBackend {
   sync(req: SyncRequest): Promise<SyncResponse>;
   /** M5-7: Stripe test-mode purchases (Supabase only; the mock cloud uses the in-browser mock). */
   readonly purchases?: import('../../purchases/service').RemotePurchases;
+  /** M7-13: weekly league (Supabase only; the game falls back to a labelled-bot league). */
+  readonly leagues?: LeagueApi;
+}
+
+export interface LeagueBoard {
+  week: string;
+  rating: number | null;
+  rows: { name: string; score: number; you: boolean }[];
+}
+
+export interface LeagueApi {
+  submit(score: number): Promise<number>;
+  board(): Promise<LeagueBoard>;
 }

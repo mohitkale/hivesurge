@@ -114,7 +114,9 @@ import { Input } from './ui/input';
 import { starRowHtml } from './ui/stars';
 import { defeatHeadline } from './ui/defeatCopy';
 import { PerfOverlay } from './ui/perfOverlay';
-import { collection, homeHtml, mockLeaderboard } from './ui/home';
+import { collection, homeHtml, type RankRow } from './ui/home';
+import { boardTop, fillWithBots, START_RATING, tierOf, weeklyScore } from './meta/leagues';
+import type { LeagueBoard } from './platform/cloud/types';
 import { homeChallenges, liveBannerHtml, liveopsHtml } from './ui/liveops';
 import { afterBattle, nextEventLevel, openLive, type LiveCtx } from './meta/liveGame';
 import {
@@ -362,6 +364,43 @@ export class Game {
   private eventPlay: { k: number } | null = null;
   private loginNote = '';
 
+  /** M7-13: last league board from the sandbox backend (null = offline league with bots). */
+  private leagueBoard: LeagueBoard | null = null;
+
+  private leagueHome(): { ranks: RankRow[]; rankLabel: string } {
+    const L = this.save.meta.liveops;
+    const dow = (new Date(gameClock().now()).getUTCDay() + 6) % 7;
+    const b = this.leagueBoard;
+    const mine = weeklyScore(L.weekly.counts);
+    const rows = b?.rows.length
+      ? b.rows.map((r) => ({ ...r, score: r.you ? Math.max(r.score, mine) : r.score, bot: false }))
+      : [{ name: 'You', score: mine, you: true, bot: false }];
+    const tier = tierOf(b?.rating ?? START_RATING);
+    return {
+      ranks: boardTop(fillWithBots(rows, L.weekly.key, dow)),
+      rankLabel: b
+        ? `${tier} league · sandbox online · bots labelled`
+        : `${tier} league · offline, bots labelled`,
+    };
+  }
+
+  /** Submit this week's score and fetch the board when signed in to the sandbox backend. */
+  private syncLeague(): void {
+    if (!this.cloud) return;
+    const score = weeklyScore(this.save.meta.liveops.weekly.counts);
+    void this.cloud
+      .then(async (c) => {
+        const api = c.backend.leagues;
+        if (!api || !c.user) return;
+        if (score > 0) await api.submit(score);
+        this.leagueBoard = await api.board();
+        if (this.phase === 'title' && this.overlay.querySelector('.home')) this.showTitle();
+      })
+      .catch(() => {
+        // Offline or not deployed: keep the bot league.
+      });
+  }
+
   private refreshLive(): LiveCtx {
     const { ctx, loginDay } = openLive(
       this.save,
@@ -422,7 +461,7 @@ export class Game {
       earned: this.lastEarned,
       collection: collection(no, bees),
       challenges: homeChallenges(this.save),
-      ranks: mockLeaderboard(stars, no),
+      ...this.leagueHome(),
       meta: `${this.loginNote ? `<p class="small login-note" role="status">🎁 ${this.loginNote}</p>` : ''}${liveBannerHtml(this.save, live, nextEvent(cachedRemoteConfig().events, live.now))}${this.homeMetaHtml()}`,
     });
     this.loginNote = '';
@@ -708,10 +747,12 @@ export class Game {
 
   /** Boot hook (main.ts): a returning signed-in player syncs without opening Account. */
   startCloud(): void {
-    this.cloudController().catch((e: unknown) => {
-      console.warn('cloud unavailable, playing offline', e);
-      this.cloud = null;
-    });
+    this.cloudController()
+      .then(() => this.syncLeague())
+      .catch((e: unknown) => {
+        console.warn('cloud unavailable, playing offline', e);
+        this.cloud = null;
+      });
   }
 
   /** A sync merged the cloud save into the running one: refresh what is on screen. */
@@ -1582,6 +1623,7 @@ export class Game {
         this.analytics.track('ad_failed', { placement: 'level_transition', reason: 'no_fill' });
     }
     this.persist();
+    this.syncLeague();
     // Round 3 (Mohit): Home after EVERY level, retries included; PLAY there replays it.
     this.hudRoot.innerHTML = '';
     this.showTitle();
