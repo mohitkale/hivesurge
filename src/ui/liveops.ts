@@ -164,14 +164,14 @@ export function liveopsHtml(
         ? `<div class="row"><button class="btn primary" data-a="buy:season_pass">Season Pass ${esc(passPrice)} (sandbox): fixed, named rewards</button></div>`
         : '';
     pass = `<p>Tier <b>${tier}</b>/${TIERS} · ${into}/${se.xpPerTier} XP · ends in ${fmtLeft(se.start + se.days * 86_400_000 - ctx.now)}</p>${buy}
-      <div class="pass-scroll"><table class="pass"><thead><tr><th>Tier</th><th>Free</th><th>Premium</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+      <div class="pass-wrap"><table class="pass"><thead><tr><th>Tier</th><th>Free</th><th>Premium</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
   }
-  return `<div class="modal"><div class="card liveops-screen">
-    <h2>Targets &amp; Pass</h2>
+  return `<div class="modal"><div class="card card-scroll liveops-screen">
+    <h2>Targets &amp; Pass</h2><div class="scroll-y scroll-body">
     <h3>Today</h3><ul class="ch-list">${daily}</ul>${bonus}
     <h3>This week</h3><ul class="ch-list">${weekly}</ul>
     ${ev ? `<h3>🎪 ${esc(ev.name ?? ev.id)} · ${L.event.points} pts</h3><ul class="milestones">${milestones}</ul>` : ''}
     <h3>📅 Events calendar</h3>${calendarHtml(events, ctx.now)}
-    <h3>Season pass</h3>${pass}
+    <h3>Season pass</h3>${pass}</div>
     <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
 }

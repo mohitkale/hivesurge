@@ -239,7 +239,7 @@ export function homeHtml(o: HomeModel): string {
     <div class="row"><button class="btn primary play-big" data-a="play">▶ PLAY · LEVEL ${o.levelNo}</button></div>
     <section class="home-sec"><h3>Modes</h3><div class="mode-grid">${modes}</div></section>
     <section class="home-sec"><h3>Collection <small>${owned}/${o.collection.length}</small></h3>
-      <ul class="coll-strip">${coll}</ul>
+      <ul class="coll-strip scroll-x">${coll}</ul>
       <div class="row"><button class="btn" data-a="skin">Bee skins</button><button class="btn" data-a="shop">Shop</button></div></section>
     <section class="home-sec"><h3>Daily challenges <small>resets 00:00 UTC</small></h3>
       <ul class="ch-list">${o.challenges
