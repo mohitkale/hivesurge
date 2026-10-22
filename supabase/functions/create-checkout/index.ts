@@ -1,7 +1,8 @@
 // M5-6d / M5-7: create a Stripe TEST-mode Checkout Session for one catalog SKU.
 // verify_jwt = true (signed-in players only). Secrets: STRIPE_SECRET_KEY (sk_test_/rk_test_
-// only, anything else is refused), optional ALLOWED_ORIGINS (comma-separated return origins).
+// only, anything else is refused; function secret or Vault, see _shared/secrets.ts), optional ALLOWED_ORIGINS (comma-separated return origins).
 import { handleCreateCheckout, isTestSecretKey, stripeRest } from '../_shared/checkout.ts';
+import { getSecret } from '../_shared/secrets.ts';
 
 const DEFAULT_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
 
@@ -22,7 +23,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST')
     return new Response('method not allowed', { status: 405, headers: cors });
 
-  const key = Deno.env.get('STRIPE_SECRET_KEY');
+  const key = await getSecret('STRIPE_SECRET_KEY', (k) => Deno.env.get(k));
   if (!isTestSecretKey(key))
     return Response.json({ error: 'stripe_not_configured' }, { status: 503, headers: cors });
 
