@@ -239,15 +239,19 @@ export function homeHtml(o: HomeModel): string {
     <section class="home-sec"><h3>Collection <small>${owned}/${o.collection.length}</small></h3>
       <ul class="coll-strip">${coll}</ul>
       <div class="row"><button class="btn" data-a="skin">Bee skins</button><button class="btn" data-a="shop">Shop</button></div></section>
-    <section class="home-sec"><h3>Daily challenges <small class="mock-tag">local preview</small></h3>
+    <section class="home-sec"><h3>Daily challenges <small>resets 00:00 UTC</small></h3>
       <ul class="ch-list">${o.challenges
         .filter((c) => c.state === 'open')
         .map(ch)
         .join('')}</ul>
-      <h4>Upcoming</h4><ul class="ch-list">${o.challenges
-        .filter((c) => c.state === 'upcoming')
-        .map(ch)
-        .join('')}</ul></section>
+      ${
+        o.challenges.some((c) => c.state === 'upcoming')
+          ? `<h4>Upcoming</h4><ul class="ch-list">${o.challenges
+              .filter((c) => c.state === 'upcoming')
+              .map(ch)
+              .join('')}</ul>`
+          : ''
+      }</section>
     <section class="home-sec"><h3>Rankings <small class="mock-tag">mock · local only, not online</small></h3>
       <ol class="rank-list">${ranks}</ol></section>
   </div></div>`;

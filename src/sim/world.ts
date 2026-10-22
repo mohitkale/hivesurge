@@ -100,7 +100,7 @@ export class World {
   hiveHp: number;
   queenCharge = 0;
   outcome: BattleOutcome = 'playing';
-  stats = { fired: 0, gateSpawns: 0, peakBees: 0, kills: 0, queens: 0 };
+  stats = { fired: 0, gateSpawns: 0, peakBees: 0, kills: 0, queens: 0, hornetKills: 0 };
   /** Bees (incl. queens) that crossed each gate line, traps included. */
   readonly gatePasses: number[];
   /**
@@ -551,7 +551,10 @@ export class World {
         const dmg = Math.min(b.hp[i], w.hp[j]);
         b.hp[i] -= dmg;
         w.hp[j] -= w.kind[j] === UnitKind.Matriarch ? dmg * MATRIARCH_DAMAGE_TAKEN : dmg;
-        if (w.hp[j] <= 0) this.stats.kills++;
+        if (w.hp[j] <= 0) {
+          this.stats.kills++;
+          if (w.kind[j] === UnitKind.Hornet) this.stats.hornetKills++;
+        }
         this.events.push({ type: 'clash', x: (bx + w.x[j]) / 2, y: (by + w.y[j]) / 2 });
         return b.hp[i] <= 0;
       });

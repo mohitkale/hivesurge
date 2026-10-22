@@ -34,7 +34,9 @@ describe('M5-6g remote config + M5-4b publish check', () => {
   it('the shipped public/remote-config.json passes the publish check', () => {
     const j: unknown = JSON.parse(readFileSync('public/remote-config.json', 'utf8'));
     expect(validateRemoteConfig(j as never)).toEqual([]);
-    expect(loadRemoteConfig(j)).toEqual(defaultRemoteConfig());
+    // M7-3: the shipped file also carries the season and the events calendar.
+    const { events, season } = j as { events: unknown; season: unknown };
+    expect(loadRemoteConfig(j)).toEqual({ ...defaultRemoteConfig(), events, season });
   });
 
   it('fails publish unless every chest odds sum to 100', () => {

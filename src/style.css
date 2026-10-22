@@ -1380,3 +1380,67 @@ body {
   color: #ff9a9a;
   font-weight: 600;
 }
+
+/* M7-3 live ops: event banner, Targets & Pass screen */
+.event-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ffcf4a33, #ff7ab633);
+}
+.event-banner small {
+  flex: 1 1 140px;
+  opacity: 0.85;
+}
+.event-banner.soon {
+  opacity: 0.75;
+}
+.pchip.streak {
+  background: #ff7a1a33;
+}
+.liveops-screen {
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.liveops-screen h3 {
+  margin: 12px 0 4px;
+}
+.milestones {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.milestone {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 0;
+}
+.milestone span {
+  margin-left: auto;
+}
+.pass-scroll {
+  max-height: 260px;
+  overflow-y: auto;
+}
+table.pass {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+table.pass th,
+table.pass td {
+  padding: 3px 4px;
+  border-bottom: 1px solid #ffffff1a;
+  text-align: left;
+}
+table.pass tr.reached th {
+  color: #ffcf4a;
+}
+.login-note {
+  margin: 4px 0;
+}

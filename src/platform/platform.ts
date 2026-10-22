@@ -113,7 +113,7 @@ export const CATALOG: Record<Sku, SkuInfo> = {
     type: 'non_consumable_per_season',
     price: { usd: 4.99, inr: 249 },
     random: false,
-    available: false, // M7-2: no season yet
+    available: true, // M7-3: season pass (premium track), sandbox purchase
     grants: { seasonPremium: true, noAds: true },
   },
 };

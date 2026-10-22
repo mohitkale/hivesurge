@@ -74,8 +74,10 @@ describe('M5-4b / G16: paid random items hidden in restricted regions', () => {
     expect(visibleSkus(list, 'IN').map((s) => s.id)).toContain('card_pack_paid');
     expect(RANDOM_PAID_BLOCKED_REGIONS).toEqual(expect.arrayContaining(['BE', 'NL']));
   });
-  it('unavailable SKUs (season pass before M7-2) are not listed', () => {
-    expect(visibleSkus(Object.values(CATALOG), 'US').map((s) => s.id)).not.toContain('season_pass');
+  it('unavailable SKUs are not listed; the season pass is sold from M7-3', () => {
+    expect(visibleSkus(Object.values(CATALOG), 'US').map((s) => s.id)).toContain('season_pass');
+    const off = Object.values(CATALOG).map((s) => ({ ...s, available: s.id !== 'season_pass' }));
+    expect(visibleSkus(off, 'US').map((s) => s.id)).not.toContain('season_pass');
   });
   it('country and currency from the locale', () => {
     expect(countryFromLocale('nl-BE')).toBe('BE');
