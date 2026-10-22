@@ -156,7 +156,19 @@ built and deployed; real test-mode Checkout switches on with secrets only (no co
 Without secrets both functions answer **503 `stripe_not_configured`** (checked live
 2026-10-22: webhook 503, checkout without JWT 401, with JWT 503).
 
-### Switch Stripe test mode on (Mohit, about 10 minutes)
+### Status: Stripe TEST mode is ON (2026-10-22)
+
+- Account `acct_1UT8lm…` (test mode, US). The Stripe CLI on the box is logged in, and only its `test_mode_*` keys are used. Live mode was never touched.
+- Webhook endpoint `we_1UT9KBAQgxxZ62wzsUl9c3hU` (test mode) → `https://yaizrnbfspmzshdzjcjz.supabase.co/functions/v1/stripe-webhook` for `checkout.session.completed`, `checkout.session.async_payment_succeeded` and `charge.refunded`.
+- **Secrets are in Supabase Vault, not Edge Function secrets.** The box has no Supabase CLI token and the MCP has no secrets tool. `STRIPE_SECRET_KEY` (`sk_test_…`) and `STRIPE_WEBHOOK_SECRET` (`whsec_…`) are stored with `vault.create_secret`. The functions read `Deno.env` first, then the service-role-only RPC `public.function_secret` (migration `20261022000800`, `_shared/secrets.ts`). To move them to function secrets later, set them in the dashboard (Edge Functions → Secrets); they take precedence. You can then delete the Vault rows: `delete from vault.secrets where name in ('STRIPE_SECRET_KEY','STRIPE_WEBHOOK_SECRET');`. To rotate a key: `select vault.update_secret(id, '<new>') from vault.secrets where name = 'STRIPE_SECRET_KEY';`, then redeploy or wait for a cold start (values are cached per isolate).
+- `VITE_STRIPE_PUBLISHABLE_KEY` (`pk_test_…`) is in the uncommitted `.env.local`. `scripts/stripe-seed-test.mjs` ran twice: the first run created 21 objects (7 products + 14 USD/INR prices), the second created 0, so it is idempotent.
+- **End-to-end run (2026-10-22, about 05:25–05:30 IST)** with sandbox user `stripe-e2e@example.invalid`:
+  - Real `create-checkout` call followed by hosted Checkout completed with card 4242: one `purchases_sandbox` row (`gems_small`, `stripe_test`, 499 USD cents). The cloud save got one ledger entry, `purchase:<cs>` +120 gems, and `noAds`.
+  - Re-sending the `checkout.session.completed` event changed nothing (still one row, one ledger entry, same revision).
+  - Card 0002 was declined on the Checkout page, and no row was created.
+  - Refunding the payment intent marked the row `refunded` and added one `refund:<cs>` −120 entry (0 gems). `noAds` is kept. Re-sending `charge.refunded` changed nothing.
+
+### Switch Stripe test mode on (reference; already done above)
 
 1. **Approve the Stripe account in chat** (M5-6b gate), then create or open the Stripe account
    and stay in **Test mode** (toggle top right). Never activate live payments.
