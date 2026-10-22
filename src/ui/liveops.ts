@@ -1,6 +1,7 @@
 import {
   DAILY_BONUS_PASS_XP,
   dailyTargets,
+  eventCalendar,
   eventLevelCount,
   eventRules,
   freeReward,
@@ -88,7 +89,28 @@ function targetRow(
 }
 
 /** The Targets & Pass screen: daily, weekly, event milestones, season pass tiers. */
-export function liveopsHtml(s: SaveData, ctx: LiveCtx, passPrice: string | null): string {
+/** M7 events calendar (remote config `events`): running event + the next ones, with dates. */
+export function calendarHtml(events: LiveEvent[] | undefined, now: number): string {
+  const rows = eventCalendar(events, now);
+  if (!rows.length) return '<p class="small">No events scheduled right now.</p>';
+  const day = (t: number) =>
+    new Date(t).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  return `<ul class="calendar">${rows
+    .map(
+      (r) =>
+        `<li class="cal-row ${r.state}" data-event="${esc(r.event.id)}"><b>${esc(r.event.name ?? r.event.id)}</b>
+        <small>${r.state === 'live' ? `on now · ends in ${fmtLeft(r.event.end - now)}` : `${day(r.event.start)} → ${day(r.event.end)} · starts in ${fmtLeft(r.event.start - now)}`}</small>
+        <small class="twist">${esc(r.twist)}</small></li>`,
+    )
+    .join('')}</ul>`;
+}
+
+export function liveopsHtml(
+  s: SaveData,
+  ctx: LiveCtx,
+  passPrice: string | null,
+  events?: LiveEvent[],
+): string {
   const L = s.meta.liveops;
   const daily = dailyTargets(L)
     .map((t, i) => targetRow(t, i, L.daily.counts, L.daily.claimed, 'daily', L.daily.rerolled < 0))
@@ -149,6 +171,7 @@ export function liveopsHtml(s: SaveData, ctx: LiveCtx, passPrice: string | null)
     <h3>Today</h3><ul class="ch-list">${daily}</ul>${bonus}
     <h3>This week</h3><ul class="ch-list">${weekly}</ul>
     ${ev ? `<h3>🎪 ${esc(ev.name ?? ev.id)} · ${L.event.points} pts</h3><ul class="milestones">${milestones}</ul>` : ''}
+    <h3>📅 Events calendar</h3>${calendarHtml(events, ctx.now)}
     <h3>Season pass</h3>${pass}
     <div class="row"><button class="btn primary" data-a="back">Back</button></div></div></div>`;
 }

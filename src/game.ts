@@ -1021,7 +1021,7 @@ export class Game {
     const cur = currencyFor(navigator.language, Intl.DateTimeFormat().resolvedOptions().timeZone);
     const sku = CATALOG.season_pass;
     const price = sku.available && live.season ? formatPrice(sku.price, cur) : null;
-    this.overlay.innerHTML = liveopsHtml(this.save, live, price);
+    this.overlay.innerHTML = liveopsHtml(this.save, live, price, cachedRemoteConfig().events);
     if (note)
       this.overlay
         .querySelector('h2')
