@@ -751,6 +751,20 @@ export class Game {
     return this.cloud;
   }
 
+  /**
+   * Boot hook (main.ts, M7 QA F1): the background remote-config refresh stored a new config.
+   * Redraw Home when it is showing with nothing on top, so a first session sees the running
+   * event, the calendar and the season right away. Ad caps and odds still apply next session.
+   */
+  remoteConfigRefreshed(): void {
+    if (
+      this.phase === 'title' &&
+      this.overlay.querySelector('.home') &&
+      !this.overlay.querySelector('.modal:not(.home)')
+    )
+      this.showTitle();
+  }
+
   /** Boot hook (main.ts): a returning signed-in player syncs without opening Account. */
   startCloud(): void {
     this.cloudController()

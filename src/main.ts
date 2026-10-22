@@ -19,9 +19,13 @@ Promise.all([import('./game'), store.load()])
     if (shouldAutoStartCloud(localStorage, location, cloudEnv())) idle(() => game.startCloud());
     // M5-6g / M7: background refresh of the remote config (events calendar, season) and the
     // admin-edited level rows, for everyone incl. guests (lazy chunks; the shipped file is
-    // used with no backend). Events show from the next home screen; levels from the next one.
+    // used with no backend). A fresh config redraws Home (events, season); caps apply next session.
     idle(() => {
-      void import('./platform/remoteConfig').then((m) => m.refreshRemoteConfig(cloudEnv()));
+      void import('./platform/remoteConfig')
+        .then((m) => m.refreshRemoteConfig(cloudEnv()))
+        .then((got) => {
+          if (got) game.remoteConfigRefreshed();
+        });
       void import('./levels/overrides').then((m) => m.refreshLevelOverrides(cloudEnv()));
     });
     // M5-7: back from hosted Stripe Checkout: collect the server-confirmed grant (lazy chunk).
