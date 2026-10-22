@@ -1,7 +1,7 @@
 import { CHESTS, type ChestType, type Rarity } from '../meta/defs';
 import { EXPECTED_P, LOSS_ASSIST, SCALE_FLOOR } from '../meta/economy';
 import { AD_CAPS, type AdCaps } from './adPacer';
-import { validateEventRules } from '../meta/liveops';
+import { validateEventRules } from '../meta/eventRules';
 
 /**
  * M5-4b / M5-6g remote config: ad caps, chest odds and difficulty knobs. The shipped values

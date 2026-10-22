@@ -67,58 +67,41 @@ export function defaultLiveOps(): LiveOpsState {
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v);
-const n0 = (v: unknown): number =>
-  typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0;
-const str = (v: unknown, max = 64): string => (typeof v === 'string' && v.length <= max ? v : '');
-const ints = (v: unknown): number[] =>
-  Array.isArray(v) ? [...new Set(v.filter((x) => Number.isInteger(x) && x >= 0))].slice(0, 64) : [];
-function counts(v: unknown): Record<string, number> {
-  const out: Record<string, number> = {};
-  if (isObj(v))
-    for (const [k, n] of Object.entries(v).slice(0, 32)) if (k.length <= 32) out[k] = n0(n);
-  return out;
+
+/**
+ * Shape-driven parse: every field takes the default's type (string ≤ 64, non-negative int,
+ * boolean, int list, string list ≤ 3, or a counter record). Keeps the initial bundle small.
+ */
+function clean<T>(d: T, v: unknown): T {
+  if (!isObj(v) || !isObj(d)) return d;
+  const out: Record<string, unknown> = {};
+  for (const [k, dv] of Object.entries(d)) {
+    const x = v[k];
+    if (typeof dv === 'string') out[k] = typeof x === 'string' && x.length <= 64 ? x : dv;
+    else if (typeof dv === 'number')
+      out[k] = Number.isInteger(x) && (x as number) >= (dv < 0 ? -1 : 0) ? x : dv;
+    else if (typeof dv === 'boolean') out[k] = x === true;
+    else if (Array.isArray(dv))
+      out[k] = Array.isArray(x)
+        ? k === 'picks'
+          ? x.filter((y) => typeof y === 'string' && y.length <= 32).slice(0, 3)
+          : [...new Set(x.filter((y) => Number.isInteger(y) && y >= 0))].slice(0, 64)
+        : [];
+    else if (k === 'counts') {
+      const c: Record<string, number> = {};
+      if (isObj(x))
+        for (const [ck, n] of Object.entries(x).slice(0, 32))
+          if (Number.isInteger(n) && (n as number) >= 0) c[ck] = n as number;
+      out[k] = c;
+    } else out[k] = clean(dv, x);
+  }
+  return out as T;
 }
 
 export function parseLiveOps(v: unknown): LiveOpsState {
-  const d = defaultLiveOps();
-  if (!isObj(v)) return d;
-  const dy = isObj(v.daily) ? v.daily : {};
-  const wk = isObj(v.weekly) ? v.weekly : {};
-  const lg = isObj(v.login) ? v.login : {};
-  const se = isObj(v.season) ? v.season : {};
-  const ev = isObj(v.event) ? v.event : {};
-  return {
-    daily: {
-      key: str(dy.key, 10),
-      counts: counts(dy.counts),
-      claimed: ints(dy.claimed),
-      picks: Array.isArray(dy.picks) ? dy.picks.map((x) => str(x, 32)).slice(0, 3) : [],
-      rerolled:
-        Number.isInteger(dy.rerolled) && (dy.rerolled as number) >= 0
-          ? (dy.rerolled as number)
-          : -1,
-      bonusClaimed: dy.bonusClaimed === true,
-    },
-    weekly: { key: str(wk.key, 10), counts: counts(wk.counts), claimed: ints(wk.claimed) },
-    login: {
-      lastDay: str(lg.lastDay, 10),
-      streakDay: Math.min(7, n0(lg.streakDay)),
-      freezeWeek: str(lg.freezeWeek, 10),
-    },
-    winStreak: n0(v.winStreak),
-    season: {
-      id: str(se.id),
-      xp: n0(se.xp),
-      claimedFree: ints(se.claimedFree),
-      claimedPremium: ints(se.claimedPremium),
-    },
-    event: {
-      id: str(ev.id),
-      points: n0(ev.points),
-      claimed: ints(ev.claimed),
-      cleared: n0(ev.cleared),
-    },
-  };
+  const s = clean(defaultLiveOps(), v);
+  s.login.streakDay = Math.min(7, s.login.streakDay);
+  return s;
 }
 
 const union = (a: number[], b: number[]) => [...new Set([...a, ...b])].sort((x, y) => x - y);

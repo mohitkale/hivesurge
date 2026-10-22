@@ -268,3 +268,35 @@ describe('M7-3 events calendar (driven by remote config)', () => {
     ).toContain('events[0].rules.waveMul must be 0.5..2');
   });
 });
+
+describe('M7-3 save state parse', () => {
+  it('hostile or old saves parse to safe defaults', () => {
+    const s = parseSave(
+      JSON.stringify({
+        ...defaultSave(),
+        meta: {
+          ...defaultSave().meta,
+          liveops: {
+            daily: {
+              key: 5,
+              counts: { win: -3, queen: 2.5, chest: 4 },
+              claimed: [1, 1, -2, 'x'],
+              picks: [1, 'd-win'],
+            },
+            login: { streakDay: 99, lastDay: 'x'.repeat(200) },
+            winStreak: 'lots',
+          },
+        },
+      }),
+    ).meta.liveops;
+    expect(s.daily.key).toBe('');
+    expect(s.daily.counts).toEqual({ chest: 4 });
+    expect(s.daily.claimed).toEqual([1]);
+    expect(s.daily.picks).toEqual(['d-win']);
+    expect(s.daily.rerolled).toBe(-1);
+    expect(s.login.streakDay).toBe(7);
+    expect(s.login.lastDay).toBe('');
+    expect(s.winStreak).toBe(0);
+    expect(parseSave(null).meta.liveops.season.id).toBe('');
+  });
+});
