@@ -457,6 +457,42 @@ export function nextEvent(events: LiveEvent[] | undefined, now: number): LiveEve
 
 export const eventRules = (e: LiveEvent): EventRules => (e.rules ?? {}) as EventRules;
 
+/** One calendar row: the running event first, then upcoming ones by start time. */
+export interface CalendarRow {
+  event: LiveEvent;
+  state: 'live' | 'soon';
+  /** Short, plain-language rule summary ("Only ×3 gates count", "Gates +1", ...). */
+  twist: string;
+}
+
+/** Plain-language summary of an event's rule twists (no new art, M7-10). */
+export function ruleSummary(r: EventRules): string {
+  const out: string[] = [];
+  if (r.onlyX3) out.push('Only ×3 gates count');
+  if (r.gateAdd) out.push(`Gates +${r.gateAdd}`);
+  if (r.waveMul && r.waveMul !== 1) out.push(`Waves ×${r.waveMul}`);
+  if (r.queenChargeMul && r.queenChargeMul !== 1) out.push(`Queen charge ×${r.queenChargeMul}`);
+  if (r.hornetShare) out.push(`${Math.round(r.hornetShare * 100)}% hornets`);
+  return out.join(' · ') || 'Bonus event levels';
+}
+
+/** M7 events calendar: what is on now and what comes next (ended events are dropped). */
+export function eventCalendar(
+  events: LiveEvent[] | undefined,
+  now: number,
+  limit = 4,
+): CalendarRow[] {
+  return [...(events ?? [])]
+    .filter((e) => e.end > now && e.end > e.start)
+    .sort((a, b) => a.start - b.start)
+    .slice(0, limit)
+    .map((e) => ({
+      event: e,
+      state: now >= e.start ? ('live' as const) : ('soon' as const),
+      twist: ruleSummary(eventRules(e)),
+    }));
+}
+
 /** Apply an event's rule twists to a level (pure; returns a new level). */
 export function applyEventRules(level: LevelDef, r: EventRules): LevelDef {
   let gates = level.gates.map((g) => ({ ...g }));

@@ -1444,3 +1444,25 @@ table.pass tr.reached th {
 .login-note {
   margin: 4px 0;
 }
+
+/* M7 events calendar */
+.calendar {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cal-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  margin: 4px 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.cal-row.live {
+  border-left: 3px solid #ffc83d;
+}
+.cal-row .twist {
+  opacity: 0.8;
+}
