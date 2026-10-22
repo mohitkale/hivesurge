@@ -103,7 +103,7 @@ await toHome();
 log('boot wallet', await wallet());
 log('ranks', (await page.locator('.rank-list').innerText()).replace(/\s+/g, ' '));
 if (step === 'all' || step === 'battle') {
-  const r = await battle('b1');
+  await battle('b1');
   await toHome();
   log('after battle wallet', await wallet());
   log('ranks', (await page.locator('.rank-list').innerText()).replace(/\s+/g, ' '));
@@ -119,8 +119,6 @@ if (step === 'all' || step === 'event') {
       (await page.locator('#overlay').innerText()).replace(/\s+/g, ' ').slice(0, 200),
     );
     if (await page.locator('[data-a=go]').count()) await click('[data-a=go]');
-    else if (await page.locator('[data-a=play]').count()) {
-    }
     const W = 390,
       H = 844;
     await page.mouse.move(W / 2, H * 0.7);
