@@ -179,6 +179,8 @@ export interface HomeModel {
   collection: CollectionItem[];
   challenges: Challenge[];
   ranks: RankRow[];
+  /** M7-13: league label (tier · sandbox online / offline with bots); default = mock tag. */
+  rankLabel?: string;
   /** M5-4 / M5-12: next-goal bar, chest row and meta buttons (prebuilt HTML). */
   meta?: string;
 }
@@ -252,7 +254,7 @@ export function homeHtml(o: HomeModel): string {
               .join('')}</ul>`
           : ''
       }</section>
-    <section class="home-sec"><h3>Rankings <small class="mock-tag">mock · local only, not online</small></h3>
+    <section class="home-sec"><h3>Rankings <small class="mock-tag">${esc(o.rankLabel ?? 'mock · local only, not online')}</small></h3>
       <ol class="rank-list">${ranks}</ol></section>
   </div></div>`;
 }

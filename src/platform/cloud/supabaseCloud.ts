@@ -48,6 +48,25 @@ export class SupabaseCloud implements CloudBackend {
     },
   };
 
+  /** M7-13: weekly league via RPCs (monotonic capped score; pseudonymous board). */
+  readonly leagues = {
+    submit: async (score: number) => {
+      const { data, error } = await this.sb.rpc('league_submit', { p_score: Math.floor(score) });
+      if (error) throw new Error(error.message || 'network error');
+      return Number(data);
+    },
+    board: async () => {
+      const { data, error } = await this.sb.rpc('league_board');
+      if (error) throw new Error(error.message || 'network error');
+      const d = (data ?? {}) as Partial<import('./types').LeagueBoard>;
+      return {
+        week: String(d.week ?? ''),
+        rating: typeof d.rating === 'number' ? d.rating : null,
+        rows: Array.isArray(d.rows) ? d.rows.slice(0, 60) : [],
+      };
+    },
+  };
+
   async currentUser() {
     // getSession reads the local session (refreshing it when needed); no request per call.
     const { data } = await this.sb.auth.getSession();

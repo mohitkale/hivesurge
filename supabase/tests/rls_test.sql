@@ -427,5 +427,38 @@ begin
 end $$;
 reset role;
 
+-- M7-13 leagues: scores only via league_submit (monotonic, capped), own rows only.
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated"}', true);
+do $$
+declare b jsonb;
+begin
+  if public.league_submit(500) <> 500 or public.league_submit(300) <> 500 then raise exception 'FAIL: league monotonic'; end if;
+  begin perform public.league_submit(999999); raise exception 'FAIL: league cap';
+  exception when invalid_parameter_value then null; end;
+  begin insert into public.league_scores (week, user_id, score) values (current_date, '11111111-1111-4111-8111-111111111111', 9); raise exception 'FAIL: direct score write';
+  exception when insufficient_privilege then null; end;
+  b := public.league_board();
+  if not exists (select 1 from jsonb_array_elements(b -> 'rows') r where (r ->> 'you')::boolean and (r ->> 'score')::int = 500) then
+    raise exception 'FAIL: league board you row';
+  end if;
+  if b::text like '%11111111-1111%' then raise exception 'FAIL: board leaks user ids'; end if;
+end $$;
+select set_config('request.jwt.claims',
+  '{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}', true);
+do $$ begin
+  perform public.league_submit(200);
+  if (select count(*) from public.league_scores) <> 1 then raise exception 'FAIL: B sees A league row'; end if;
+  if jsonb_array_length(public.league_board() -> 'rows') <> 2 then raise exception 'FAIL: one group of 2'; end if;
+end $$;
+reset role;
+set local role anon;
+do $$ begin
+  begin perform public.league_board(); raise exception 'FAIL: anon board';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+
 select 'M4/M5/M6/M7 RLS tests: all passed' as result;
 rollback;
