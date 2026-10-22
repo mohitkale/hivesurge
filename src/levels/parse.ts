@@ -85,6 +85,10 @@ function parseGate(raw: unknown, i: number, laneLength: number, laneWidth: numbe
     if (m.phase !== undefined) gate.motion.phase = n(m.phase, 'motion.phase');
   }
   if (g.fromPhase !== undefined) gate.fromPhase = int(g.fromPhase, `gates[${i}].fromPhase`, 1);
+  if (g.obstacle !== undefined) {
+    if (typeof g.obstacle !== 'boolean') throw new Error(`gates[${i}].obstacle must be boolean`);
+    if (g.obstacle) gate.obstacle = true;
+  }
   return gate;
 }
 
