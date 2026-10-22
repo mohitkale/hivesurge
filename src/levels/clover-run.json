@@ -5,7 +5,7 @@
   "laneWidth": 10,
   "laneLength": 40,
   "timeLimit": 90,
-  "nestHp": 3050,
+  "nestHp": 3250,
   "hiveHp": 50,
   "fireInterval": 0.11,
   "queenCharge": 7,
@@ -52,16 +52,16 @@
     },
     {
       "kind": "sub",
-      "value": 600,
+      "value": 150,
       "x": -3.8,
-      "y": 5,
+      "y": 13,
       "width": 2.4
     },
     {
       "kind": "sub",
-      "value": 600,
+      "value": 150,
       "x": 3.8,
-      "y": 5,
+      "y": 13,
       "width": 2.4
     }
   ],

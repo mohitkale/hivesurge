@@ -6,7 +6,7 @@ const CLOVER = getLevel('clover-run');
 
 describe('M2-18 Clover Run ease (levels-m2.md M2-17 note)', () => {
   it('ships the tuned knobs', () => {
-    expect(CLOVER.nestHp).toBe(3050);
+    expect(CLOVER.nestHp).toBe(3250);
     expect(CLOVER.hiveHp).toBe(50);
   });
 

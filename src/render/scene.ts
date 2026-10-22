@@ -46,6 +46,9 @@ import { COLORS, type Palette } from '../ui/theme';
 
 /** Sub line under a blocker's countdown. */
 const TRAP_SUB = 'to break';
+/** Feedback round 4: sub-label of the mini-boss tower (band C and boss levels). */
+const TOWER_SUB = 'tower: break it';
+const trapSub = (g: GateDef): string => (g.tower ? TOWER_SUB : TRAP_SUB);
 
 /** Original palette: honey yellow + teal (player) vs plum purple + orange (rivals). */
 let PALETTE: Palette & { trap: string; add: string } = {
@@ -511,7 +514,7 @@ export class GameScene {
       }),
     );
     panel.position.y = 0.8;
-    const texture = labelTexture(gateLabel(g), color, g.kind === 'sub' ? TRAP_SUB : '');
+    const texture = labelTexture(gateLabel(g), color, g.kind === 'sub' ? trapSub(g) : '');
     // Labels grow with distance so the farthest row stays >= 18 CSS px on a
     // 360 px wide phone (art/ART_DIRECTION.md §Gates); tilted toward the camera.
     const lh = labelHeight(g.y, this.level.laneLength);
@@ -562,6 +565,16 @@ export class GameScene {
       back.renderOrder = 11;
       fill.renderOrder = 12;
       label.add(back, fill);
+    }
+    if (g.tower) {
+      // Mini-boss tower: a wax keep behind the pane (one mesh, at most one per level).
+      const keep = new THREE.Mesh(
+        new THREE.CylinderGeometry(g.width * 0.32, g.width * 0.4, 3.2, 6),
+        new THREE.MeshLambertMaterial({ color: '#6b2a4a' }),
+      );
+      keep.position.set(0, 1.6, -0.6);
+      group.add(keep);
+      group.scale.set(1, 1.25, 1);
     }
     group.position.set(g.x, 0, -g.y);
     this.scene.add(group);
@@ -745,7 +758,7 @@ export class GameScene {
       gv.fill.position.x = (-(1 - f) * (gv.fill.userData.w as number)) / 2;
     }
     if (r.hit && !r.shatter && gv.canvas) {
-      drawLabel(gv.canvas, c.label, PALETTE.trap, TRAP_SUB);
+      drawLabel(gv.canvas, c.label, PALETTE.trap, trapSub(g));
       gv.texture.needsUpdate = true;
     }
     if (r.shatter) {

@@ -8,17 +8,26 @@ import { validateLevel } from '../src/levels/validate';
 const FILE = 'src/levels/genTuning.json';
 const TARGET = 22; // aim-bot seconds left
 
-function calibrate(n: number): [number, number] | null {
+function calibrate(n: number): number[] | null {
+  // Feedback round 4: some layouts snowball (win fast or lose); re-roll the layout then.
+  for (const variant of [0, 1, 2, 3, 4, 5]) {
+    const t = calibrateVariant(n, variant);
+    if (t) return variant ? [...t, variant] : t;
+  }
+  return null;
+}
+
+function calibrateVariant(n: number, variant: number): [number, number] | null {
   const band = levelBand(n);
   // Lower wave size only when the hive falls even with a small nest.
   for (const wave of [100, 90, 80, 70, 60, 50]) {
     let lo = 30;
-    let hi = 250;
+    let hi = 450; // feedback round 4 layouts multiply more than the M7-1 templates
     let pct = 100;
     let best: { pct: number; tl: number } | null = null;
     let hiveFell = false;
     for (let it = 0; it < 8; it++) {
-      const v = validateLevel(generateLevel(n, [pct, wave]), band);
+      const v = validateLevel(generateLevel(n, [pct, wave, variant]), band);
       const won = v.aim.outcome === 'won';
       const tl = won ? v.aim.timeLeft : -1;
       if (!won && v.aim.timeLeft > 0 && pct <= 40) hiveFell = true;

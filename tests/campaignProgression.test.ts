@@ -35,9 +35,10 @@ describe('feedback 2026-10-15: progressive campaign', () => {
     expect(levelStrength(7)).toBeGreaterThan(1);
     expect(levelStrength(20)).toBeGreaterThan(levelStrength(7));
     expect(levelStrength(500)).toBeLessThanOrEqual(1.48);
-    // Same template three levels later: bigger nest and more defenders.
-    const a = generateLevel(6);
-    const b = generateLevel(9);
+    // Same band one world later at the same calibration: bigger nest and more defenders
+    // (feedback round 4 layouts make the calibrated nest size vary per level).
+    const a = generateLevel(6, [100, 100]);
+    const b = generateLevel(11, [100, 100]);
     expect(b.nestHp).toBeGreaterThan(a.nestHp);
     const sum = (l: typeof a) => l.waves.reduce((n, w) => n + w.count, 0);
     expect(sum(b)).toBeGreaterThan(sum(a));
@@ -50,7 +51,8 @@ describe('feedback 2026-10-15: progressive campaign', () => {
     for (let n = 1; n <= AUTHORED + 9; n++) sigs.add(sig(n));
     expect(sigs.size).toBe(AUTHORED + 9);
     // Every generated level adds a thorn-wall obstacle.
-    expect(generateLevel(6).gates.length).toBe(LEVELS[1].gates.length + 1);
+    for (let n = AUTHORED + 1; n <= AUTHORED + 9; n++)
+      expect(generateLevel(n).gates.some((g) => g.obstacle)).toBe(true);
   });
 
   it('generated levels: an aiming player wins, an idle player loses', () => {

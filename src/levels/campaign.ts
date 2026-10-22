@@ -3,6 +3,7 @@ import { LEVELS } from './index';
 import { overrideFor } from './overrides';
 import TUNING from './genTuning.json';
 import type { Band } from './validate';
+import { buildLayout, classifyOpening, pickOpening, type Opening } from './layout';
 
 /**
  * Feedback round 2026-10-15 (Mohit: "every level looks the same, only the multipliers change").
@@ -74,22 +75,27 @@ export function campaignNextIndex(bestStars: Record<string, number>, limit = 999
  * (written by `npm run levels:calibrate`). Past the validated range the table repeats, and the
  * capped strength makes those levels the same shape as validated ones.
  */
-export function levelTuning(n: number): [nestPct: number, wavePct: number] {
+export function levelTuning(n: number): [nestPct: number, wavePct: number, layoutVariant: number] {
   const k = n - AUTHORED - 1;
   const t = (TUNING as number[][])[k % TUNING.length] ?? [100, 100];
-  return [t[0], t[1] ?? 100];
+  return [t[0], t[1] ?? 100, t[2] ?? 0];
 }
 
 /**
- * M7-1 templated generator (levels-m2.md "Templated level generator"). Band picks the template:
- * A breather = L2 Dandelion Drift, B = L3 Clover Run / L4 Thistle Gauntlet in turn,
- * C = Thistle plus a hornet wave and a moving multiplier, Boss = L5 Wasp Queen Nest (3 phases,
- * the mini-objective). Every level then gets a mirror, a row shift, and a thorn-wall obstacle.
- * `tuning` overrides the calibration (the calibration script uses it). Exported for tests.
+ * M7-1 templated generator (levels-m2.md "Templated level generator"). Band picks the template
+ * for waves, timing and the nest: A breather = L2 Dandelion Drift, B = L3 Clover Run / L4
+ * Thistle Gauntlet in turn, C = Thistle plus a hornet wave, Boss = L5 Wasp Queen Nest (3 phases,
+ * the mini-objective). Feedback round 4: the gate layout is no longer the template's (which
+ * opened every level with the same -600 side walls); `buildLayout` composes an opening
+ * archetype (never the previous level's) and mid-level modules, with blocker values scaled to
+ * the expected army, plus a mini-boss tower on C and boss levels. `tuning` overrides the
+ * calibration (the calibration script uses it). Exported for tests.
  */
-export function generateLevel(n: number, tuning = levelTuning(n)): LevelDef {
-  const [nestPct, wavePct] = tuning;
-  const k = n - AUTHORED - 1;
+export function generateLevel(
+  n: number,
+  tuning: [number, number, number?] = levelTuning(n),
+): LevelDef {
+  const [nestPct, wavePct, variant = 0] = tuning;
   const band = levelBand(n);
   const tier = worldBand(n);
   // Template index into LEVELS by saw-tooth position: A→L2, B→L3 then L4, C→L4, Boss→L5.
@@ -97,43 +103,20 @@ export function generateLevel(n: number, tuning = levelTuning(n)): LevelDef {
   const s = levelStrength(n);
   const ws = (s * wavePct) / 100; // wave strength
   const mirror = tier % 2 === 1 ? -1 : 1;
-  // Deterministic per-level row shift (−1, 0 or +1.2 lane units) so gate rows move around.
-  const shift = [0, 1.2, -1][(k + tier) % 3];
-  const top = base.laneLength - 6;
-  const gates: GateDef[] = base.gates.map((g) => {
-    const isHiveGuard = g.kind === 'sub' && g.value >= 600; // side walls by the hive stay put
-    return {
-      ...g,
-      x: g.x * mirror,
-      y: isHiveGuard || g.fromPhase ? g.y : clamp(g.y + shift, 5, top),
-      ...(g.kind === 'sub' && !isHiveGuard ? { value: Math.round(g.value * s) } : {}),
-    };
+  const layout = buildLayout({
+    n,
+    laneLength: base.laneLength,
+    s,
+    tier,
+    opening: openingForLevel(n),
+    tower: band === 'C' || band === 'Boss',
+    variant,
   });
-  if (band === 'C') {
-    // Greedy row: the first still multiplier starts to drift (never two movers in a row).
-    const i = gates.findIndex((g) => g.kind === 'mul' && !g.motion);
-    if (i >= 0) {
-      const rowHasMover = gates.some(
-        (g, j) => j !== i && g.motion && Math.abs(g.y - gates[i].y) < 2,
-      );
-      if (!rowHasMover) gates[i] = { ...gates[i], motion: { amplitude: 1.2, speed: 0.6 } };
-    }
-  }
-  // Thorn wall obstacle: a short trap off the main gate column, between the first two rows.
-  const rows = [...new Set(gates.filter((g) => g.kind !== 'sub').map((g) => g.y))].sort(
-    (a, b) => a - b,
-  );
-  if (rows.length >= 2) {
-    const y = Math.round(((rows[0] + rows[1]) / 2) * 10) / 10;
-    gates.push({
-      kind: 'sub',
-      value: Math.round(15 * s),
-      x: -3.2 * mirror,
-      y,
-      width: 1.8,
-      obstacle: true,
-    });
-  }
+  // Boss phase gates (the phase-2 trap) stay from the template, scaled.
+  const phaseGates: GateDef[] = base.gates
+    .filter((g) => g.fromPhase)
+    .map((g) => ({ ...g, x: g.x * mirror, value: Math.round(g.value * s) }));
+  const gates = [...layout.gates, ...phaseGates];
   const waves: WaveDef[] = base.waves.map((w) => ({
     ...w,
     x: w.x * mirror,
@@ -161,6 +144,19 @@ export function generateLevel(n: number, tuning = levelTuning(n)): LevelDef {
   };
 }
 
+const openings = new Map<number, Opening>();
+
+/**
+ * Opening archetype of 1-based level n. Authored levels report the structure they open with;
+ * generated levels pick a seeded archetype that differs from the level before.
+ */
+export function openingForLevel(n: number): Opening {
+  if (n <= AUTHORED) return classifyOpening(LEVELS[Math.max(0, n - 1)]);
+  let o = openings.get(n);
+  if (!o) openings.set(n, (o = pickOpening(n, openingForLevel(n - 1))));
+  return o;
+}
+
 function scaleSpawn<T extends { kind: string; count: number; x: number }>(
   w: T,
   s: number,
@@ -171,8 +167,4 @@ function scaleSpawn<T extends { kind: string; count: number; x: number }>(
     x: w.x * mirror,
     count: w.kind === 'matriarch' ? w.count : Math.max(1, Math.round(w.count * s)),
   };
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.min(hi, Math.max(lo, v));
 }

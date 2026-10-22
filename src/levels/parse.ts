@@ -89,6 +89,10 @@ function parseGate(raw: unknown, i: number, laneLength: number, laneWidth: numbe
     if (typeof g.obstacle !== 'boolean') throw new Error(`gates[${i}].obstacle must be boolean`);
     if (g.obstacle) gate.obstacle = true;
   }
+  if (g.tower !== undefined) {
+    if (typeof g.tower !== 'boolean') throw new Error(`gates[${i}].tower must be boolean`);
+    if (g.tower) gate.tower = true;
+  }
   return gate;
 }
 

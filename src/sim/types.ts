@@ -21,6 +21,8 @@ export interface GateDef {
   fromPhase?: number;
   /** M7-9: a thorn-wall obstacle (a short trap placed off the gate column). */
   obstacle?: boolean;
+  /** Feedback round 4: a mini-boss tower (a tall blocker in front of the nest). */
+  tower?: boolean;
 }
 
 export type EnemyKind = 'wasp' | 'hornet' | 'matriarch';
