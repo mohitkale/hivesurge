@@ -12,7 +12,7 @@ describe('level data files', () => {
       laneWidth: 10,
       laneLength: 40,
       timeLimit: 90,
-      nestHp: 3050,
+      nestHp: 3250, // feedback round 4: side walls moved to y 13, nest +200
       hiveHp: 50,
       fireInterval: 0.11,
       queenCharge: 7,

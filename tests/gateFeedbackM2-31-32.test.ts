@@ -29,7 +29,7 @@ describe('M2-31 missed-gate feedback (QA S1-S3: volleys go straight up past the 
 
   it('traps and later-phase gates are never miss targets', () => {
     const w = new World(L2);
-    expect(w.gateRowY).toEqual([9, 18]); // the sub 600 rows at y 5 are not targets
+    expect(w.gateRowY).toEqual([9, 18]); // the side-wall trap rows at y 5 are not targets
     const L5 = new World(getLevel('wasp-queen-nest'));
     const subYs = getLevel('wasp-queen-nest')
       .gates.filter((g) => g.kind === 'sub')
@@ -115,28 +115,28 @@ describe('M2-32 trap telegraph (design ruling)', () => {
   const trapIdx = L2.gates.findIndex((g) => g.kind === 'sub' && g.x < 0);
   const trap = L2.gates[trapIdx];
 
-  it('sim is unchanged: a trap absorbs one bee per crossing, 600 in total', () => {
+  it('sim is unchanged: a trap absorbs one bee per crossing, 200 in total (was 600 before feedback round 4)', () => {
     const w = new World(L2);
-    expect(w.trapRemaining(trapIdx)).toBe(600);
+    expect(w.trapRemaining(trapIdx)).toBe(200);
     fireAt(w, -3.8, 4);
     const left = w.trapRemaining(trapIdx);
-    expect(left).toBeLessThan(600);
-    expect(600 - left).toBe(w.gatePasses[trapIdx]);
+    expect(left).toBeLessThan(200);
+    expect(200 - left).toBe(w.gatePasses[trapIdx]);
   });
 
   it('feedback round 4: the label counts down with each absorbed bee (was fixed in M2-32)', () => {
     const w = new World(L2);
     const labels: string[] = [];
     fireAt(w, -3.8, 4, () => labels.push(trapLabelText(trap, w.trapRemaining(trapIdx))));
-    expect(labels[0]).toBe('−600');
+    expect(labels[0]).toBe('−200');
     expect(new Set(labels).size).toBeGreaterThan(1);
     expect(labels.at(-1)).toBe(`−${w.trapRemaining(trapIdx)}`);
     expect(trapLabelText(trap, 0)).toBe('');
   });
 
   it('fill bar drains with absorbed bees', () => {
-    expect(trapFill(trap, 600)).toBe(1);
-    expect(trapFill(trap, 300)).toBe(0.5);
+    expect(trapFill(trap, 200)).toBe(1);
+    expect(trapFill(trap, 100)).toBe(0.5);
     expect(trapFill(trap, 0)).toBe(0);
     const w = new World(L2);
     const fills: number[] = [];

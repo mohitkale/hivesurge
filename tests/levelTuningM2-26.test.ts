@@ -8,7 +8,7 @@ describe('M2-26 tuning from validation-m2.md', () => {
   const W = getLevel('wasp-queen-nest');
 
   it('ships the spec values', () => {
-    expect([T.nestHp, T.hiveHp]).toEqual([3900, 50]);
+    expect([T.nestHp, T.hiveHp]).toEqual([4250, 50]);
     expect([W.nestHp, W.hiveHp]).toEqual([2500, 50]);
     expect(W.gates[1]).toMatchObject({ kind: 'add', value: 5 });
     expect(W.gates[2]).toMatchObject({ kind: 'mul', value: 3, width: 2.6, motion: { speed: 0.6 } });
