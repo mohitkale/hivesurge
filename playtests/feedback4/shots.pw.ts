@@ -20,5 +20,23 @@ for (const vp of [
       await page.screenshot({
         path: `playtests/feedback4/${TAG}/${s.name}-${vp.width}x${vp.height}.png`,
       });
+      // Long screens: also the far end of every scroll track (season pass, rankings, ...).
+      const scrolled = await page.evaluate(() => {
+        let any = false;
+        for (const el of document.querySelectorAll<HTMLElement>('#overlay *')) {
+          const cs = getComputedStyle(el);
+          if (/auto|scroll/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 40) {
+            el.scrollTop = el.scrollHeight;
+            any = true;
+          }
+        }
+        return any;
+      });
+      if (scrolled) {
+        await page.waitForTimeout(150);
+        await page.screenshot({
+          path: `playtests/feedback4/${TAG}/${s.name}-end-${vp.width}x${vp.height}.png`,
+        });
+      }
     }
   });

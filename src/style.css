@@ -1383,18 +1383,6 @@ body {
 .chest-icon {
   font-size: 26px;
 }
-.odds {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 6px 0;
-  font-size: 13px;
-}
-.odds th,
-.odds td {
-  padding: 3px 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  text-align: left;
-}
 .card-drops,
 .bee-grid,
 .rooms {
@@ -1483,34 +1471,6 @@ body {
 .liveops-screen h3 {
   margin: 12px 0 4px;
 }
-.milestones {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.milestone {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 3px 0;
-}
-.milestone span {
-  margin-left: auto;
-}
-table.pass {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85em;
-}
-table.pass th,
-table.pass td {
-  padding: 3px 4px;
-  border-bottom: 1px solid #ffffff1a;
-  text-align: left;
-}
-table.pass tr.reached th {
-  color: #ffcf4a;
-}
 .login-note {
   margin: 4px 0;
 }
@@ -1535,4 +1495,408 @@ table.pass tr.reached th {
 }
 .cal-row .twist {
   opacity: 0.8;
+}
+
+/* Feedback round 4 #2 (Mohit: "many table layouts don't look good"): game-style rows and cards
+   instead of tables. Shared pieces: reward chips, tier track, toggle rows, shop cards, odds chips. */
+.rw {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 4px 6px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+  line-height: 1.1;
+}
+.rw-icon {
+  font-size: 22px;
+}
+.rw b {
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rw.claimed {
+  opacity: 0.55;
+}
+.rw.locked {
+  filter: grayscale(0.7);
+  opacity: 0.75;
+}
+.rw-mark {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-style: normal;
+  font-size: 13px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 99px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+}
+.liveops-screen h3 {
+  text-align: left;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+/* Season pass: header with tier badge + XP bar, then a two-lane tier track. */
+.pass-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  margin: 4px 0 8px;
+}
+.pass-prog {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pass-prog .ch-bar {
+  height: 10px;
+}
+.pass-prog small {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.tier-badge {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  background: #e8dccb;
+  color: var(--ink);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+}
+.tier-badge.big {
+  width: 52px;
+  height: 52px;
+  font-size: 22px;
+  background: linear-gradient(180deg, #ffd96b, var(--honey));
+}
+.pass-legend,
+.tier-row {
+  display: grid;
+  grid-template-columns: 1fr 44px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+.pass-legend {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin: 6px 0 4px;
+}
+.pass-track {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tier-row {
+  justify-items: center;
+}
+.tier-row.reached .tier-badge {
+  background: linear-gradient(180deg, #ffd96b, var(--honey));
+}
+.tier-row.next .tier-badge {
+  outline: 3px solid var(--teal);
+}
+.tier-cell {
+  width: 100%;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 6px;
+  border-radius: 14px;
+  background: #f1e6d6;
+  border: 0;
+  font: inherit;
+  color: inherit;
+}
+.tier-row.reached .tier-cell {
+  background: #ffe9b0;
+}
+.tier-row .tier-cell + .tier-badge + .tier-cell,
+.tier-row > .tier-cell:last-child {
+  background: #eadcf2;
+}
+.tier-row.reached > .tier-cell:last-child {
+  background: #e3cdf3;
+}
+button.tier-cell.claim {
+  cursor: pointer;
+  flex-direction: column;
+  background: linear-gradient(180deg, #4fe0d2, var(--teal)) !important;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  animation: idle-pulse 1.4s ease-in-out infinite;
+}
+.tc-cta {
+  color: #fff;
+  font-weight: 900;
+  font-size: 12px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+/* Event milestones: points badge, reward chip + progress, claim. */
+.milestones {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ms-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: #f1e6d6;
+}
+.ms-row.ready {
+  background: #ffe9b0;
+}
+.ms-pts {
+  flex: none;
+  width: 46px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+.ms-pts b {
+  font-size: 16px;
+}
+.ms-pts small {
+  font-size: 10px;
+  opacity: 0.7;
+}
+.ms-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ms-body .ch-bar {
+  flex: 1;
+}
+/* Chest odds: one chip per rarity (G12 facts unchanged). */
+.odds-title {
+  margin: 8px 0 4px;
+}
+.odds {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.odd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 2px;
+  border-radius: 12px;
+  background: #ece3d6;
+  border-bottom: 4px solid #9a8f80;
+}
+.odd b {
+  font-size: 18px;
+}
+.odd small {
+  font-size: 11px;
+  font-weight: 800;
+}
+.odd.r-R {
+  background: #dcebfa;
+  border-color: #1f6fb8;
+}
+.odd.r-E {
+  background: #eadcf8;
+  border-color: #7b35c2;
+}
+.odd.r-L {
+  background: #fff0c8;
+  border-color: #c98a00;
+}
+/* Settings: one toggle row per setting, the whole row is the tap target. */
+.toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0;
+}
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: #f1e6d6;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+}
+.toggle-row:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12);
+}
+.tg-icon {
+  font-size: 22px;
+}
+.tg-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tg-label small {
+  font-weight: 600;
+  font-size: 12px;
+  opacity: 0.7;
+}
+.switch {
+  flex: none;
+  width: 50px;
+  height: 28px;
+  border-radius: 99px;
+  background: #c9bba8;
+  position: relative;
+  transition: background 0.15s;
+}
+.switch i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s;
+}
+.switch.on {
+  background: var(--teal);
+}
+.switch.on i {
+  transform: translateX(22px);
+}
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  padding: 4px 6px;
+}
+.info-row > span {
+  font-size: 18px;
+}
+/* Shop: product cards (icon tile, what you get, price pill). */
+.shop-list {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.14);
+}
+.shop-item:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.14);
+}
+.si-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  background: linear-gradient(180deg, #ffe9b0, #ffd36b);
+}
+.si-icon.lg {
+  font-size: 28px;
+}
+.si-icon.xl {
+  font-size: 32px;
+}
+.si-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.si-body b {
+  font-weight: 900;
+}
+.si-body small {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.si-price {
+  flex: none;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(180deg, #4fe0d2, var(--teal));
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+/* Leaderboard medals + trophy score. */
+.rank {
+  min-height: 40px;
+}
+.rank .rk.medal {
+  font-size: 22px;
+}
+.rank .rs {
+  font-variant-numeric: tabular-nums;
 }

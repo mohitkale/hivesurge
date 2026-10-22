@@ -1,4 +1,5 @@
 import { worldName, type EarnedRewards } from './homeMap';
+import { rankRow } from './gameUi';
 
 /**
  * Round 3 (2026-10-16, Mohit playtest): a real hyper-casual home screen shown on every launch
@@ -215,12 +216,7 @@ export function homeHtml(o: HomeModel): string {
           ? `<span class="ch-bar"><span style="width:${Math.round((100 * c.progress) / c.goal)}%"></span></span><small>${c.progress}/${c.goal}</small>`
           : `<small>Opens tomorrow</small>`
       }</span><span class="ch-reward">${c.reward}</span></li>`;
-  const ranks = o.ranks
-    .map(
-      (r) =>
-        `<li class="rank${r.you ? ' you' : ''}"><span class="rk">#${r.rank}</span><span class="rn">${esc(r.name)}</span><span class="rs">${r.score}</span></li>`,
-    )
-    .join('');
+  const ranks = o.ranks.map(rankRow).join('');
   const e = o.earned;
   const earned = e
     ? `<div class="earned ${e.won ? 'won' : 'lost'}" role="status">

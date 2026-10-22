@@ -27,14 +27,17 @@ describe('M5-4b / M5-11 chest UI shows the odds table', () => {
       const s = defaultSave();
       awardChest(s, type, 0, createRng(1));
       const html = chestInfoHtml(s, s.meta.chests[0], 0);
-      expect(html).toContain('<table class="odds"');
+      // Feedback round 4: rarity chips instead of a table, same facts (G12).
+      expect(html).toContain('<ul class="odds" aria-label="Odds per card"');
       for (const [r, name] of [
         ['C', 'Common'],
         ['R', 'Rare'],
         ['E', 'Epic'],
         ['L', 'Legendary'],
       ] as const)
-        expect(html).toContain(`<td>${name}</td><td>${CHESTS[type].odds[r]}%</td>`);
+        expect(html).toContain(
+          `<li class="odd r-${r}"><b>${CHESTS[type].odds[r]}%</b><small>${name}</small></li>`,
+        );
       expect(html).toMatch(/Legendary guaranteed within 40 chests/);
     }
     expect(oddsTableHtml('royal')).toContain('at least 1 Epic');

@@ -18,6 +18,7 @@ import type { LiveEvent } from '../platform/remoteConfig';
 import type { SaveData } from '../platform/save';
 import type { LiveCtx } from '../meta/liveGame';
 import type { Challenge } from './home';
+import { rewardChip } from './gameUi';
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 const fmtLeft = (ms: number) => {
@@ -127,12 +128,17 @@ export function liveopsHtml(
   const milestones = ev
     ? (eventRules(ev).milestones ?? [])
         .map(([pts, r], i) => {
-          const st = L.event.claimed.includes(i)
-            ? '✅'
-            : L.event.points >= pts
+          const done = L.event.claimed.includes(i);
+          const ready = !done && L.event.points >= pts;
+          const act = done
+            ? '<span class="claimed">✅</span>'
+            : ready
               ? `<button class="btn small primary" data-a="claim:event:${i}">Claim</button>`
-              : `${L.event.points}/${pts}`;
-          return `<li class="milestone"><b>${pts} pts</b> ${rewardLabel(r)} <span>${st}</span></li>`;
+              : `<small>${L.event.points}/${pts}</small>`;
+          const pct = Math.min(100, Math.round((100 * L.event.points) / pts));
+          return `<li class="ms-row${done ? ' done' : ready ? ' ready' : ''}"><span class="ms-pts" aria-label="${pts} pts"><b>${pts}</b><small>pts</small></span>
+            <span class="ms-body">${rewardChip(rewardLabel(r), done ? 'claimed' : '')}<span class="ch-bar"><span style="width:${pct}%"></span></span></span>
+            <span class="ms-act">${act}</span></li>`;
         })
         .join('')
     : '';
@@ -141,30 +147,39 @@ export function liveopsHtml(
   if (se) {
     const tier = passTier(L.season.xp, se.xpPerTier);
     const into = L.season.xp - tier * se.xpPerTier;
+    const premium = s.meta.seasonPremium;
     const rows: string[] = [];
     for (let t = 1; t <= TIERS; t++) {
       const reached = t <= tier;
-      const f = L.season.claimedFree.includes(t)
-        ? '✅'
-        : reached
-          ? `<button class="btn small" data-a="tier:free:${t}">${freeReward(t).map(rewardLabel).join(' ')}</button>`
-          : `<small>${freeReward(t).map(rewardLabel).join(' ')}</small>`;
-      const pr = premiumRewards(t).map(rewardLabel).join(' + ');
-      const p = L.season.claimedPremium.includes(t)
-        ? '✅'
-        : reached && s.meta.seasonPremium
-          ? `<button class="btn small primary" data-a="tier:premium:${t}">${pr}</button>`
-          : `<small>${s.meta.seasonPremium ? '' : '🔒 '}${pr}</small>`;
+      const cell = (labels: string[], claimed: boolean, action: string | null, locked: boolean) => {
+        const chips = labels
+          .map((l) => rewardChip(l, claimed ? 'claimed' : locked ? 'locked' : ''))
+          .join('');
+        return action
+          ? `<button class="tier-cell claim" data-a="${action}">${chips}<span class="tc-cta">Claim</span></button>`
+          : `<span class="tier-cell">${chips}</span>`;
+      };
+      const free = freeReward(t).map(rewardLabel);
+      const prem = premiumRewards(t).map(rewardLabel);
+      const fClaimed = L.season.claimedFree.includes(t);
+      const pClaimed = L.season.claimedPremium.includes(t);
+      const state = reached ? 'reached' : t === tier + 1 ? 'next' : 'locked';
       rows.push(
-        `<tr class="${reached ? 'reached' : ''}"><th>${t}</th><td>${f}</td><td>${p}</td></tr>`,
+        `<li class="tier-row ${state}">${cell(free, fClaimed, reached && !fClaimed ? `tier:free:${t}` : null, false)}
+          <span class="tier-badge">${t}</span>
+          ${cell(prem, pClaimed, reached && premium && !pClaimed ? `tier:premium:${t}` : null, !premium)}</li>`,
       );
     }
     const buy =
-      !s.meta.seasonPremium && passPrice
-        ? `<div class="row"><button class="btn primary" data-a="buy:season_pass">Season Pass ${esc(passPrice)} (sandbox): fixed, named rewards</button></div>`
+      !premium && passPrice
+        ? `<div class="row"><button class="btn primary" data-a="buy:season_pass">👑 Season Pass ${esc(passPrice)} (sandbox): fixed, named rewards</button></div>`
         : '';
-    pass = `<p>Tier <b>${tier}</b>/${TIERS} · ${into}/${se.xpPerTier} XP · ends in ${fmtLeft(se.start + se.days * 86_400_000 - ctx.now)}</p>${buy}
-      <div class="pass-wrap"><table class="pass"><thead><tr><th>Tier</th><th>Free</th><th>Premium</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+    const pct = Math.round((100 * into) / se.xpPerTier);
+    pass = `<div class="pass-head"><span class="tier-badge big">${tier}</span>
+        <span class="pass-prog"><b>Tier ${tier} of ${TIERS}</b><span class="ch-bar"><span style="width:${pct}%"></span></span>
+        <small>${into}/${se.xpPerTier} XP to tier ${Math.min(TIERS, tier + 1)} · ends in ${fmtLeft(se.start + se.days * 86_400_000 - ctx.now)}</small></span></div>${buy}
+      <div class="pass-legend"><span>Free</span><span></span><span>👑 Premium</span></div>
+      <ol class="pass-track">${rows.join('')}</ol>`;
   }
   return `<div class="modal"><div class="card card-scroll liveops-screen">
     <h2>Targets &amp; Pass</h2><div class="scroll-y scroll-body">
