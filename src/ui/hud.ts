@@ -39,6 +39,7 @@ export class Hud {
         <div class="meter-row"><span class="meter-label">🍯 YOUR HIVE</span>
           <div class="bar hive"><i style="width:100%"></i></div><span class="meter-num" data-hive>0</span></div></div>
       <div class="level-banner" aria-live="polite"></div>
+      <div class="world-card" aria-live="polite"></div>
       <div class="count">0</div>
       <div class="hint">Hold &amp; drag to launch bees</div>
       <div class="ftue-prompt" role="status" aria-live="polite"></div>
@@ -86,6 +87,18 @@ export class Hud {
     b.innerHTML = `<small>${world}</small><b>LEVEL ${no}</b><span>${boss ? '👑 BOSS · ' : ''}${name}</span>`;
     b.classList.add('show');
     setTimeout(() => b.classList.remove('show'), 2200);
+  }
+
+  /**
+   * Feedback round 4 #5: world name card shown when the environment changes (new world, boss
+   * fortress). `sky` tints the card so it matches the new scene.
+   */
+  showWorld(icon: string, name: string, sub: string, sky: string): void {
+    const c = this.root.querySelector<HTMLElement>('.world-card')!;
+    c.innerHTML = `<i aria-hidden="true">${icon}</i><span><small>${sub}</small><b>${name}</b></span>`;
+    c.style.setProperty('--world-sky', sky);
+    c.classList.add('show');
+    setTimeout(() => c.classList.remove('show'), 2600);
   }
 
   /** Active pre-level boosts, shown under the enemy meter. */

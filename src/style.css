@@ -823,6 +823,55 @@ body {
   font-weight: 800;
 }
 
+/* Feedback round 4 #5: world name card when the environment changes. */
+.world-card {
+  position: absolute;
+  left: 50%;
+  top: 13%;
+  transform: translate(-50%, -30%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px 8px 10px;
+  border-radius: 999px;
+  color: #fff;
+  text-shadow: var(--hud-outline);
+  background: linear-gradient(90deg, var(--world-sky, #6b4a8a), var(--hud-plate) 70%);
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transition:
+    opacity 0.35s,
+    transform 0.35s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.world-card.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.world-card i {
+  font-style: normal;
+  font-size: 30px;
+  line-height: 1;
+}
+.world-card span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.world-card small {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+.world-card b {
+  font-size: 20px;
+  font-weight: 900;
+}
+
 /* Feedback 2026-10-15: home / map screen. */
 .modal.home {
   overflow: hidden;

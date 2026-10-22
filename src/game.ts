@@ -85,7 +85,7 @@ import { installScrollHints } from './ui/scrollHints';
 import { shopItem, toggleRow } from './ui/gameUi';
 import { GameScene } from './render/scene';
 import { LEVELS } from './sim/levels';
-import { biomeForLevel, bandTheme } from './art/biomes';
+import { biomeForLevel, environmentFor } from './art/environments';
 import { SKINS, skinById } from './art/skins';
 import { equipSkin, equippedSkinId, pickerEntries } from './platform/skinSelect';
 import {
@@ -93,6 +93,7 @@ import {
   campaignLevel,
   campaignNextIndex,
   levelStrength,
+  levelBand,
   worldBand,
 } from './levels/campaign';
 import {
@@ -309,7 +310,7 @@ export class Game {
       this.world.level,
       palette(this.save.settings.colorBlind),
       this.models,
-      biomeForLevel(this.levelNo(this.world.level), this.world.level.id, location.search),
+      biomeForLevel(this.levelNo(this.world.level), this.isBossLevel(), location.search),
       skinById(this.equippedSkin()) ?? null,
       {
         // MSAA only for the high tier on a hardware renderer; fixed per GL context.
@@ -437,6 +438,15 @@ export class Game {
   private levelNo(level: LevelDef): number {
     return campaignIndexOf(level.id) + 1;
   }
+
+  /** Boss level (boss phases or the saw-tooth Boss slot): drawn in the Wasp Nest Fortress. */
+  private isBossLevel(): boolean {
+    const L = this.world.level;
+    return !!L.bossPhases || levelBand(this.levelNo(L)) === 'Boss';
+  }
+
+  /** Environment of the last battle this session; the world card shows when it changes. */
+  private lastEnvId = '';
 
   // ---------- screens ----------
   /** Feedback 2026-10-15: what the last battle paid (shown once on the home map). */
@@ -1161,8 +1171,19 @@ export class Game {
     {
       const ev = this.eventPlay;
       const no = ev ? ev.k + 1 : this.levelNo(this.world.level);
-      const world = ev ? 'Event' : (bandTheme(worldBand(no))?.name ?? 'Meadow');
+      const boss = this.isBossLevel();
+      const env = environmentFor(this.levelNo(this.world.level), boss, location.search);
+      const world = ev ? 'Event' : env.name;
       this.hud.showLevel(no, this.world.level.name, world, !!this.world.level.bossPhases);
+      // Feedback round 4 #5: name card when the environment changes (new world, boss lair).
+      if (env.id !== this.lastEnvId)
+        this.hud.showWorld(
+          env.icon ?? '🌼',
+          env.name,
+          boss ? 'Boss lair' : `World ${worldBand(no) + 1}`,
+          env.sky,
+        );
+      this.lastEnvId = env.id;
       const active = Object.keys(boosts).map((id) => boostById(id));
       if (active.length)
         this.hud.showBoosts(
