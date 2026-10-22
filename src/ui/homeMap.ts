@@ -1,5 +1,5 @@
-import { bandTheme } from '../art/biomes';
-import { campaignLevel, worldBand } from '../levels/campaign';
+import { worldName } from '../art/environments';
+import { campaignLevel } from '../levels/campaign';
 
 /**
  * Feedback 2026-10-15: home / map screen between levels (typical hyper-casual loop:
@@ -61,9 +61,7 @@ export function starGain(prevBest: number, stars: number): { newStars: number; g
   return { newStars, gems: newStars * GEMS_PER_NEW_STAR };
 }
 
-export function worldName(levelNo: number): string {
-  return bandTheme(worldBand(levelNo))?.name ?? 'Meadow';
-}
+export { worldName };
 
 const starStr = (n: number) => '★'.repeat(n) + '☆'.repeat(3 - n);
 

@@ -20,7 +20,19 @@ export interface BiomeKit {
   railPost: string;
   /** Large set pieces outside the lane (hills, trees, bushes): prop id + count per side. */
   backdrop: { id: string; perSide: number; scale: number; offset?: number }[];
+  /** Feedback round 4 environments (src/art/environments.ts); defaults keep the M3 look. */
+  sun?: { color: string; intensity: number };
+  /** Hemisphere light intensity (default 1.6). */
+  hemi?: number;
+  /** Fog near / far (default 45 / 75). */
+  fogRange?: [number, number];
+  /** Ambient particles drawn over the scene (render/ambient.ts). */
+  ambient?: AmbientKind;
+  /** Icon on the world name card. */
+  icon?: string;
 }
+
+export type AmbientKind = 'pollen' | 'petals' | 'rain' | 'dust' | 'fireflies' | 'embers';
 
 /** Budgets for one kit (PLAN M3-3, within the M3 model budget). Enforced in tests/biomes.test.ts. */
 export const BIOME_BUDGET = {
@@ -32,9 +44,10 @@ export const BIOME_BUDGET = {
   maxPropDrawCalls: 12,
 } as const;
 
-const at = (g: THREE.BufferGeometry, x: number, y: number, z: number) => g.translate(x, y, z);
+export const at = (g: THREE.BufferGeometry, x: number, y: number, z: number) =>
+  g.translate(x, y, z);
 
-function flower(petal: string, centre = '#ffd23f'): () => THREE.BufferGeometry {
+export function flower(petal: string, centre = '#ffd23f'): () => THREE.BufferGeometry {
   return () => {
     const parts: Part[] = [
       { geo: at(new THREE.CylinderGeometry(0.04, 0.05, 0.6, 4), 0, 0.3, 0), color: '#3f8f3a' },
@@ -63,7 +76,7 @@ const clover = (): THREE.BufferGeometry => {
   return bake(parts);
 };
 
-const mushroom = (cap: string) => (): THREE.BufferGeometry =>
+export const mushroom = (cap: string) => (): THREE.BufferGeometry =>
   bake([
     { geo: at(new THREE.CylinderGeometry(0.1, 0.13, 0.3, 6), 0, 0.15, 0), color: '#fff1dc' },
     {
@@ -72,7 +85,7 @@ const mushroom = (cap: string) => (): THREE.BufferGeometry =>
     },
   ]);
 
-const pebble = (c: string) => (): THREE.BufferGeometry =>
+export const pebble = (c: string) => (): THREE.BufferGeometry =>
   bake([
     {
       geo: new THREE.DodecahedronGeometry(0.22).scale(1.3, 0.6, 1).translate(0, 0.08, 0),
@@ -80,13 +93,13 @@ const pebble = (c: string) => (): THREE.BufferGeometry =>
     },
   ]);
 
-const fencePost = (c: string) => (): THREE.BufferGeometry =>
+export const fencePost = (c: string) => (): THREE.BufferGeometry =>
   bake([
     { geo: at(new THREE.BoxGeometry(0.22, 0.8, 0.22), 0, 0.4, 0), color: c },
     { geo: at(new THREE.ConeGeometry(0.16, 0.2, 4).rotateY(Math.PI / 4), 0, 0.9, 0), color: c },
   ]);
 
-const tree = (leaf: string, fruit: string) => (): THREE.BufferGeometry => {
+export const tree = (leaf: string, fruit: string) => (): THREE.BufferGeometry => {
   const parts: Part[] = [
     { geo: at(new THREE.CylinderGeometry(0.12, 0.18, 1.0, 5), 0, 0.5, 0), color: '#8a5530' },
     { geo: at(new THREE.IcosahedronGeometry(0.75, 0), 0, 1.45, 0), color: leaf },
@@ -106,7 +119,7 @@ const tree = (leaf: string, fruit: string) => (): THREE.BufferGeometry => {
   return bake(parts);
 };
 
-const bush = (leaf: string, berry: string) => (): THREE.BufferGeometry => {
+export const bush = (leaf: string, berry: string) => (): THREE.BufferGeometry => {
   const parts: Part[] = [];
   const blobs: [number, number, number, number][] = [
     [0, 0.45, 0, 0.55],
@@ -124,7 +137,7 @@ const bush = (leaf: string, berry: string) => (): THREE.BufferGeometry => {
 };
 
 /** Low rolling hill for the backdrop: one flattened dodecahedron with a lighter crown. */
-const hill = (base: string, crown: string) => (): THREE.BufferGeometry =>
+export const hill = (base: string, crown: string) => (): THREE.BufferGeometry =>
   bake([
     {
       geo: new THREE.DodecahedronGeometry(1, 0).scale(2.6, 0.9, 1.8),
@@ -293,71 +306,4 @@ export function layoutBiome(kit: BiomeKit, laneWidth: number, laneLength: number
         });
       }
   return out;
-}
-
-/**
- * Feedback 2026-10-15: one environment theme per world band of 5 levels. Band 0 is the authored
- * Meadow world (LEVEL_BIOME as before); later bands recolour an existing prop kit (same kit id,
- * so the GLB props and budgets stay valid) with their own sky, fog, ground and light.
- */
-export interface BandTheme {
-  name: string;
-  base: 'clover' | 'orchard';
-  sky: string;
-  fog: string;
-  lane: string;
-  laneAlt: string;
-  soil: string;
-  rail: string;
-  light: [string, string];
-}
-
-export const BAND_THEMES: BandTheme[] = [
-  {
-    name: 'Lavender Dusk',
-    base: 'clover',
-    sky: '#c7a8e8',
-    fog: '#b896de',
-    lane: '#6fae7a',
-    laneAlt: '#79b884',
-    soil: '#9a74b8',
-    rail: '#f3e6ff',
-    light: ['#f0e2ff', '#4a3a78'],
-  },
-  {
-    name: 'Frost Garden',
-    base: 'orchard',
-    sky: '#bfe4f5',
-    fog: '#d6eef8',
-    lane: '#a9d8c8',
-    laneAlt: '#b8e2d4',
-    soil: '#8fb3c9',
-    rail: '#ffffff',
-    light: ['#ffffff', '#5a7a9a'],
-  },
-  {
-    name: 'Ember Canyon',
-    base: 'orchard',
-    sky: '#f2a07a',
-    fog: '#e88a66',
-    lane: '#c4a24e',
-    laneAlt: '#b8953f',
-    soil: '#a8553a',
-    rail: '#5a2e20',
-    light: ['#ffd6b0', '#7a2a2a'],
-  },
-];
-
-/** Theme for a world band, or null for band 0 (authored kits unchanged). Bands cycle. */
-export function bandTheme(band: number): BandTheme | null {
-  return band <= 0 ? null : BAND_THEMES[(band - 1) % BAND_THEMES.length];
-}
-
-/** Biome for 1-based campaign level `levelNo`; `?biome=` still overrides. */
-export function biomeForLevel(levelNo: number, levelId: string, search = ''): BiomeKit {
-  if (new URLSearchParams(search).get('biome')) return biomeFor(levelId, search);
-  const t = bandTheme(Math.floor((Math.max(1, levelNo) - 1) / 5));
-  if (!t) return biomeFor(levelId);
-  const { base, ...colours } = t;
-  return { ...BIOMES[base], ...colours };
 }

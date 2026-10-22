@@ -17,6 +17,7 @@ import {
   labelScale,
 } from './gateLabel';
 import { Particles } from './particles';
+import { Ambient, ambientCount } from './ambient';
 import { drawLabel, grassTexture, labelTexture } from './textures';
 import {
   beeCrowdGeometry,
@@ -143,12 +144,17 @@ export class GameScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.scene.background = new THREE.Color(this.biome.sky);
-    this.fog = new THREE.Fog(this.biome.fog, 45, 75);
+    // Feedback round 4 #5: each environment sets its own fog range and light colours.
+    const [fogNear, fogFar] = this.biome.fogRange ?? [45, 75];
+    this.fog = new THREE.Fog(this.biome.fog, fogNear, fogFar);
     this.scene.fog = this.fog;
 
     this.lights.push(
-      new THREE.HemisphereLight(this.biome.light[0], this.biome.light[1], 1.6),
-      new THREE.DirectionalLight('#ffffff', 1.6),
+      new THREE.HemisphereLight(this.biome.light[0], this.biome.light[1], this.biome.hemi ?? 1.6),
+      new THREE.DirectionalLight(
+        this.biome.sun?.color ?? '#ffffff',
+        this.biome.sun?.intensity ?? 1.6,
+      ),
     );
     this.lights[1].position.set(-6, 14, 6);
     this.scene.add(...this.lights);
@@ -184,6 +190,10 @@ export class GameScene {
       waspFar: this.unitMesh(waspFarGeometry(0.5), 400, 0.5, 30),
     };
     this.scene.add(this.particles.mesh, this.shatter.mesh);
+    if (this.biome.ambient) {
+      this.ambient = new Ambient(this.biome.ambient, level.laneWidth / 2 + 5, level.laneLength);
+      this.scene.add(this.ambient.object);
+    }
     this.buildCannon();
     this.buildNest();
     this.buildHive();
@@ -192,6 +202,8 @@ export class GameScene {
   }
 
   private readonly fog: THREE.Fog;
+  /** Environment ambient particles (feedback round 4 #5), null for kits without any. */
+  readonly ambient: Ambient | null = null;
   private readonly lod: Record<'workerMid' | 'workerFar' | 'waspFar', THREE.InstancedMesh>;
   /** Per-side crowd switch (enter/exit thresholds + hold), exposed for the debug overlay. */
   readonly crowdLod = {
@@ -227,6 +239,7 @@ export class GameScene {
         : (this.litOf.get(mesh.material) ?? mesh.material);
     });
     this.particles.setBudget(q.particles);
+    this.ambient?.setCount(ambientCount(q.particles));
   }
 
   /** MeshBasic twin of a lit material: same colour/map/vertex colours/shader patch, no lighting. */
@@ -710,6 +723,7 @@ export class GameScene {
 
     this.particles.update(dt);
     this.shatter.update(dt);
+    this.ambient?.update(dt);
 
     // Camera with decaying shake
     const off = this.shake.update(dt);
@@ -838,6 +852,7 @@ export class GameScene {
     const gl = this.renderer.getContext();
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    this.ambient?.dispose();
     this.renderer.dispose();
   }
 }

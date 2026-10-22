@@ -145,6 +145,6 @@ describe('feedback 2026-10-15: home map', () => {
     expect(html).toContain('Level 6 cleared!');
     expect(html).toContain('+🪙 75');
     expect(html).toContain('+💎 2');
-    expect(html).toContain('Lavender Dusk');
+    expect(html).toContain('Sunset Orchard');
   });
 });

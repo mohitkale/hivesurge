@@ -10,7 +10,7 @@ import {
 } from '../src/levels/campaign';
 import { LEVELS } from '../src/levels';
 import { parseLevel } from '../src/levels/parse';
-import { bandTheme, biomeForLevel, BIOMES } from '../src/art/biomes';
+import { biomeForLevel, ENVIRONMENTS } from '../src/art/environments';
 import { aimBot, idleBot, run } from './bots';
 
 describe('feedback 2026-10-15: progressive campaign', () => {
@@ -70,20 +70,19 @@ describe('feedback 2026-10-15: progressive campaign', () => {
 });
 
 describe('feedback 2026-10-15: world band themes', () => {
-  it('bands are 5 levels long and each band past the first has its own palette', () => {
+  it('bands are 5 levels long and each band has its own palette', () => {
     expect(worldBand(1)).toBe(0);
     expect(worldBand(5)).toBe(0);
     expect(worldBand(6)).toBe(1);
     const skies = new Set<string>();
-    for (const n of [1, 6, 11, 16]) skies.add(biomeForLevel(n, campaignLevel(n - 1).id).sky);
+    for (const n of [1, 6, 11, 16]) skies.add(biomeForLevel(n, false).sky);
     expect(skies.size).toBe(4);
-    expect(bandTheme(0)).toBeNull();
   });
 
-  it('themed kits reuse an existing prop kit id (GLB props stay valid)', () => {
-    for (let n = 1; n <= 30; n += 5) {
-      const k = biomeForLevel(n, campaignLevel(n - 1).id);
-      expect(BIOMES[k.id], `${n}`).toBeDefined();
+  it('every level maps to an environment kit (round 4: procedural env kits)', () => {
+    for (let n = 1; n <= 30; n++) {
+      const k = biomeForLevel(n, n % 5 === 0);
+      expect(ENVIRONMENTS[k.id], `${n}`).toBeDefined();
     }
   });
 });

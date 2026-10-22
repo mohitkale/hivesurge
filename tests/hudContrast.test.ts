@@ -41,7 +41,7 @@ describe('HUD contrast (QA BUG-01)', () => {
   it('defines the HUD backplate', () => expect(m).not.toBeNull());
   const plate = m!.slice(1).map(Number) as [number, number, number, number];
 
-  for (const sel of ['.meter-label', '.ftue-prompt', '.level-banner', '.hint']) {
+  for (const sel of ['.meter-label', '.ftue-prompt', '.level-banner', '.world-card', '.hint']) {
     it(`${sel} uses the backplate and white text`, () => {
       const block = css.match(new RegExp(`\\n\\${sel} \\{([^}]*)\\}`))![1];
       expect(block).toContain('background: var(--hud-plate)');
