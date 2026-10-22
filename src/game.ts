@@ -11,6 +11,7 @@ import { GemReviveCaps, isEventFinalLevel, reviveGemConfig } from './platform/re
 import { canOfferRewarded, shouldShowInterstitialOnClaim } from './platform/adPolicy';
 import { AdPacer } from './platform/adPacer';
 import { applyRemoteConfig, cachedRemoteConfig } from './platform/remoteConfig';
+import { loadCachedLevelOverrides } from './levels/overrides';
 import { starterOfferEligible } from './platform/offers';
 import { gameClock } from './platform/clock';
 import { CHESTS, XP } from './meta/defs';
@@ -224,6 +225,7 @@ export class Game {
       this.save.ftueDone = true;
     this.world = new World(this.currentLevel());
     // M5-6g: last fetched remote config (validated) drives caps, chest odds and difficulty.
+    loadCachedLevelOverrides(); // M7 (a): admin-edited level rows from the last refresh
     const rc = cachedRemoteConfig();
     applyRemoteConfig(rc);
     this.pacer = new AdPacer(this.save.adDay, Date.now, rc.ads);

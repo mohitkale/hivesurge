@@ -1,5 +1,6 @@
 import type { GateDef, LevelDef, WaveDef } from '../sim/types';
 import { LEVELS } from './index';
+import { overrideFor } from './overrides';
 import TUNING from './genTuning.json';
 import type { Band } from './validate';
 
@@ -45,7 +46,10 @@ const cache = new Map<number, LevelDef>();
 
 /** Campaign level at 0-based index `i` (authored first, then generated; deterministic). */
 export function campaignLevel(i: number): LevelDef {
-  if (i < AUTHORED) return LEVELS[i];
+  // M7 (a): an admin-edited row with the same id wins over the shipped / generated level.
+  if (i < AUTHORED) return overrideFor(LEVELS[i].id) ?? LEVELS[i];
+  const o = overrideFor(`gen-${i + 1}`);
+  if (o) return o;
   let l = cache.get(i);
   if (!l) cache.set(i, (l = generateLevel(i + 1)));
   return l;
